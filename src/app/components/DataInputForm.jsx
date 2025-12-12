@@ -1,58 +1,126 @@
-'use client';
+"use client";
 
-import { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
-import { School, Users, BookOpen, Save, ArrowLeft, Loader2 } from 'lucide-react';
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import {
+  School,
+  Users,
+  BookOpen,
+  Save,
+  ArrowLeft,
+  Loader2,
+} from "lucide-react";
 
-// PASTIKAN PATH INI SESUAI DENGAN STRUKTUR FOLDER KAMU
-import { schoolConfigs, createInitialFormData } from '@/lib/config/schoolConfig';
-import { useDataInput } from '@/hooks/useDataInput';
-import { NumberInput, TextInput, SelectInput } from './ui/FormInputs';
-import Stepper from './Stepper';
-import { supabase } from '@/lib/supabase/lib/client';
+import {
+  schoolConfigs,
+  createInitialFormData,
+} from "@/lib/config/schoolConfig";
+import { useDataInput } from "@/hooks/useDataInput";
+import { NumberInput, TextInput, SelectInput } from "./ui/FormInputs";
+import Stepper from "./Stepper";
+import { supabase } from "@/lib/supabase/lib/client";
 
-const LocationPickerMap = dynamic(() => import('./LocationPickerMap.jsx'), {
+const LocationPickerMap = dynamic(() => import("./LocationPickerMap.jsx"), {
   ssr: false,
 });
 
 // Helper untuk mengambil value dari object bertingkat
-const getValue = (obj, path) => path.split('.').reduce((o, k) => (o ? o[k] : undefined), obj);
+const getValue = (obj, path) =>
+  path.split(".").reduce((o, k) => (o ? o[k] : undefined), obj);
 
 export default function DataInputForm({ schoolType, embedded = false }) {
   const router = useRouter();
 
   // 1. Config & Initial Data
-  const config = useMemo(() => schoolConfigs[schoolType] || schoolConfigs.default, [schoolType]);
+  const config = useMemo(
+    () => schoolConfigs[schoolType] || schoolConfigs.default,
+    [schoolType]
+  );
   const initialData = useMemo(() => createInitialFormData(config), [config]);
 
   // 2. Hook Form Data
-  const { formData, handleChange, errors, validate } = useDataInput(config, initialData);
+  const { formData, handleChange, errors, validate } = useDataInput(
+    config,
+    initialData
+  );
 
-  // 3. Local State
+  // 3. KECAMATAN OPTIONS dari JSON (public/data/kecamatan-garut.json)
+  const [kecamatanOptions, setKecamatanOptions] = useState([]);
+  const [loadingKecamatan, setLoadingKecamatan] = useState(false);
+
+  useEffect(() => {
+    const loadKecamatan = async () => {
+      try {
+        setLoadingKecamatan(true);
+        const res = await fetch("/data/kecamatan-garut.json");
+        if (!res.ok) {
+          throw new Error("Gagal memuat data kecamatan");
+        }
+        const data = await res.json();
+
+        const options = (Array.isArray(data) ? data : []).map((nama) => ({
+          value: nama,
+          label: nama,
+        }));
+
+        setKecamatanOptions(options);
+      } catch (err) {
+        console.error("Error memuat kecamatan:", err);
+      } finally {
+        setLoadingKecamatan(false);
+      }
+    };
+
+    loadKecamatan();
+  }, []);
+
+  // Khusus TK/PAUD: pilih jenis rombel aktif berdasarkan schoolType
+  const activePaudRombelTypes = useMemo(() => {
+    if (!config.isPaud || !config.rombelTypes) return [];
+
+    if (schoolType === "TK") {
+      // Hanya TK A & TK B
+      return config.rombelTypes.filter(
+        (t) => t.key === "tka" || t.key === "tkb"
+      );
+    }
+
+    if (schoolType === "PAUD") {
+      // Hanya KB & SPS/TPA
+      return config.rombelTypes.filter(
+        (t) => t.key === "kb" || t.key === "sps_tpa"
+      );
+    }
+
+    // Fallback jika nanti ada type lain yang juga isPaud
+    return config.rombelTypes;
+  }, [config, schoolType]);
+
+  // 4. Local State
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState({});
   const [showMap, setShowMap] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // 4. Definisi Section (Dibungkus useMemo agar tidak re-render loop)
+  // 5. Definisi Section (Dibungkus useMemo agar tidak re-render loop)
   const sections = useMemo(
     () => [
       {
-        id: 'info',
-        title: 'Info Sekolah',
+        id: "info",
+        title: "Info Sekolah",
         icon: <School className="w-5 h-5" />,
-        fields: ['namaSekolah', 'npsn'],
+        fields: ["namaSekolah", "npsn"],
       },
       {
-        id: 'siswa',
-        title: 'Data Siswa',
+        id: "siswa",
+        title: "Data Siswa",
         icon: <Users className="w-5 h-5" />,
         fields: [],
       },
       {
-        id: 'rombel',
-        title: 'Rombel',
+        id: "rombel",
+        title: "Rombel",
         icon: <BookOpen className="w-5 h-5" />,
         fields: [],
       },
@@ -63,22 +131,46 @@ export default function DataInputForm({ schoolType, embedded = false }) {
   // --- LOGIC HELPERS ---
 
   const sumSiswa = (genderKey) => {
-    if (!config.grades) return 0;
-    return config.grades.reduce((total, grade) => {
-      const val = getValue(formData, `siswa.kelas${grade}.${genderKey}`);
-      return total + (Number(val) || 0);
-    }, 0);
+    // TK/PAUD: gunakan rombelTypes aktif (TK A/B atau KB/SPS/TPA)
+    if (config.isPaud && activePaudRombelTypes.length > 0) {
+      return activePaudRombelTypes.reduce((total, type) => {
+        const val = getValue(formData, `siswa.${type.key}.${genderKey}`);
+        return total + (Number(val) || 0);
+      }, 0);
+    }
+
+    // Sekolah lain: gunakan grades (kelas 1,2,dst)
+    if (config.grades && config.grades.length > 0) {
+      return config.grades.reduce((total, grade) => {
+        const val = getValue(formData, `siswa.kelas${grade}.${genderKey}`);
+        return total + (Number(val) || 0);
+      }, 0);
+    }
+
+    return 0;
   };
 
   const buildRombelMeta = () => {
     const meta = { rombel: {} };
-    if (config.grades) {
+
+    // TK/PAUD: rombel berdasarkan rombelTypes aktif
+    if (config.isPaud && activePaudRombelTypes.length > 0) {
+      activePaudRombelTypes.forEach((type) => {
+        const val = getValue(formData, `rombel.${type.key}`);
+        meta.rombel[type.key] = Number(val) || 0;
+      });
+      return meta;
+    }
+
+    // Sekolah lain: rombel per kelas
+    if (config.grades && config.grades.length > 0) {
       config.grades.forEach((grade) => {
         const key = `kelas${grade}`;
         const val = getValue(formData, `rombel.${key}`);
         meta.rombel[key] = Number(val) || 0;
       });
     }
+
     return meta;
   };
 
@@ -97,6 +189,7 @@ export default function DataInputForm({ schoolType, embedded = false }) {
           extra: null,
         });
       }
+
       if (female > 0) {
         classes.push({
           grade: `kelas${grade}_P`,
@@ -110,8 +203,10 @@ export default function DataInputForm({ schoolType, embedded = false }) {
   };
 
   useEffect(() => {
-    console.log('config : ', config);
+    console.log("config : ", config);
   }, [config]);
+
+  // --- HANDLER STEP & SUBMIT ---
 
   const handleNext = () => {
     const currentFields = sections[currentStep - 1].fields;
@@ -124,7 +219,7 @@ export default function DataInputForm({ schoolType, embedded = false }) {
         setCurrentStep((s) => s + 1);
       }
     } else {
-      console.log('Validasi gagal pada step:', currentStep);
+      console.log("Validasi gagal pada step:", currentStep);
     }
   };
 
@@ -134,80 +229,99 @@ export default function DataInputForm({ schoolType, embedded = false }) {
     }
   };
 
-  // FUNGSI SAVE: Hanya jalan kalau tombol Simpan diklik
   const handleSave = async () => {
-    // Validasi step terakhir sebelum simpan
     const currentFields = sections[currentStep - 1].fields;
+
     if (!validate(currentFields)) {
-      alert('Mohon lengkapi data di halaman ini terlebih dahulu.');
+      alert("Mohon lengkapi data di halaman ini terlebih dahulu.");
       return;
     }
 
     setSaving(true);
 
     try {
-      const totalMale = sumSiswa('l');
-      const totalFemale = sumSiswa('p');
+      const totalMale = sumSiswa("l");
+      const totalFemale = sumSiswa("p");
       const rombelMeta = buildRombelMeta();
       const classes = buildClassesArray();
 
-      const locationPayload = {
-        province: 'Jawa Barat',
-        district: 'Garut',
+      // Bentuk payload sesuai kontrak RPC insert_school_with_relations
+      const location = {
+        province: "Jawa Barat",
+        district: "Garut",
         subdistrict: formData.kecamatan,
-        village: formData.village_name || formData.desa || 'Banjarwangi',
-        extra: null,
+        village: formData.desa,
+        extra: {
+          address_detail: formData.alamat || "",
+          latitude: formData.latitude ? Number(formData.latitude) : null,
+          longitude: formData.longitude ? Number(formData.longitude) : null,
+        },
       };
 
-      const schoolPayload = {
+      const school = {
+        npsn: formData.npsn,
         name: formData.namaSekolah,
-        npsn: formData.npsn?.toString(),
-        address: formData.address || null,
-        village_name: formData.village_name || formData.desa || locationPayload.village,
-        school_type_id: config.schoolTypeId || 3,
-        status: formData.status,
+        address: formData.alamat || "",
+        village_name: formData.desa || "",
+        // gunakan schoolTypeId sebagai FK ke tabel school_types
+        school_type_id: config.schoolTypeId ?? null,
+        status: formData.status || "UNKNOWN",
         student_count: totalMale + totalFemale,
         st_male: totalMale,
         st_female: totalFemale,
         lat: formData.latitude ? Number(formData.latitude) : null,
         lng: formData.longitude ? Number(formData.longitude) : null,
-        facilities: formData.facilities || null,
-        class_condition: formData.class_condition || null,
-        meta: rombelMeta,
-        contact: formData.contact || null,
+        facilities: null,
+        class_condition: null,
+        meta: {
+          ...rombelMeta,
+          kecamatan: formData.kecamatan,
+          desa: formData.desa,
+          alamat: formData.alamat || "",
+          is_paud: config.isPaud || false,
+          monthly_report_file: formData.monthly_report_file || null,
+          bantuan_received: formData.bantuan_received || "",
+        },
+        contact: {
+          operator_name: formData.namaOperator || "",
+          operator_phone: formData.hp || "",
+        },
       };
 
       const payload = {
-        location: locationPayload,
-        school: schoolPayload,
+        location,
+        school,
         classes,
       };
 
-      console.log('Payload yang dikirim:', payload);
+      console.log("Payload yang dikirim:", payload);
 
-      const { data, error } = await supabase.rpc('insert_school_with_relations', {
-        p_payload: payload,
-      });
+      const { data, error } = await supabase.rpc(
+        "insert_school_with_relations",
+        {
+          p_payload: payload,
+        }
+      );
 
       if (error) {
-        console.error('Supabase Error:', error);
-        throw new Error(error.message || 'Gagal menyimpan data');
+        console.error("Supabase Error:", error);
+        throw new Error(error.message || "Gagal menyimpan data");
       }
 
-      console.log('Berhasil disimpan:', data);
-      alert('Data berhasil disimpan!');
-      router.push('/dashboard');
+      console.log("Berhasil disimpan:", data);
+      alert("Data berhasil disimpan!");
+      router.push("/dashboard");
     } catch (err) {
       console.error(err);
-      alert(err.message || 'Terjadi kesalahan saat menyimpan data');
+      alert(err.message || "Terjadi kesalahan saat menyimpan data");
     } finally {
       setSaving(false);
     }
   };
 
   const handleLocationSelected = (lat, lng) => {
-    handleChange('latitude', lat);
-    handleChange('longitude', lng);
+    handleChange("latitude", lat);
+    handleChange("longitude", lng);
     setShowMap(false);
   };
 
@@ -220,68 +334,82 @@ export default function DataInputForm({ schoolType, embedded = false }) {
     if (!formData) return <div>Loading form data...</div>;
 
     switch (section.id) {
-      case 'info':
+      case "info":
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <TextInput
               label="Nama Sekolah"
               value={formData.namaSekolah}
-              onChange={(v) => handleChange('namaSekolah', v)}
+              onChange={(v) => handleChange("namaSekolah", v)}
               error={errors.namaSekolah}
               required
             />
-            <NumberInput
+            <TextInput
               label="NPSN"
               value={formData.npsn}
-              onChange={(v) => handleChange('npsn', v)}
+              onChange={(v) => handleChange("npsn", v)}
               error={errors.npsn}
               required
-              placeholder="8 Digit Angka"
             />
             <SelectInput
               label="Kecamatan"
               value={formData.kecamatan}
-              onChange={(v) => handleChange('kecamatan', v)}
-              options={['Garut Kota', 'Tarogong Kidul', 'Tarogong Kaler', 'Cilawu']}
+              onChange={(v) => handleChange("kecamatan", v)}
               error={errors.kecamatan}
+              options={kecamatanOptions}
+              required
+              disabled={loadingKecamatan || kecamatanOptions.length === 0}
             />
-            <SelectInput
-              label="Status"
-              value={formData.status}
-              onChange={(v) => handleChange('status', v)}
-              options={['Negeri', 'Swasta']}
-              error={errors.status}
+            <TextInput
+              label="Desa/Kelurahan"
+              value={formData.desa}
+              onChange={(v) => handleChange("desa", v)}
+              error={errors.desa}
+              required
             />
-
-            <NumberInput
-              label="Latitude"
-              value={formData.latitude ?? ''}
-              onChange={(v) => handleChange('latitude', v)}
-              placeholder="-6.9114359"
+            <TextInput
+              label="Alamat Lengkap"
+              value={formData.alamat}
+              onChange={(v) => handleChange("alamat", v)}
+              error={errors.alamat}
+              required
             />
-            <NumberInput
-              label="Longitude"
-              value={formData.longitude ?? ''}
-              onChange={(v) => handleChange('longitude', v)}
-              placeholder="107.5770168"
-            />
-
-            <div className="md:col-span-2 space-y-2">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Koordinat
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                <TextInput
+                  label="Latitude"
+                  value={formData.latitude}
+                  onChange={(v) => handleChange("latitude", v)}
+                  error={errors.latitude}
+                  placeholder="-6.9"
+                />
+                <TextInput
+                  label="Longitude"
+                  value={formData.longitude}
+                  onChange={(v) => handleChange("longitude", v)}
+                  error={errors.longitude}
+                  placeholder="107.5"
+                />
+              </div>
               <button
                 type="button"
                 onClick={() => setShowMap(true)}
-                className="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                className="mt-2 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
               >
                 Pilih Koordinat di Map
               </button>
               <p className="text-xs text-gray-500">
-                Anda bisa mengisi koordinat secara manual atau klik tombol di atas.
+                Anda bisa mengisi koordinat secara manual atau klik tombol di
+                atas.
               </p>
             </div>
           </div>
         );
 
-      case 'siswa':
+      case "siswa":
         return (
           <div className="space-y-6">
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
@@ -292,7 +420,10 @@ export default function DataInputForm({ schoolType, embedded = false }) {
 
             {config.grades &&
               config.grades.map((grade) => (
-                <div key={grade} className="p-4 border rounded-lg bg-gray-50/50">
+                <div
+                  key={grade}
+                  className="p-4 border rounded-lg bg-gray-50/50"
+                >
                   <p className="font-medium mb-3">Kelas {grade}</p>
                   <div className="grid grid-cols-2 gap-4">
                     <NumberInput
@@ -310,9 +441,12 @@ export default function DataInputForm({ schoolType, embedded = false }) {
               ))}
 
             {config.isPaud &&
-              config.rombelTypes &&
-              config.rombelTypes.map((type) => (
-                <div key={type.key} className="p-4 border rounded-lg bg-gray-50/50">
+              activePaudRombelTypes.length > 0 &&
+              activePaudRombelTypes.map((type) => (
+                <div
+                  key={type.key}
+                  className="p-4 border rounded-lg bg-gray-50/50"
+                >
                   <p className="font-medium mb-3">{type.label}</p>
                   <div className="grid grid-cols-2 gap-4">
                     <NumberInput
@@ -331,7 +465,24 @@ export default function DataInputForm({ schoolType, embedded = false }) {
           </div>
         );
 
-      case 'rombel':
+      case "rombel":
+        // TK/PAUD: rombel per jenis (TK A/B atau KB/SPS/TPA)
+        if (config.isPaud && activePaudRombelTypes.length > 0) {
+          return (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {activePaudRombelTypes.map((type) => (
+                <NumberInput
+                  key={`rombel-${type.key}`}
+                  label={`Rombel ${type.label}`}
+                  value={getValue(formData, `rombel.${type.key}`)}
+                  onChange={(v) => handleChange(`rombel.${type.key}`, v)}
+                />
+              ))}
+            </div>
+          );
+        }
+
+        // Sekolah lain: rombel per kelas
         return (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {config.grades &&
@@ -353,9 +504,15 @@ export default function DataInputForm({ schoolType, embedded = false }) {
 
   return (
     <div
-      className={embedded ? 'w-full' : 'max-w-4xl mx-auto p-6 border rounded-lg bg-white shadow-sm'}
+      className={
+        embedded
+          ? "w-full"
+          : "max-w-4xl mx-auto p-6 border rounded-lg bg-white shadow-sm"
+      }
     >
-      {!embedded && <h1 className="text-2xl font-bold mb-6">Input Data {schoolType}</h1>}
+      {!embedded && (
+        <h1 className="text-2xl font-bold mb-6">Input Data {schoolType}</h1>
+      )}
 
       <div className="mb-8">
         <Stepper
@@ -366,23 +523,29 @@ export default function DataInputForm({ schoolType, embedded = false }) {
         />
       </div>
 
-      {/* PENTING: preventDefault agar Enter tidak men-submit form otomatis */}
-      <form onSubmit={(e) => e.preventDefault()}>
-        <div className="flex items-center gap-3 text-lg font-semibold mb-6">
-          {sections[currentStep - 1].icon}
-          <span>{sections[currentStep - 1].title}</span>
-        </div>
+      <div className="mb-6 flex items-center gap-4">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Kembali
+        </button>
+      </div>
 
-        <div className="min-h-[300px]">{renderContent()}</div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+        }}
+        className="space-y-6"
+      >
+        {renderContent()}
 
-        <div className="mt-8 pt-4 border-t flex justify-between items-center">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" /> Batal
-          </button>
+        <div className="flex justify-between items-center pt-6 border-t mt-6">
+          <div className="text-sm text-gray-500">
+            Langkah {currentStep} dari {sections.length}
+          </div>
 
           <div className="flex gap-3">
             {currentStep > 1 && (
@@ -399,14 +562,14 @@ export default function DataInputForm({ schoolType, embedded = false }) {
               <button
                 type="button"
                 onClick={handleNext}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
                 Lanjut
               </button>
             ) : (
               <button
-                type="button" /* BUTTON, BUKAN SUBMIT */
-                onClick={handleSave} /* FUNGSI SIMPAN KHUSUS */
+                type="button"
+                onClick={handleSave}
                 disabled={saving}
                 className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
               >
@@ -423,22 +586,22 @@ export default function DataInputForm({ schoolType, embedded = false }) {
       </form>
 
       {showMap && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-2xl w-[90%] max-w-3xl p-4 space-y-4">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-semibold">Klik pada peta untuk memilih lokasi sekolah</h2>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-3xl">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-semibold">Pilih Lokasi di Peta</h3>
               <button
                 type="button"
                 onClick={() => setShowMap(false)}
-                className="text-sm px-3 py-1 rounded-full bg-gray-100 hover:bg-gray-200"
+                className="text-gray-500 hover:text-gray-700"
               >
-                Tutup
+                ✕
               </button>
             </div>
 
             <LocationPickerMap
               onSelectLocation={handleLocationSelected}
-              defaultCenter={
+              initialCoordinates={
                 formData.latitude && formData.longitude
                   ? [Number(formData.latitude), Number(formData.longitude)]
                   : [-6.911435926513646, 107.57701686406499]
@@ -446,7 +609,8 @@ export default function DataInputForm({ schoolType, embedded = false }) {
             />
 
             <p className="text-xs text-gray-500">
-              Setelah memilih titik di peta, nilai latitude & longitude akan terisi otomatis.
+              Setelah memilih titik di peta, nilai latitude & longitude akan
+              terisi otomatis.
             </p>
           </div>
         </div>

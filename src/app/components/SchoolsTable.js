@@ -318,6 +318,9 @@ export default function SchoolsTable({ operatorType }) {
           jenjang_filter: operatorType,
         });
 
+
+        console
+
         setSchoolsData(data);
 
         console.log('finalFilteredSchoolsJSON : ', finalFilteredSchools[0]);
