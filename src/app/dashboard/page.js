@@ -1,13 +1,21 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import StatCards from '../components/StatCards';
-import { LayoutDashboard, Plus, Edit } from 'lucide-react';
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import StatCards from "../components/StatCards";
+import { LayoutDashboard, Plus, Edit } from "lucide-react";
 
 export default function DashboardPage() {
   const { user, roleConfig } = useAuth();
   const router = useRouter();
+  const inputPath = roleConfig?.menu?.find((m) =>
+    m.path?.endsWith("/input")
+  )?.path;
+  const dataPath = roleConfig?.menu?.find(
+    (m) => m.path && m.path !== "" && !m.path.endsWith("/input")
+  )?.path;
+
+  const go = (path) => router.push(`${roleConfig.basePath}${path || ""}`);
 
   return (
     <>
@@ -27,14 +35,14 @@ export default function DashboardPage() {
 
           <div className="hidden md:flex gap-3">
             <button
-              onClick={() => router.push(`${roleConfig.basePath}/input`)}
+              onClick={() => go(inputPath)}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
             >
               <Plus className="h-4 w-4" />
               Input Data Baru
             </button>
             <button
-              onClick={() => router.push(`${roleConfig.basePath}/data`)}
+              onClick={() => go(dataPath)}
               className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg"
             >
               <Edit className="h-4 w-4" />
@@ -44,7 +52,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <StatCards operatorType={user.role} />
+<StatCards operatorType={roleConfig.title} />
 
       <div className="bg-blue-50 rounded-xl border border-blue-200 p-6 mt-6">
         <h3 className="text-lg font-semibold text-blue-900 mb-2">
@@ -52,7 +60,9 @@ export default function DashboardPage() {
         </h3>
         <div className="text-sm text-blue-800 space-y-2">
           <p>• Anda terdaftar sebagai operator tingkat {roleConfig.title}</p>
-          <p>• Data yang Anda input akan otomatis terfilter sesuai jenjang ini.</p>
+          <p>
+            • Data yang Anda input akan otomatis terfilter sesuai jenjang ini.
+          </p>
         </div>
       </div>
     </>

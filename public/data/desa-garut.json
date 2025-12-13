@@ -1,0 +1,4772 @@
+{
+  "meta": {
+    "sumber": "KODE-WILAYAH-KEPMENDAGRI-2025.xlsx",
+    "catatan": "Diekstrak khusus Kabupaten Garut (Jawa Barat). Gunakan kode_* sebagai kunci utama untuk menghindari variasi penulisan.",
+    "kode_provinsi": "32",
+    "nama_provinsi": "Jawa Barat",
+    "kode_kabupaten": "32.05",
+    "nama_kabupaten": "Kabupaten Garut",
+    "jumlah_kecamatan": 42,
+    "jumlah_desa_kelurahan": 442
+  },
+  "kecamatan": [
+    {
+      "kode_kecamatan": "32.05.23",
+      "nama_kecamatan": "Banjarwangi",
+      "desa": [
+        {
+          "kode_desa": "32.05.23.2001",
+          "nama_desa": "Banjarwangi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.23.2010",
+          "nama_desa": "Bojong",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.23.2008",
+          "nama_desa": "Dangiang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.23.2006",
+          "nama_desa": "Jayabakti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.23.2004",
+          "nama_desa": "Kadongdong",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.23.2007",
+          "nama_desa": "Mulyajaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.23.2003",
+          "nama_desa": "Padahurip",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.23.2002",
+          "nama_desa": "Talagajaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.23.2005",
+          "nama_desa": "Talagasari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.23.2009",
+          "nama_desa": "Tanjungjaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.23.2011",
+          "nama_desa": "Wangunjaya",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.06",
+      "nama_kecamatan": "Banyuresmi",
+      "desa": [
+        {
+          "kode_desa": "32.05.06.2011",
+          "nama_desa": "Bagendit",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.06.2001",
+          "nama_desa": "Banyuresmi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.06.2010",
+          "nama_desa": "Binakarya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.06.2002",
+          "nama_desa": "Cimareme",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.06.2006",
+          "nama_desa": "Cipicung",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.06.2007",
+          "nama_desa": "Dangdeur",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.06.2012",
+          "nama_desa": "Karyamukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.06.2013",
+          "nama_desa": "Karyasari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.06.2009",
+          "nama_desa": "Pamekarsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.06.2008",
+          "nama_desa": "Sukakarya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.06.2015",
+          "nama_desa": "Sukalaksana",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.06.2014",
+          "nama_desa": "Sukamukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.06.2005",
+          "nama_desa": "Sukaraja",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.06.2003",
+          "nama_desa": "Sukaratu",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.06.2004",
+          "nama_desa": "Sukasenang",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.17",
+      "nama_kecamatan": "Bayongbong",
+      "desa": [
+        {
+          "kode_desa": "32.05.17.2012",
+          "nama_desa": "Banjarsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.17.2001",
+          "nama_desa": "Bayongbong",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.17.2009",
+          "nama_desa": "Ciburuy",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.17.2010",
+          "nama_desa": "Ciela",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.17.2011",
+          "nama_desa": "Cikedokan",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.17.2017",
+          "nama_desa": "Cinisti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.17.2003",
+          "nama_desa": "Hegarmanah",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.17.2005",
+          "nama_desa": "Karyajaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.17.2014",
+          "nama_desa": "Mekarjaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.17.2008",
+          "nama_desa": "Mekarsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.17.2006",
+          "nama_desa": "Mulyasari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.17.2007",
+          "nama_desa": "Pamalayan",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.17.2002",
+          "nama_desa": "Panembong",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.17.2004",
+          "nama_desa": "Salakuray",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.17.2015",
+          "nama_desa": "Sirnagalih",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.17.2018",
+          "nama_desa": "Sukamanah",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.17.2016",
+          "nama_desa": "Sukarame",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.17.2013",
+          "nama_desa": "Sukasenang",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.38",
+      "nama_kecamatan": "Bl. Limbangan",
+      "desa": [
+        {
+          "kode_desa": "32.05.38.2011",
+          "nama_desa": "Cigagade",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.38.2005",
+          "nama_desa": "Cijolang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.38.2010",
+          "nama_desa": "Ciwangi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.38.2013",
+          "nama_desa": "Dunguswiru",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.38.2003",
+          "nama_desa": "Galihpakuwon",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.38.2002",
+          "nama_desa": "Limbangan Barat",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.38.2001",
+          "nama_desa": "Limbangan Tengah",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.38.2012",
+          "nama_desa": "Limbangan Timur",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.38.2006",
+          "nama_desa": "Neglasari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.38.2014",
+          "nama_desa": "Pangeureunan",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.38.2008",
+          "nama_desa": "Pasirwaru",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.38.2007",
+          "nama_desa": "Simpen Kaler",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.38.2009",
+          "nama_desa": "Simpen Kidul",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.38.2004",
+          "nama_desa": "Surabaya",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.31",
+      "nama_kecamatan": "Bungbulang",
+      "desa": [
+        {
+          "kode_desa": "32.05.31.2007",
+          "nama_desa": "Bojong",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.31.2001",
+          "nama_desa": "Bungbulang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.31.2010",
+          "nama_desa": "Cihikeu",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.31.2003",
+          "nama_desa": "Gunamekar",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.31.2012",
+          "nama_desa": "Gunung Jampang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.31.2002",
+          "nama_desa": "Hanjuang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.31.2013",
+          "nama_desa": "Hegarmanah",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.31.2006",
+          "nama_desa": "Margalaksana",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.31.2005",
+          "nama_desa": "Mekarbakti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.31.2009",
+          "nama_desa": "Mekarjaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.31.2008",
+          "nama_desa": "Sinarjaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.31.2004",
+          "nama_desa": "Tegallega",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.31.2011",
+          "nama_desa": "Wangunjaya",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.36",
+      "nama_kecamatan": "Caringin",
+      "desa": [
+        {
+          "kode_desa": "32.05.36.2001",
+          "nama_desa": "Caringin",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.36.2003",
+          "nama_desa": "Cimahi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.36.2002",
+          "nama_desa": "Indralayang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.36.2005",
+          "nama_desa": "Purbayani",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.36.2006",
+          "nama_desa": "Samuderajaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.36.2004",
+          "nama_desa": "Sukarame",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.29",
+      "nama_kecamatan": "Cibalong",
+      "desa": [
+        {
+          "kode_desa": "32.05.29.2009",
+          "nama_desa": "Cigaronggong",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.29.2004",
+          "nama_desa": "Karyamukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.29.2001",
+          "nama_desa": "Karyasari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.29.2002",
+          "nama_desa": "Maroko",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.29.2008",
+          "nama_desa": "Mekar Mukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.29.2006",
+          "nama_desa": "Mekarsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.29.2010",
+          "nama_desa": "Mekarwangi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.29.2011",
+          "nama_desa": "Najaten",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.29.2005",
+          "nama_desa": "Sagara",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.29.2003",
+          "nama_desa": "Sancang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.29.2007",
+          "nama_desa": "Simpang",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.12",
+      "nama_kecamatan": "Cibatu",
+      "desa": [
+        {
+          "kode_desa": "32.05.12.2001",
+          "nama_desa": "Cibatu",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.12.2003",
+          "nama_desa": "Cibunar",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.12.2009",
+          "nama_desa": "Girimukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.12.2008",
+          "nama_desa": "Karyamukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.12.2010",
+          "nama_desa": "Keresek",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.12.2005",
+          "nama_desa": "Kertajaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.12.2002",
+          "nama_desa": "Mekarsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.12.2007",
+          "nama_desa": "Padasuka",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.12.2004",
+          "nama_desa": "Sindangsuka",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.12.2006",
+          "nama_desa": "Sukalilah",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.12.2011",
+          "nama_desa": "Wanakerta",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.40",
+      "nama_kecamatan": "Cibiuk",
+      "desa": [
+        {
+          "kode_desa": "32.05.40.2002",
+          "nama_desa": "Cibiuk Kaler",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.40.2003",
+          "nama_desa": "Cibiuk Kidul",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.40.2001",
+          "nama_desa": "Cipareuan",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.40.2005",
+          "nama_desa": "Lingkungpasir",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.40.2004",
+          "nama_desa": "Majasari",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.18",
+      "nama_kecamatan": "Cigedug",
+      "desa": [
+        {
+          "kode_desa": "32.05.18.2002",
+          "nama_desa": "Barusuda",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.18.2001",
+          "nama_desa": "Cigedug",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.18.2005",
+          "nama_desa": "Cintanagara",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.18.2004",
+          "nama_desa": "Sindangsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.18.2003",
+          "nama_desa": "Sukahurip",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.25",
+      "nama_kecamatan": "Cihurip",
+      "desa": [
+        {
+          "kode_desa": "32.05.25.2001",
+          "nama_desa": "Cihurip",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.25.2002",
+          "nama_desa": "Cisangkal",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.25.2004",
+          "nama_desa": "Jayamukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.25.2003",
+          "nama_desa": "Mekarwangi",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.22",
+      "nama_kecamatan": "Cikajang",
+      "desa": [
+        {
+          "kode_desa": "32.05.22.2006",
+          "nama_desa": "Cibodas",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.22.2001",
+          "nama_desa": "Cikajang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.22.2008",
+          "nama_desa": "Cikandang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.22.2011",
+          "nama_desa": "Cipangramatan",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.22.2005",
+          "nama_desa": "Giriawas",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.22.2004",
+          "nama_desa": "Girijaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.22.2012",
+          "nama_desa": "Karamatwangi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.22.2010",
+          "nama_desa": "Margamulya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.22.2007",
+          "nama_desa": "Mekarjaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.22.2003",
+          "nama_desa": "Mekarsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.22.2009",
+          "nama_desa": "Padasuka",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.22.2002",
+          "nama_desa": "Simpang",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.30",
+      "nama_kecamatan": "Cikelet",
+      "desa": [
+        {
+          "kode_desa": "32.05.30.2010",
+          "nama_desa": "Awassagara",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.30.2004",
+          "nama_desa": "Cigadog",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.30.2007",
+          "nama_desa": "Cijambe",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.30.2001",
+          "nama_desa": "Cikelet",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.30.2009",
+          "nama_desa": "Ciroyom",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.30.2008",
+          "nama_desa": "Girimukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.30.2006",
+          "nama_desa": "Karangsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.30.2003",
+          "nama_desa": "Kertamukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.30.2002",
+          "nama_desa": "Linggamanik",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.30.2005",
+          "nama_desa": "Pamalayan",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.30.2011",
+          "nama_desa": "Tipar",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.19",
+      "nama_kecamatan": "Cilawu",
+      "desa": [
+        {
+          "kode_desa": "32.05.19.2001",
+          "nama_desa": "Cilawu",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.19.2012",
+          "nama_desa": "Dangiang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.19.2004",
+          "nama_desa": "Dawungsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.19.2013",
+          "nama_desa": "Dayeuhmanggung",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.19.2009",
+          "nama_desa": "Desakolot",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.19.2003",
+          "nama_desa": "Karyamekar",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.19.2015",
+          "nama_desa": "Mangkurakyat",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.19.2011",
+          "nama_desa": "Margalaksana",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.19.2008",
+          "nama_desa": "Mekarmukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.19.2007",
+          "nama_desa": "Mekarsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.19.2016",
+          "nama_desa": "Ngamplang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.19.2010",
+          "nama_desa": "Ngamplangsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.19.2005",
+          "nama_desa": "Pasanggrahan",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.19.2006",
+          "nama_desa": "Sukahati",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.19.2014",
+          "nama_desa": "Sukamaju",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.19.2002",
+          "nama_desa": "Sukamukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.19.2018",
+          "nama_desa": "Sukamurni",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.19.2017",
+          "nama_desa": "Sukatani",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.35",
+      "nama_kecamatan": "Cisewu",
+      "desa": [
+        {
+          "kode_desa": "32.05.35.2004",
+          "nama_desa": "Cikarang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.35.2001",
+          "nama_desa": "Cisewu",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.35.2002",
+          "nama_desa": "Girimukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.35.2007",
+          "nama_desa": "Karangsewu",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.35.2008",
+          "nama_desa": "Mekarsewu",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.35.2006",
+          "nama_desa": "Nyalindung",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.35.2003",
+          "nama_desa": "Pamalayan",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.35.2009",
+          "nama_desa": "Panggalih",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.35.2005",
+          "nama_desa": "Sukajaya",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.28",
+      "nama_kecamatan": "Cisompet",
+      "desa": [
+        {
+          "kode_desa": "32.05.28.2002",
+          "nama_desa": "Cihaurkuning",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.28.2006",
+          "nama_desa": "Cikondang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.28.2001",
+          "nama_desa": "Cisompet",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.28.2007",
+          "nama_desa": "Depok",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.28.2009",
+          "nama_desa": "Jatisari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.28.2003",
+          "nama_desa": "Margamulya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.28.2010",
+          "nama_desa": "Neglasari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.28.2008",
+          "nama_desa": "Panyindangan",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.28.2011",
+          "nama_desa": "Sindangsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.28.2004",
+          "nama_desa": "Sukamukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.28.2005",
+          "nama_desa": "Sukanagara",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.20",
+      "nama_kecamatan": "Cisurupan",
+      "desa": [
+        {
+          "kode_desa": "32.05.20.2007",
+          "nama_desa": "Balewangi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.20.2002",
+          "nama_desa": "Cidatar",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.20.2017",
+          "nama_desa": "Cintaasih",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.20.2011",
+          "nama_desa": "Cipaganti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.20.2009",
+          "nama_desa": "Cisero",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.20.2001",
+          "nama_desa": "Cisurupan",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.20.2010",
+          "nama_desa": "Karamatwangi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.20.2006",
+          "nama_desa": "Pakuwon",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.20.2012",
+          "nama_desa": "Pamulihan",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.20.2015",
+          "nama_desa": "Pangauban",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.20.2016",
+          "nama_desa": "Simpangsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.20.2014",
+          "nama_desa": "Sirnagalih",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.20.2008",
+          "nama_desa": "Sirnajaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.20.2005",
+          "nama_desa": "Situsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.20.2004",
+          "nama_desa": "Sukatani",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.20.2003",
+          "nama_desa": "Sukawangi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.20.2013",
+          "nama_desa": "Tambakbaya",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.01",
+      "nama_kecamatan": "Garut Kota",
+      "desa": [
+        {
+          "kode_desa": "32.05.01.1011",
+          "nama_desa": "Cimuncang",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.01.1007",
+          "nama_desa": "Ciwalen",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.01.1001",
+          "nama_desa": "Kota Kulon",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.01.1002",
+          "nama_desa": "Kota Wetan",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.01.1003",
+          "nama_desa": "Margawati",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.01.1005",
+          "nama_desa": "Muara Sanding",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.01.1004",
+          "nama_desa": "Pakuwon",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.01.1008",
+          "nama_desa": "Paminggir",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.01.1009",
+          "nama_desa": "Regol",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.01.1006",
+          "nama_desa": "Sukamentri",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.01.1010",
+          "nama_desa": "Sukanegla",
+          "tipe": "KELURAHAN"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.10",
+      "nama_kecamatan": "Kadungora",
+      "desa": [
+        {
+          "kode_desa": "32.05.10.2003",
+          "nama_desa": "Cikembulan",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.10.2004",
+          "nama_desa": "Cisaat",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.10.2002",
+          "nama_desa": "Gandamekar",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.10.2009",
+          "nama_desa": "Harumansari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.10.2011",
+          "nama_desa": "Hegarsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.10.2001",
+          "nama_desa": "Kadungora",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.10.2008",
+          "nama_desa": "Karangmulya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.10.2013",
+          "nama_desa": "Karangtengah",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.10.2005",
+          "nama_desa": "Mandalasari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.10.2007",
+          "nama_desa": "Mekarbakti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.10.2012",
+          "nama_desa": "Neglasari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.10.2014",
+          "nama_desa": "Rancasalak",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.10.2010",
+          "nama_desa": "Talagasari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.10.2006",
+          "nama_desa": "Tanggulun",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.02",
+      "nama_kecamatan": "Karangpawitan",
+      "desa": [
+        {
+          "kode_desa": "32.05.02.2006",
+          "nama_desa": "Cimurah",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.02.2009",
+          "nama_desa": "Godog",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.02.2008",
+          "nama_desa": "Jatisari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.02.1003",
+          "nama_desa": "Karangmulya",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.02.2004",
+          "nama_desa": "Karangpawitan",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.02.2011",
+          "nama_desa": "Karangsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.02.2013",
+          "nama_desa": "Lebakagung",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.02.1002",
+          "nama_desa": "Lebakjaya",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.02.1014",
+          "nama_desa": "Lengkongjaya",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.02.2016",
+          "nama_desa": "Mekarsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.02.2015",
+          "nama_desa": "Sindanggalih",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.02.2017",
+          "nama_desa": "Sindanglaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.02.2012",
+          "nama_desa": "Sindangpalay",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.02.2005",
+          "nama_desa": "Situgede",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.02.2020",
+          "nama_desa": "Situjaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.02.2019",
+          "nama_desa": "Situsaeur",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.02.2010",
+          "nama_desa": "Situsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.02.2007",
+          "nama_desa": "Suci",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.02.1001",
+          "nama_desa": "Suci Kaler",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.02.2018",
+          "nama_desa": "Tanjungsari",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.16",
+      "nama_kecamatan": "Karangtengah",
+      "desa": [
+        {
+          "kode_desa": "32.05.16.2001",
+          "nama_desa": "Caringin",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.16.2003",
+          "nama_desa": "Cinta",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.16.2002",
+          "nama_desa": "Cintamanik",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.16.2004",
+          "nama_desa": "Sindanggalih",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.13",
+      "nama_kecamatan": "Kersamanah",
+      "desa": [
+        {
+          "kode_desa": "32.05.13.2004",
+          "nama_desa": "Girijaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.13.2001",
+          "nama_desa": "Kersamanah",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.13.2006",
+          "nama_desa": "Mekarraya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.13.2002",
+          "nama_desa": "Nanjungjaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.13.2005",
+          "nama_desa": "Sukamaju",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.13.2003",
+          "nama_desa": "Sukamerang",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.09",
+      "nama_kecamatan": "Leles",
+      "desa": [
+        {
+          "kode_desa": "32.05.09.2006",
+          "nama_desa": "Cangkuang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.09.2002",
+          "nama_desa": "Ciburial",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.09.2010",
+          "nama_desa": "Cipancar",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.09.2012",
+          "nama_desa": "Dano",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.09.2011",
+          "nama_desa": "Haruman",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.09.2003",
+          "nama_desa": "Jangkurang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.09.2008",
+          "nama_desa": "Kandangmukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.09.2001",
+          "nama_desa": "Leles",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.09.2005",
+          "nama_desa": "Lembang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.09.2009",
+          "nama_desa": "Margaluyu",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.09.2007",
+          "nama_desa": "Salamnunggal",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.09.2004",
+          "nama_desa": "Sukarame",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.11",
+      "nama_kecamatan": "Leuwigoong",
+      "desa": [
+        {
+          "kode_desa": "32.05.11.2005",
+          "nama_desa": "Dungusiku",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.11.2002",
+          "nama_desa": "Karanganyar",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.11.2008",
+          "nama_desa": "Karangsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.11.2001",
+          "nama_desa": "Leuwigoong",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.11.2003",
+          "nama_desa": "Margacinta",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.11.2004",
+          "nama_desa": "Margahayu",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.11.2007",
+          "nama_desa": "Sindangsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.11.2006",
+          "nama_desa": "Tambak Sari",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.14",
+      "nama_kecamatan": "Malangbong",
+      "desa": [
+        {
+          "kode_desa": "32.05.14.2020",
+          "nama_desa": "Baru Dua",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2022",
+          "nama_desa": "Bunisari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2008",
+          "nama_desa": "Campaka",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2003",
+          "nama_desa": "Cibunar",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2019",
+          "nama_desa": "Cihaurkuning",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2004",
+          "nama_desa": "Cikarag",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2011",
+          "nama_desa": "Cilampuyang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2012",
+          "nama_desa": "Cinagara",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2007",
+          "nama_desa": "Cisitu",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2014",
+          "nama_desa": "Citeras",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2024",
+          "nama_desa": "Girimakmur",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2002",
+          "nama_desa": "Karangmulya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2017",
+          "nama_desa": "Kutanagara",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2009",
+          "nama_desa": "Lewobaru",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2001",
+          "nama_desa": "Malangbong",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2006",
+          "nama_desa": "Mekarasih",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2023",
+          "nama_desa": "Mekarmulya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2005",
+          "nama_desa": "Sakawayana",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2018",
+          "nama_desa": "Sanding",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2016",
+          "nama_desa": "Sekarwangi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2021",
+          "nama_desa": "Sukajaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2010",
+          "nama_desa": "Sukamanah",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2015",
+          "nama_desa": "Sukarasa",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.14.2013",
+          "nama_desa": "Sukaratu",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.32",
+      "nama_kecamatan": "Mekarmukti",
+      "desa": [
+        {
+          "kode_desa": "32.05.32.2004",
+          "nama_desa": "Cijayana",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.32.2003",
+          "nama_desa": "Jagabaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.32.2002",
+          "nama_desa": "Karangwangi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.32.2001",
+          "nama_desa": "Mekarmukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.32.2005",
+          "nama_desa": "Mekarsari",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.33",
+      "nama_kecamatan": "Pakenjeng",
+      "desa": [
+        {
+          "kode_desa": "32.05.33.2011",
+          "nama_desa": "Depok",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.33.2008",
+          "nama_desa": "Jatiwangi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.33.2013",
+          "nama_desa": "Jayamekar",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.33.2012",
+          "nama_desa": "Karangsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.33.2001",
+          "nama_desa": "Neglasari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.33.2009",
+          "nama_desa": "Panyindangan",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.33.2006",
+          "nama_desa": "Pasirlangu",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.33.2005",
+          "nama_desa": "Sukamulya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.33.2007",
+          "nama_desa": "Talagawangi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.33.2002",
+          "nama_desa": "Tanjungjaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.33.2003",
+          "nama_desa": "Tanjungmulya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.33.2010",
+          "nama_desa": "Tegalgede",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.33.2004",
+          "nama_desa": "Wangunjaya",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.27",
+      "nama_kecamatan": "Pameungpeuk",
+      "desa": [
+        {
+          "kode_desa": "32.05.27.2006",
+          "nama_desa": "Bojong",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.27.2008",
+          "nama_desa": "Bojong Kidul",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.27.2005",
+          "nama_desa": "Jatimulya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.27.2002",
+          "nama_desa": "Mancagahar",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.27.2004",
+          "nama_desa": "Mandalakasih",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.27.2003",
+          "nama_desa": "Paas",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.27.2001",
+          "nama_desa": "Pameungpeuk",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.27.2007",
+          "nama_desa": "Sirnabakti",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.34",
+      "nama_kecamatan": "Pamulihan",
+      "desa": [
+        {
+          "kode_desa": "32.05.34.2002",
+          "nama_desa": "Garumukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.34.2005",
+          "nama_desa": "Linggarjati",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.34.2001",
+          "nama_desa": "Pakenjeng",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.34.2004",
+          "nama_desa": "Pananjung",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.34.2003",
+          "nama_desa": "Panawa",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.41",
+      "nama_kecamatan": "Pangatikan",
+      "desa": [
+        {
+          "kode_desa": "32.05.41.2003",
+          "nama_desa": "Babakan Loa",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.41.2006",
+          "nama_desa": "Cihuni",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.41.2002",
+          "nama_desa": "Cimaragas",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.41.2001",
+          "nama_desa": "Citangtu",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.41.2008",
+          "nama_desa": "Karangsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.41.2004",
+          "nama_desa": "Sukahurip",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.41.2005",
+          "nama_desa": "Sukamulya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.41.2007",
+          "nama_desa": "Sukarasa",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.08",
+      "nama_kecamatan": "Pasirwangi",
+      "desa": [
+        {
+          "kode_desa": "32.05.08.2007",
+          "nama_desa": "Barusari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.08.2004",
+          "nama_desa": "Karyamekar",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.08.2006",
+          "nama_desa": "Padaasih",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.08.2009",
+          "nama_desa": "Padamukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.08.2012",
+          "nama_desa": "Padamulya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.08.2003",
+          "nama_desa": "Padasuka",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.08.2005",
+          "nama_desa": "Padawaas",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.08.2002",
+          "nama_desa": "Pasirkiamis",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.08.2001",
+          "nama_desa": "Pasirwangi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.08.2011",
+          "nama_desa": "Sarimukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.08.2010",
+          "nama_desa": "Sinarjaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.08.2008",
+          "nama_desa": "Talaga",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.26",
+      "nama_kecamatan": "Peundeuy",
+      "desa": [
+        {
+          "kode_desa": "32.05.26.2004",
+          "nama_desa": "Pangrumasan",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.26.2001",
+          "nama_desa": "Peundeuy",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.26.2006",
+          "nama_desa": "Purwajaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.26.2003",
+          "nama_desa": "Saribakti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.26.2005",
+          "nama_desa": "Sukanagara",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.26.2002",
+          "nama_desa": "Toblong",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.07",
+      "nama_kecamatan": "Samarang",
+      "desa": [
+        {
+          "kode_desa": "32.05.07.2010",
+          "nama_desa": "Cintaasih",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.07.2006",
+          "nama_desa": "Cintakarya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.07.2002",
+          "nama_desa": "Cintarakyat",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.07.2009",
+          "nama_desa": "Cintarasa",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.07.2008",
+          "nama_desa": "Cisarua",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.07.2004",
+          "nama_desa": "Parakan",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.07.2001",
+          "nama_desa": "Samarang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.07.2011",
+          "nama_desa": "Sirnasari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.07.2005",
+          "nama_desa": "Sukakarya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.07.2012",
+          "nama_desa": "Sukalaksana",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.07.2003",
+          "nama_desa": "Sukarasa",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.07.2007",
+          "nama_desa": "Tanjung Karya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.07.2013",
+          "nama_desa": "Tanjunganom",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.39",
+      "nama_kecamatan": "Selaawi",
+      "desa": [
+        {
+          "kode_desa": "32.05.39.2003",
+          "nama_desa": "Cigawir",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.39.2005",
+          "nama_desa": "Cirapuhan",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.39.2006",
+          "nama_desa": "Mekarsari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.39.2004",
+          "nama_desa": "Pelitaasih",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.39.2002",
+          "nama_desa": "Putrajawa",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.39.2007",
+          "nama_desa": "Samida",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.39.2001",
+          "nama_desa": "Selaawi",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.24",
+      "nama_kecamatan": "Singajaya",
+      "desa": [
+        {
+          "kode_desa": "32.05.24.2008",
+          "nama_desa": "Cigintung",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.24.2002",
+          "nama_desa": "Ciudian",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.24.2009",
+          "nama_desa": "Girimukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.24.2007",
+          "nama_desa": "Karangagung",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.24.2003",
+          "nama_desa": "Mekartani",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.24.2006",
+          "nama_desa": "Pancasura",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.24.2001",
+          "nama_desa": "Singajaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.24.2004",
+          "nama_desa": "Sukamulya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.24.2005",
+          "nama_desa": "Sukawangi",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.42",
+      "nama_kecamatan": "Sucinaraja",
+      "desa": [
+        {
+          "kode_desa": "32.05.42.2005",
+          "nama_desa": "Cigadog",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.42.2006",
+          "nama_desa": "Linggamukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.42.2001",
+          "nama_desa": "Sadang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.42.2007",
+          "nama_desa": "Sukalaksana",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.42.2002",
+          "nama_desa": "Sukaratu",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.42.2004",
+          "nama_desa": "Tegalpanjang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.42.2003",
+          "nama_desa": "Tenjonagara",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.21",
+      "nama_kecamatan": "Sukaresmi",
+      "desa": [
+        {
+          "kode_desa": "32.05.21.2002",
+          "nama_desa": "Cintadamai",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.21.2003",
+          "nama_desa": "Mekarjaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.21.2006",
+          "nama_desa": "Padamukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.21.2004",
+          "nama_desa": "Sukajaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.21.2007",
+          "nama_desa": "Sukalilah",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.21.2005",
+          "nama_desa": "Sukamulya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.21.2001",
+          "nama_desa": "Sukaresmi",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.15",
+      "nama_kecamatan": "Sukawening",
+      "desa": [
+        {
+          "kode_desa": "32.05.15.2009",
+          "nama_desa": "Maripari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.15.2011",
+          "nama_desa": "Mekar Hurip",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.15.2003",
+          "nama_desa": "Mekarluyu",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.15.2010",
+          "nama_desa": "Mekarwangi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.15.2008",
+          "nama_desa": "Pasanggrahan",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.15.2005",
+          "nama_desa": "Sudalarang",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.15.2007",
+          "nama_desa": "Sukahaji",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.15.2004",
+          "nama_desa": "Sukaluyu",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.15.2002",
+          "nama_desa": "Sukamukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.15.2006",
+          "nama_desa": "Sukasono",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.15.2001",
+          "nama_desa": "Sukawening",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.37",
+      "nama_kecamatan": "Talegong",
+      "desa": [
+        {
+          "kode_desa": "32.05.37.2003",
+          "nama_desa": "Mekarmukti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.37.2004",
+          "nama_desa": "Mekarmulya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.37.2007",
+          "nama_desa": "Mekarwangi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.37.2006",
+          "nama_desa": "Selaawi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.37.2005",
+          "nama_desa": "Sukalaksana",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.37.2001",
+          "nama_desa": "Sukamaju",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.37.2002",
+          "nama_desa": "Sukamulya",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.04",
+      "nama_kecamatan": "Tarogong Kaler",
+      "desa": [
+        {
+          "kode_desa": "32.05.04.2002",
+          "nama_desa": "Cimanganten",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.04.2003",
+          "nama_desa": "Jati",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.04.2009",
+          "nama_desa": "Langensari",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.04.2008",
+          "nama_desa": "Mekarjaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.04.2010",
+          "nama_desa": "Mekarwangi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.04.1012",
+          "nama_desa": "Pananjung",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.04.2013",
+          "nama_desa": "Panjiwangi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.04.2011",
+          "nama_desa": "Pasawahan",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.04.2004",
+          "nama_desa": "Rancabango",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.04.2006",
+          "nama_desa": "Sirnajaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.04.2001",
+          "nama_desa": "Sukajadi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.04.2005",
+          "nama_desa": "Sukawangi",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.04.2007",
+          "nama_desa": "Tanjung Kamuning",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.05",
+      "nama_kecamatan": "Tarogong Kidul",
+      "desa": [
+        {
+          "kode_desa": "32.05.05.2005",
+          "nama_desa": "Cibunar",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.05.2004",
+          "nama_desa": "Haurpanggung",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.05.2003",
+          "nama_desa": "Jayaraga",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.05.1006",
+          "nama_desa": "Jayawaras",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.05.2011",
+          "nama_desa": "Kersamenak",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.05.2010",
+          "nama_desa": "Mekargalih",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.05.1001",
+          "nama_desa": "Pataruman",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.05.2007",
+          "nama_desa": "Sukabakti",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.05.1002",
+          "nama_desa": "Sukagalih",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.05.1012",
+          "nama_desa": "Sukajaya",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.05.1009",
+          "nama_desa": "Sukakarya",
+          "tipe": "KELURAHAN"
+        },
+        {
+          "kode_desa": "32.05.05.2008",
+          "nama_desa": "Tarogong",
+          "tipe": "DESA"
+        }
+      ]
+    },
+    {
+      "kode_kecamatan": "32.05.03",
+      "nama_kecamatan": "Wanaraja",
+      "desa": [
+        {
+          "kode_desa": "32.05.03.2003",
+          "nama_desa": "Cinunuk",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.03.2015",
+          "nama_desa": "Sindangmekar",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.03.2024",
+          "nama_desa": "Sindangprabu",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.03.2008",
+          "nama_desa": "Sindangratu",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.03.2007",
+          "nama_desa": "Sukamenak",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.03.2011",
+          "nama_desa": "Wanajaya",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.03.2002",
+          "nama_desa": "Wanamekar",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.03.2001",
+          "nama_desa": "Wanaraja",
+          "tipe": "DESA"
+        },
+        {
+          "kode_desa": "32.05.03.2019",
+          "nama_desa": "Wanasari",
+          "tipe": "DESA"
+        }
+      ]
+    }
+  ],
+  "by_kecamatan": {
+    "Banjarwangi": [
+      {
+        "kode_desa": "32.05.23.2001",
+        "nama_desa": "Banjarwangi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.23.2010",
+        "nama_desa": "Bojong",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.23.2008",
+        "nama_desa": "Dangiang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.23.2006",
+        "nama_desa": "Jayabakti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.23.2004",
+        "nama_desa": "Kadongdong",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.23.2007",
+        "nama_desa": "Mulyajaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.23.2003",
+        "nama_desa": "Padahurip",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.23.2002",
+        "nama_desa": "Talagajaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.23.2005",
+        "nama_desa": "Talagasari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.23.2009",
+        "nama_desa": "Tanjungjaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.23.2011",
+        "nama_desa": "Wangunjaya",
+        "tipe": "DESA"
+      }
+    ],
+    "Banyuresmi": [
+      {
+        "kode_desa": "32.05.06.2011",
+        "nama_desa": "Bagendit",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.06.2001",
+        "nama_desa": "Banyuresmi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.06.2010",
+        "nama_desa": "Binakarya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.06.2002",
+        "nama_desa": "Cimareme",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.06.2006",
+        "nama_desa": "Cipicung",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.06.2007",
+        "nama_desa": "Dangdeur",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.06.2012",
+        "nama_desa": "Karyamukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.06.2013",
+        "nama_desa": "Karyasari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.06.2009",
+        "nama_desa": "Pamekarsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.06.2008",
+        "nama_desa": "Sukakarya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.06.2015",
+        "nama_desa": "Sukalaksana",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.06.2014",
+        "nama_desa": "Sukamukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.06.2005",
+        "nama_desa": "Sukaraja",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.06.2003",
+        "nama_desa": "Sukaratu",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.06.2004",
+        "nama_desa": "Sukasenang",
+        "tipe": "DESA"
+      }
+    ],
+    "Bayongbong": [
+      {
+        "kode_desa": "32.05.17.2012",
+        "nama_desa": "Banjarsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.17.2001",
+        "nama_desa": "Bayongbong",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.17.2009",
+        "nama_desa": "Ciburuy",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.17.2010",
+        "nama_desa": "Ciela",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.17.2011",
+        "nama_desa": "Cikedokan",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.17.2017",
+        "nama_desa": "Cinisti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.17.2003",
+        "nama_desa": "Hegarmanah",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.17.2005",
+        "nama_desa": "Karyajaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.17.2014",
+        "nama_desa": "Mekarjaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.17.2008",
+        "nama_desa": "Mekarsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.17.2006",
+        "nama_desa": "Mulyasari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.17.2007",
+        "nama_desa": "Pamalayan",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.17.2002",
+        "nama_desa": "Panembong",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.17.2004",
+        "nama_desa": "Salakuray",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.17.2015",
+        "nama_desa": "Sirnagalih",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.17.2018",
+        "nama_desa": "Sukamanah",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.17.2016",
+        "nama_desa": "Sukarame",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.17.2013",
+        "nama_desa": "Sukasenang",
+        "tipe": "DESA"
+      }
+    ],
+    "Bl. Limbangan": [
+      {
+        "kode_desa": "32.05.38.2011",
+        "nama_desa": "Cigagade",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.38.2005",
+        "nama_desa": "Cijolang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.38.2010",
+        "nama_desa": "Ciwangi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.38.2013",
+        "nama_desa": "Dunguswiru",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.38.2003",
+        "nama_desa": "Galihpakuwon",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.38.2002",
+        "nama_desa": "Limbangan Barat",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.38.2001",
+        "nama_desa": "Limbangan Tengah",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.38.2012",
+        "nama_desa": "Limbangan Timur",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.38.2006",
+        "nama_desa": "Neglasari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.38.2014",
+        "nama_desa": "Pangeureunan",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.38.2008",
+        "nama_desa": "Pasirwaru",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.38.2007",
+        "nama_desa": "Simpen Kaler",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.38.2009",
+        "nama_desa": "Simpen Kidul",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.38.2004",
+        "nama_desa": "Surabaya",
+        "tipe": "DESA"
+      }
+    ],
+    "Bungbulang": [
+      {
+        "kode_desa": "32.05.31.2007",
+        "nama_desa": "Bojong",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.31.2001",
+        "nama_desa": "Bungbulang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.31.2010",
+        "nama_desa": "Cihikeu",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.31.2003",
+        "nama_desa": "Gunamekar",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.31.2012",
+        "nama_desa": "Gunung Jampang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.31.2002",
+        "nama_desa": "Hanjuang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.31.2013",
+        "nama_desa": "Hegarmanah",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.31.2006",
+        "nama_desa": "Margalaksana",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.31.2005",
+        "nama_desa": "Mekarbakti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.31.2009",
+        "nama_desa": "Mekarjaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.31.2008",
+        "nama_desa": "Sinarjaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.31.2004",
+        "nama_desa": "Tegallega",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.31.2011",
+        "nama_desa": "Wangunjaya",
+        "tipe": "DESA"
+      }
+    ],
+    "Caringin": [
+      {
+        "kode_desa": "32.05.36.2001",
+        "nama_desa": "Caringin",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.36.2003",
+        "nama_desa": "Cimahi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.36.2002",
+        "nama_desa": "Indralayang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.36.2005",
+        "nama_desa": "Purbayani",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.36.2006",
+        "nama_desa": "Samuderajaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.36.2004",
+        "nama_desa": "Sukarame",
+        "tipe": "DESA"
+      }
+    ],
+    "Cibalong": [
+      {
+        "kode_desa": "32.05.29.2009",
+        "nama_desa": "Cigaronggong",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.29.2004",
+        "nama_desa": "Karyamukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.29.2001",
+        "nama_desa": "Karyasari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.29.2002",
+        "nama_desa": "Maroko",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.29.2008",
+        "nama_desa": "Mekar Mukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.29.2006",
+        "nama_desa": "Mekarsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.29.2010",
+        "nama_desa": "Mekarwangi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.29.2011",
+        "nama_desa": "Najaten",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.29.2005",
+        "nama_desa": "Sagara",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.29.2003",
+        "nama_desa": "Sancang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.29.2007",
+        "nama_desa": "Simpang",
+        "tipe": "DESA"
+      }
+    ],
+    "Cibatu": [
+      {
+        "kode_desa": "32.05.12.2001",
+        "nama_desa": "Cibatu",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.12.2003",
+        "nama_desa": "Cibunar",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.12.2009",
+        "nama_desa": "Girimukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.12.2008",
+        "nama_desa": "Karyamukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.12.2010",
+        "nama_desa": "Keresek",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.12.2005",
+        "nama_desa": "Kertajaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.12.2002",
+        "nama_desa": "Mekarsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.12.2007",
+        "nama_desa": "Padasuka",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.12.2004",
+        "nama_desa": "Sindangsuka",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.12.2006",
+        "nama_desa": "Sukalilah",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.12.2011",
+        "nama_desa": "Wanakerta",
+        "tipe": "DESA"
+      }
+    ],
+    "Cibiuk": [
+      {
+        "kode_desa": "32.05.40.2002",
+        "nama_desa": "Cibiuk Kaler",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.40.2003",
+        "nama_desa": "Cibiuk Kidul",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.40.2001",
+        "nama_desa": "Cipareuan",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.40.2005",
+        "nama_desa": "Lingkungpasir",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.40.2004",
+        "nama_desa": "Majasari",
+        "tipe": "DESA"
+      }
+    ],
+    "Cigedug": [
+      {
+        "kode_desa": "32.05.18.2002",
+        "nama_desa": "Barusuda",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.18.2001",
+        "nama_desa": "Cigedug",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.18.2005",
+        "nama_desa": "Cintanagara",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.18.2004",
+        "nama_desa": "Sindangsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.18.2003",
+        "nama_desa": "Sukahurip",
+        "tipe": "DESA"
+      }
+    ],
+    "Cihurip": [
+      {
+        "kode_desa": "32.05.25.2001",
+        "nama_desa": "Cihurip",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.25.2002",
+        "nama_desa": "Cisangkal",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.25.2004",
+        "nama_desa": "Jayamukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.25.2003",
+        "nama_desa": "Mekarwangi",
+        "tipe": "DESA"
+      }
+    ],
+    "Cikajang": [
+      {
+        "kode_desa": "32.05.22.2006",
+        "nama_desa": "Cibodas",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.22.2001",
+        "nama_desa": "Cikajang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.22.2008",
+        "nama_desa": "Cikandang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.22.2011",
+        "nama_desa": "Cipangramatan",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.22.2005",
+        "nama_desa": "Giriawas",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.22.2004",
+        "nama_desa": "Girijaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.22.2012",
+        "nama_desa": "Karamatwangi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.22.2010",
+        "nama_desa": "Margamulya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.22.2007",
+        "nama_desa": "Mekarjaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.22.2003",
+        "nama_desa": "Mekarsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.22.2009",
+        "nama_desa": "Padasuka",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.22.2002",
+        "nama_desa": "Simpang",
+        "tipe": "DESA"
+      }
+    ],
+    "Cikelet": [
+      {
+        "kode_desa": "32.05.30.2010",
+        "nama_desa": "Awassagara",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.30.2004",
+        "nama_desa": "Cigadog",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.30.2007",
+        "nama_desa": "Cijambe",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.30.2001",
+        "nama_desa": "Cikelet",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.30.2009",
+        "nama_desa": "Ciroyom",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.30.2008",
+        "nama_desa": "Girimukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.30.2006",
+        "nama_desa": "Karangsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.30.2003",
+        "nama_desa": "Kertamukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.30.2002",
+        "nama_desa": "Linggamanik",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.30.2005",
+        "nama_desa": "Pamalayan",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.30.2011",
+        "nama_desa": "Tipar",
+        "tipe": "DESA"
+      }
+    ],
+    "Cilawu": [
+      {
+        "kode_desa": "32.05.19.2001",
+        "nama_desa": "Cilawu",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.19.2012",
+        "nama_desa": "Dangiang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.19.2004",
+        "nama_desa": "Dawungsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.19.2013",
+        "nama_desa": "Dayeuhmanggung",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.19.2009",
+        "nama_desa": "Desakolot",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.19.2003",
+        "nama_desa": "Karyamekar",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.19.2015",
+        "nama_desa": "Mangkurakyat",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.19.2011",
+        "nama_desa": "Margalaksana",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.19.2008",
+        "nama_desa": "Mekarmukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.19.2007",
+        "nama_desa": "Mekarsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.19.2016",
+        "nama_desa": "Ngamplang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.19.2010",
+        "nama_desa": "Ngamplangsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.19.2005",
+        "nama_desa": "Pasanggrahan",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.19.2006",
+        "nama_desa": "Sukahati",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.19.2014",
+        "nama_desa": "Sukamaju",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.19.2002",
+        "nama_desa": "Sukamukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.19.2018",
+        "nama_desa": "Sukamurni",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.19.2017",
+        "nama_desa": "Sukatani",
+        "tipe": "DESA"
+      }
+    ],
+    "Cisewu": [
+      {
+        "kode_desa": "32.05.35.2004",
+        "nama_desa": "Cikarang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.35.2001",
+        "nama_desa": "Cisewu",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.35.2002",
+        "nama_desa": "Girimukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.35.2007",
+        "nama_desa": "Karangsewu",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.35.2008",
+        "nama_desa": "Mekarsewu",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.35.2006",
+        "nama_desa": "Nyalindung",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.35.2003",
+        "nama_desa": "Pamalayan",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.35.2009",
+        "nama_desa": "Panggalih",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.35.2005",
+        "nama_desa": "Sukajaya",
+        "tipe": "DESA"
+      }
+    ],
+    "Cisompet": [
+      {
+        "kode_desa": "32.05.28.2002",
+        "nama_desa": "Cihaurkuning",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.28.2006",
+        "nama_desa": "Cikondang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.28.2001",
+        "nama_desa": "Cisompet",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.28.2007",
+        "nama_desa": "Depok",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.28.2009",
+        "nama_desa": "Jatisari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.28.2003",
+        "nama_desa": "Margamulya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.28.2010",
+        "nama_desa": "Neglasari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.28.2008",
+        "nama_desa": "Panyindangan",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.28.2011",
+        "nama_desa": "Sindangsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.28.2004",
+        "nama_desa": "Sukamukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.28.2005",
+        "nama_desa": "Sukanagara",
+        "tipe": "DESA"
+      }
+    ],
+    "Cisurupan": [
+      {
+        "kode_desa": "32.05.20.2007",
+        "nama_desa": "Balewangi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.20.2002",
+        "nama_desa": "Cidatar",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.20.2017",
+        "nama_desa": "Cintaasih",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.20.2011",
+        "nama_desa": "Cipaganti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.20.2009",
+        "nama_desa": "Cisero",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.20.2001",
+        "nama_desa": "Cisurupan",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.20.2010",
+        "nama_desa": "Karamatwangi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.20.2006",
+        "nama_desa": "Pakuwon",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.20.2012",
+        "nama_desa": "Pamulihan",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.20.2015",
+        "nama_desa": "Pangauban",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.20.2016",
+        "nama_desa": "Simpangsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.20.2014",
+        "nama_desa": "Sirnagalih",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.20.2008",
+        "nama_desa": "Sirnajaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.20.2005",
+        "nama_desa": "Situsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.20.2004",
+        "nama_desa": "Sukatani",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.20.2003",
+        "nama_desa": "Sukawangi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.20.2013",
+        "nama_desa": "Tambakbaya",
+        "tipe": "DESA"
+      }
+    ],
+    "Garut Kota": [
+      {
+        "kode_desa": "32.05.01.1011",
+        "nama_desa": "Cimuncang",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.01.1007",
+        "nama_desa": "Ciwalen",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.01.1001",
+        "nama_desa": "Kota Kulon",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.01.1002",
+        "nama_desa": "Kota Wetan",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.01.1003",
+        "nama_desa": "Margawati",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.01.1005",
+        "nama_desa": "Muara Sanding",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.01.1004",
+        "nama_desa": "Pakuwon",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.01.1008",
+        "nama_desa": "Paminggir",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.01.1009",
+        "nama_desa": "Regol",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.01.1006",
+        "nama_desa": "Sukamentri",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.01.1010",
+        "nama_desa": "Sukanegla",
+        "tipe": "KELURAHAN"
+      }
+    ],
+    "Kadungora": [
+      {
+        "kode_desa": "32.05.10.2003",
+        "nama_desa": "Cikembulan",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.10.2004",
+        "nama_desa": "Cisaat",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.10.2002",
+        "nama_desa": "Gandamekar",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.10.2009",
+        "nama_desa": "Harumansari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.10.2011",
+        "nama_desa": "Hegarsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.10.2001",
+        "nama_desa": "Kadungora",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.10.2008",
+        "nama_desa": "Karangmulya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.10.2013",
+        "nama_desa": "Karangtengah",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.10.2005",
+        "nama_desa": "Mandalasari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.10.2007",
+        "nama_desa": "Mekarbakti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.10.2012",
+        "nama_desa": "Neglasari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.10.2014",
+        "nama_desa": "Rancasalak",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.10.2010",
+        "nama_desa": "Talagasari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.10.2006",
+        "nama_desa": "Tanggulun",
+        "tipe": "DESA"
+      }
+    ],
+    "Karangpawitan": [
+      {
+        "kode_desa": "32.05.02.2006",
+        "nama_desa": "Cimurah",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.02.2009",
+        "nama_desa": "Godog",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.02.2008",
+        "nama_desa": "Jatisari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.02.1003",
+        "nama_desa": "Karangmulya",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.02.2004",
+        "nama_desa": "Karangpawitan",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.02.2011",
+        "nama_desa": "Karangsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.02.2013",
+        "nama_desa": "Lebakagung",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.02.1002",
+        "nama_desa": "Lebakjaya",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.02.1014",
+        "nama_desa": "Lengkongjaya",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.02.2016",
+        "nama_desa": "Mekarsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.02.2015",
+        "nama_desa": "Sindanggalih",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.02.2017",
+        "nama_desa": "Sindanglaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.02.2012",
+        "nama_desa": "Sindangpalay",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.02.2005",
+        "nama_desa": "Situgede",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.02.2020",
+        "nama_desa": "Situjaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.02.2019",
+        "nama_desa": "Situsaeur",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.02.2010",
+        "nama_desa": "Situsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.02.2007",
+        "nama_desa": "Suci",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.02.1001",
+        "nama_desa": "Suci Kaler",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.02.2018",
+        "nama_desa": "Tanjungsari",
+        "tipe": "DESA"
+      }
+    ],
+    "Karangtengah": [
+      {
+        "kode_desa": "32.05.16.2001",
+        "nama_desa": "Caringin",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.16.2003",
+        "nama_desa": "Cinta",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.16.2002",
+        "nama_desa": "Cintamanik",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.16.2004",
+        "nama_desa": "Sindanggalih",
+        "tipe": "DESA"
+      }
+    ],
+    "Kersamanah": [
+      {
+        "kode_desa": "32.05.13.2004",
+        "nama_desa": "Girijaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.13.2001",
+        "nama_desa": "Kersamanah",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.13.2006",
+        "nama_desa": "Mekarraya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.13.2002",
+        "nama_desa": "Nanjungjaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.13.2005",
+        "nama_desa": "Sukamaju",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.13.2003",
+        "nama_desa": "Sukamerang",
+        "tipe": "DESA"
+      }
+    ],
+    "Leles": [
+      {
+        "kode_desa": "32.05.09.2006",
+        "nama_desa": "Cangkuang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.09.2002",
+        "nama_desa": "Ciburial",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.09.2010",
+        "nama_desa": "Cipancar",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.09.2012",
+        "nama_desa": "Dano",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.09.2011",
+        "nama_desa": "Haruman",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.09.2003",
+        "nama_desa": "Jangkurang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.09.2008",
+        "nama_desa": "Kandangmukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.09.2001",
+        "nama_desa": "Leles",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.09.2005",
+        "nama_desa": "Lembang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.09.2009",
+        "nama_desa": "Margaluyu",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.09.2007",
+        "nama_desa": "Salamnunggal",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.09.2004",
+        "nama_desa": "Sukarame",
+        "tipe": "DESA"
+      }
+    ],
+    "Leuwigoong": [
+      {
+        "kode_desa": "32.05.11.2005",
+        "nama_desa": "Dungusiku",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.11.2002",
+        "nama_desa": "Karanganyar",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.11.2008",
+        "nama_desa": "Karangsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.11.2001",
+        "nama_desa": "Leuwigoong",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.11.2003",
+        "nama_desa": "Margacinta",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.11.2004",
+        "nama_desa": "Margahayu",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.11.2007",
+        "nama_desa": "Sindangsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.11.2006",
+        "nama_desa": "Tambak Sari",
+        "tipe": "DESA"
+      }
+    ],
+    "Malangbong": [
+      {
+        "kode_desa": "32.05.14.2020",
+        "nama_desa": "Baru Dua",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2022",
+        "nama_desa": "Bunisari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2008",
+        "nama_desa": "Campaka",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2003",
+        "nama_desa": "Cibunar",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2019",
+        "nama_desa": "Cihaurkuning",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2004",
+        "nama_desa": "Cikarag",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2011",
+        "nama_desa": "Cilampuyang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2012",
+        "nama_desa": "Cinagara",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2007",
+        "nama_desa": "Cisitu",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2014",
+        "nama_desa": "Citeras",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2024",
+        "nama_desa": "Girimakmur",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2002",
+        "nama_desa": "Karangmulya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2017",
+        "nama_desa": "Kutanagara",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2009",
+        "nama_desa": "Lewobaru",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2001",
+        "nama_desa": "Malangbong",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2006",
+        "nama_desa": "Mekarasih",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2023",
+        "nama_desa": "Mekarmulya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2005",
+        "nama_desa": "Sakawayana",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2018",
+        "nama_desa": "Sanding",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2016",
+        "nama_desa": "Sekarwangi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2021",
+        "nama_desa": "Sukajaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2010",
+        "nama_desa": "Sukamanah",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2015",
+        "nama_desa": "Sukarasa",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.14.2013",
+        "nama_desa": "Sukaratu",
+        "tipe": "DESA"
+      }
+    ],
+    "Mekarmukti": [
+      {
+        "kode_desa": "32.05.32.2004",
+        "nama_desa": "Cijayana",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.32.2003",
+        "nama_desa": "Jagabaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.32.2002",
+        "nama_desa": "Karangwangi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.32.2001",
+        "nama_desa": "Mekarmukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.32.2005",
+        "nama_desa": "Mekarsari",
+        "tipe": "DESA"
+      }
+    ],
+    "Pakenjeng": [
+      {
+        "kode_desa": "32.05.33.2011",
+        "nama_desa": "Depok",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.33.2008",
+        "nama_desa": "Jatiwangi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.33.2013",
+        "nama_desa": "Jayamekar",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.33.2012",
+        "nama_desa": "Karangsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.33.2001",
+        "nama_desa": "Neglasari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.33.2009",
+        "nama_desa": "Panyindangan",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.33.2006",
+        "nama_desa": "Pasirlangu",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.33.2005",
+        "nama_desa": "Sukamulya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.33.2007",
+        "nama_desa": "Talagawangi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.33.2002",
+        "nama_desa": "Tanjungjaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.33.2003",
+        "nama_desa": "Tanjungmulya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.33.2010",
+        "nama_desa": "Tegalgede",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.33.2004",
+        "nama_desa": "Wangunjaya",
+        "tipe": "DESA"
+      }
+    ],
+    "Pameungpeuk": [
+      {
+        "kode_desa": "32.05.27.2006",
+        "nama_desa": "Bojong",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.27.2008",
+        "nama_desa": "Bojong Kidul",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.27.2005",
+        "nama_desa": "Jatimulya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.27.2002",
+        "nama_desa": "Mancagahar",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.27.2004",
+        "nama_desa": "Mandalakasih",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.27.2003",
+        "nama_desa": "Paas",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.27.2001",
+        "nama_desa": "Pameungpeuk",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.27.2007",
+        "nama_desa": "Sirnabakti",
+        "tipe": "DESA"
+      }
+    ],
+    "Pamulihan": [
+      {
+        "kode_desa": "32.05.34.2002",
+        "nama_desa": "Garumukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.34.2005",
+        "nama_desa": "Linggarjati",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.34.2001",
+        "nama_desa": "Pakenjeng",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.34.2004",
+        "nama_desa": "Pananjung",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.34.2003",
+        "nama_desa": "Panawa",
+        "tipe": "DESA"
+      }
+    ],
+    "Pangatikan": [
+      {
+        "kode_desa": "32.05.41.2003",
+        "nama_desa": "Babakan Loa",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.41.2006",
+        "nama_desa": "Cihuni",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.41.2002",
+        "nama_desa": "Cimaragas",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.41.2001",
+        "nama_desa": "Citangtu",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.41.2008",
+        "nama_desa": "Karangsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.41.2004",
+        "nama_desa": "Sukahurip",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.41.2005",
+        "nama_desa": "Sukamulya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.41.2007",
+        "nama_desa": "Sukarasa",
+        "tipe": "DESA"
+      }
+    ],
+    "Pasirwangi": [
+      {
+        "kode_desa": "32.05.08.2007",
+        "nama_desa": "Barusari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.08.2004",
+        "nama_desa": "Karyamekar",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.08.2006",
+        "nama_desa": "Padaasih",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.08.2009",
+        "nama_desa": "Padamukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.08.2012",
+        "nama_desa": "Padamulya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.08.2003",
+        "nama_desa": "Padasuka",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.08.2005",
+        "nama_desa": "Padawaas",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.08.2002",
+        "nama_desa": "Pasirkiamis",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.08.2001",
+        "nama_desa": "Pasirwangi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.08.2011",
+        "nama_desa": "Sarimukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.08.2010",
+        "nama_desa": "Sinarjaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.08.2008",
+        "nama_desa": "Talaga",
+        "tipe": "DESA"
+      }
+    ],
+    "Peundeuy": [
+      {
+        "kode_desa": "32.05.26.2004",
+        "nama_desa": "Pangrumasan",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.26.2001",
+        "nama_desa": "Peundeuy",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.26.2006",
+        "nama_desa": "Purwajaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.26.2003",
+        "nama_desa": "Saribakti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.26.2005",
+        "nama_desa": "Sukanagara",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.26.2002",
+        "nama_desa": "Toblong",
+        "tipe": "DESA"
+      }
+    ],
+    "Samarang": [
+      {
+        "kode_desa": "32.05.07.2010",
+        "nama_desa": "Cintaasih",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.07.2006",
+        "nama_desa": "Cintakarya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.07.2002",
+        "nama_desa": "Cintarakyat",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.07.2009",
+        "nama_desa": "Cintarasa",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.07.2008",
+        "nama_desa": "Cisarua",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.07.2004",
+        "nama_desa": "Parakan",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.07.2001",
+        "nama_desa": "Samarang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.07.2011",
+        "nama_desa": "Sirnasari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.07.2005",
+        "nama_desa": "Sukakarya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.07.2012",
+        "nama_desa": "Sukalaksana",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.07.2003",
+        "nama_desa": "Sukarasa",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.07.2007",
+        "nama_desa": "Tanjung Karya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.07.2013",
+        "nama_desa": "Tanjunganom",
+        "tipe": "DESA"
+      }
+    ],
+    "Selaawi": [
+      {
+        "kode_desa": "32.05.39.2003",
+        "nama_desa": "Cigawir",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.39.2005",
+        "nama_desa": "Cirapuhan",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.39.2006",
+        "nama_desa": "Mekarsari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.39.2004",
+        "nama_desa": "Pelitaasih",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.39.2002",
+        "nama_desa": "Putrajawa",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.39.2007",
+        "nama_desa": "Samida",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.39.2001",
+        "nama_desa": "Selaawi",
+        "tipe": "DESA"
+      }
+    ],
+    "Singajaya": [
+      {
+        "kode_desa": "32.05.24.2008",
+        "nama_desa": "Cigintung",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.24.2002",
+        "nama_desa": "Ciudian",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.24.2009",
+        "nama_desa": "Girimukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.24.2007",
+        "nama_desa": "Karangagung",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.24.2003",
+        "nama_desa": "Mekartani",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.24.2006",
+        "nama_desa": "Pancasura",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.24.2001",
+        "nama_desa": "Singajaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.24.2004",
+        "nama_desa": "Sukamulya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.24.2005",
+        "nama_desa": "Sukawangi",
+        "tipe": "DESA"
+      }
+    ],
+    "Sucinaraja": [
+      {
+        "kode_desa": "32.05.42.2005",
+        "nama_desa": "Cigadog",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.42.2006",
+        "nama_desa": "Linggamukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.42.2001",
+        "nama_desa": "Sadang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.42.2007",
+        "nama_desa": "Sukalaksana",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.42.2002",
+        "nama_desa": "Sukaratu",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.42.2004",
+        "nama_desa": "Tegalpanjang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.42.2003",
+        "nama_desa": "Tenjonagara",
+        "tipe": "DESA"
+      }
+    ],
+    "Sukaresmi": [
+      {
+        "kode_desa": "32.05.21.2002",
+        "nama_desa": "Cintadamai",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.21.2003",
+        "nama_desa": "Mekarjaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.21.2006",
+        "nama_desa": "Padamukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.21.2004",
+        "nama_desa": "Sukajaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.21.2007",
+        "nama_desa": "Sukalilah",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.21.2005",
+        "nama_desa": "Sukamulya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.21.2001",
+        "nama_desa": "Sukaresmi",
+        "tipe": "DESA"
+      }
+    ],
+    "Sukawening": [
+      {
+        "kode_desa": "32.05.15.2009",
+        "nama_desa": "Maripari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.15.2011",
+        "nama_desa": "Mekar Hurip",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.15.2003",
+        "nama_desa": "Mekarluyu",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.15.2010",
+        "nama_desa": "Mekarwangi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.15.2008",
+        "nama_desa": "Pasanggrahan",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.15.2005",
+        "nama_desa": "Sudalarang",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.15.2007",
+        "nama_desa": "Sukahaji",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.15.2004",
+        "nama_desa": "Sukaluyu",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.15.2002",
+        "nama_desa": "Sukamukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.15.2006",
+        "nama_desa": "Sukasono",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.15.2001",
+        "nama_desa": "Sukawening",
+        "tipe": "DESA"
+      }
+    ],
+    "Talegong": [
+      {
+        "kode_desa": "32.05.37.2003",
+        "nama_desa": "Mekarmukti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.37.2004",
+        "nama_desa": "Mekarmulya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.37.2007",
+        "nama_desa": "Mekarwangi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.37.2006",
+        "nama_desa": "Selaawi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.37.2005",
+        "nama_desa": "Sukalaksana",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.37.2001",
+        "nama_desa": "Sukamaju",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.37.2002",
+        "nama_desa": "Sukamulya",
+        "tipe": "DESA"
+      }
+    ],
+    "Tarogong Kaler": [
+      {
+        "kode_desa": "32.05.04.2002",
+        "nama_desa": "Cimanganten",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.04.2003",
+        "nama_desa": "Jati",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.04.2009",
+        "nama_desa": "Langensari",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.04.2008",
+        "nama_desa": "Mekarjaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.04.2010",
+        "nama_desa": "Mekarwangi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.04.1012",
+        "nama_desa": "Pananjung",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.04.2013",
+        "nama_desa": "Panjiwangi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.04.2011",
+        "nama_desa": "Pasawahan",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.04.2004",
+        "nama_desa": "Rancabango",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.04.2006",
+        "nama_desa": "Sirnajaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.04.2001",
+        "nama_desa": "Sukajadi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.04.2005",
+        "nama_desa": "Sukawangi",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.04.2007",
+        "nama_desa": "Tanjung Kamuning",
+        "tipe": "DESA"
+      }
+    ],
+    "Tarogong Kidul": [
+      {
+        "kode_desa": "32.05.05.2005",
+        "nama_desa": "Cibunar",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.05.2004",
+        "nama_desa": "Haurpanggung",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.05.2003",
+        "nama_desa": "Jayaraga",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.05.1006",
+        "nama_desa": "Jayawaras",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.05.2011",
+        "nama_desa": "Kersamenak",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.05.2010",
+        "nama_desa": "Mekargalih",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.05.1001",
+        "nama_desa": "Pataruman",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.05.2007",
+        "nama_desa": "Sukabakti",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.05.1002",
+        "nama_desa": "Sukagalih",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.05.1012",
+        "nama_desa": "Sukajaya",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.05.1009",
+        "nama_desa": "Sukakarya",
+        "tipe": "KELURAHAN"
+      },
+      {
+        "kode_desa": "32.05.05.2008",
+        "nama_desa": "Tarogong",
+        "tipe": "DESA"
+      }
+    ],
+    "Wanaraja": [
+      {
+        "kode_desa": "32.05.03.2003",
+        "nama_desa": "Cinunuk",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.03.2015",
+        "nama_desa": "Sindangmekar",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.03.2024",
+        "nama_desa": "Sindangprabu",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.03.2008",
+        "nama_desa": "Sindangratu",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.03.2007",
+        "nama_desa": "Sukamenak",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.03.2011",
+        "nama_desa": "Wanajaya",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.03.2002",
+        "nama_desa": "Wanamekar",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.03.2001",
+        "nama_desa": "Wanaraja",
+        "tipe": "DESA"
+      },
+      {
+        "kode_desa": "32.05.03.2019",
+        "nama_desa": "Wanasari",
+        "tipe": "DESA"
+      }
+    ]
+  }
+}

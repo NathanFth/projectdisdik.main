@@ -3,19 +3,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import {
-  School,
-  Users,
-  BookOpen,
-  Save,
-  ArrowLeft,
-  Loader2,
-} from "lucide-react";
+import { School, Users, BookOpen, Save, ArrowLeft, Loader2 } from "lucide-react";
 
-import {
-  schoolConfigs,
-  createInitialFormData,
-} from "@/lib/config/schoolConfig";
+import { schoolConfigs, createInitialFormData } from "@/lib/config/schoolConfig";
 import { useDataInput } from "@/hooks/useDataInput";
 import { NumberInput, TextInput, SelectInput } from "./ui/FormInputs";
 import Stepper from "./Stepper";
@@ -26,112 +16,146 @@ const LocationPickerMap = dynamic(() => import("./LocationPickerMap.jsx"), {
 });
 
 // Helper untuk mengambil value dari object bertingkat
-const getValue = (obj, path) =>
-  path.split(".").reduce((o, k) => (o ? o[k] : undefined), obj);
+const getValue = (obj, path) => path.split(".").reduce((o, k) => (o ? o[k] : undefined), obj);
+
+// (Opsional) override label biar user-friendly, tapi value tetap kode resmi
+const KEC_LABEL_OVERRIDE = {
+  "Bl. Limbangan": "Blubur Limbangan",
+};
 
 export default function DataInputForm({ schoolType, embedded = false }) {
   const router = useRouter();
 
   // 1. Config & Initial Data
-  const config = useMemo(
-    () => schoolConfigs[schoolType] || schoolConfigs.default,
-    [schoolType]
-  );
+  const config = useMemo(() => schoolConfigs[schoolType] || schoolConfigs.default, [schoolType]);
   const initialData = useMemo(() => createInitialFormData(config), [config]);
 
   // 2. Hook Form Data
-  const { formData, handleChange, errors, validate } = useDataInput(
-    config,
-    initialData
-  );
+  const { formData, handleChange, errors, validate } = useDataInput(config, initialData);
 
-  // 3. KECAMATAN OPTIONS dari JSON (public/data/kecamatan-garut.json)
+  // 3. Master Wilayah (Kemendagri) dari: public/data/desa-garut.json
+  const [loadingWilayah, setLoadingWilayah] = useState(false);
+
+  // kecamatanOptions pakai value = kode_kecamatan, label = nama (user-friendly)
   const [kecamatanOptions, setKecamatanOptions] = useState([]);
-  const [loadingKecamatan, setLoadingKecamatan] = useState(false);
+
+  // mapping kode_kecamatan -> nama_kecamatan (resmi Kemendagri)
+  const [kecNameByCode, setKecNameByCode] = useState({});
+
+  // desaByKecCode: kode_kecamatan -> list desa [{kode_desa,nama_desa,tipe}]
+  const [desaByKecCode, setDesaByKecCode] = useState({});
+
+  // options desa untuk dropdown (value = kode_desa)
+  const [desaOptions, setDesaOptions] = useState([]);
 
   useEffect(() => {
-    const loadKecamatan = async () => {
+    const loadWilayah = async () => {
       try {
-        setLoadingKecamatan(true);
-        const res = await fetch("/data/kecamatan-garut.json");
-        if (!res.ok) {
-          throw new Error("Gagal memuat data kecamatan");
-        }
+        setLoadingWilayah(true);
+
+        const res = await fetch("/data/desa-garut.json");
+        if (!res.ok) throw new Error("Gagal memuat data desa-garut.json");
         const data = await res.json();
 
-        const options = (Array.isArray(data) ? data : []).map((nama) => ({
-          value: nama,
-          label: nama,
-        }));
+        const kecArray = Array.isArray(data?.kecamatan) ? data.kecamatan : [];
+        const byKecamatanName = data?.by_kecamatan || {};
 
-        setKecamatanOptions(options);
+        // build maps
+        const nameByCode = {};
+        const desaMapByCode = {};
+        const kecOpts = kecArray
+          .map((k) => {
+            const kode = String(k.kode_kecamatan || "").trim();
+            const namaResmi = String(k.nama_kecamatan || "").trim();
+
+            if (!kode || !namaResmi) return null;
+
+            nameByCode[kode] = namaResmi;
+
+            const desaList = Array.isArray(byKecamatanName[namaResmi]) ? byKecamatanName[namaResmi] : [];
+            desaMapByCode[kode] = desaList;
+
+            const label = KEC_LABEL_OVERRIDE[namaResmi] || namaResmi;
+
+            return { value: kode, label };
+          })
+          .filter(Boolean)
+          .sort((a, b) => a.label.localeCompare(b.label, "id"));
+
+        setKecNameByCode(nameByCode);
+        setDesaByKecCode(desaMapByCode);
+        setKecamatanOptions(kecOpts);
       } catch (err) {
-        console.error("Error memuat kecamatan:", err);
+        console.error("Error memuat wilayah:", err);
+        setKecNameByCode({});
+        setDesaByKecCode({});
+        setKecamatanOptions([]);
       } finally {
-        setLoadingKecamatan(false);
+        setLoadingWilayah(false);
       }
     };
 
-    loadKecamatan();
+    loadWilayah();
   }, []);
+
+  // update desaOptions saat kecamatanCode berubah
+  useEffect(() => {
+    const kecCode = formData?.kecamatanCode;
+    if (!kecCode) {
+      setDesaOptions([]);
+      return;
+    }
+
+    const list = Array.isArray(desaByKecCode[kecCode]) ? desaByKecCode[kecCode] : [];
+
+    const options = list
+      .map((d) => ({
+        value: String(d.kode_desa || "").trim(), // value = KODE
+        label: String(d.nama_desa || "").trim(), // label = NAMA
+      }))
+      .filter((o) => o.value && o.label)
+      .sort((a, b) => a.label.localeCompare(b.label, "id"));
+
+    setDesaOptions(options);
+  }, [desaByKecCode, formData?.kecamatanCode]);
 
   // Khusus TK/PAUD: pilih jenis rombel aktif berdasarkan schoolType
   const activePaudRombelTypes = useMemo(() => {
     if (!config.isPaud || !config.rombelTypes) return [];
 
     if (schoolType === "TK") {
-      // Hanya TK A & TK B
-      return config.rombelTypes.filter(
-        (t) => t.key === "tka" || t.key === "tkb"
-      );
+      return config.rombelTypes.filter((t) => t.key === "tka" || t.key === "tkb");
     }
-
     if (schoolType === "PAUD") {
-      // Hanya KB & SPS/TPA
-      return config.rombelTypes.filter(
-        (t) => t.key === "kb" || t.key === "sps_tpa"
-      );
+      return config.rombelTypes.filter((t) => t.key === "kb" || t.key === "sps_tpa");
     }
-
-    // Fallback jika nanti ada type lain yang juga isPaud
     return config.rombelTypes;
   }, [config, schoolType]);
 
-  // 4. Local State
+  // 5. Local State
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState({});
   const [showMap, setShowMap] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // 5. Definisi Section (Dibungkus useMemo agar tidak re-render loop)
+  // 6. Definisi Section
   const sections = useMemo(
     () => [
       {
         id: "info",
         title: "Info Sekolah",
         icon: <School className="w-5 h-5" />,
-        fields: ["namaSekolah", "npsn"],
+        // ✅ kunci validasi
+        fields: ["namaSekolah", "npsn", "kecamatan", "desa", "alamat"],
       },
-      {
-        id: "siswa",
-        title: "Data Siswa",
-        icon: <Users className="w-5 h-5" />,
-        fields: [],
-      },
-      {
-        id: "rombel",
-        title: "Rombel",
-        icon: <BookOpen className="w-5 h-5" />,
-        fields: [],
-      },
+      { id: "siswa", title: "Data Siswa", icon: <Users className="w-5 h-5" />, fields: [] },
+      { id: "rombel", title: "Rombel", icon: <BookOpen className="w-5 h-5" />, fields: [] },
     ],
     []
   );
 
   // --- LOGIC HELPERS ---
-
   const sumSiswa = (genderKey) => {
-    // TK/PAUD: gunakan rombelTypes aktif (TK A/B atau KB/SPS/TPA)
     if (config.isPaud && activePaudRombelTypes.length > 0) {
       return activePaudRombelTypes.reduce((total, type) => {
         const val = getValue(formData, `siswa.${type.key}.${genderKey}`);
@@ -139,7 +163,6 @@ export default function DataInputForm({ schoolType, embedded = false }) {
       }, 0);
     }
 
-    // Sekolah lain: gunakan grades (kelas 1,2,dst)
     if (config.grades && config.grades.length > 0) {
       return config.grades.reduce((total, grade) => {
         const val = getValue(formData, `siswa.kelas${grade}.${genderKey}`);
@@ -153,7 +176,6 @@ export default function DataInputForm({ schoolType, embedded = false }) {
   const buildRombelMeta = () => {
     const meta = { rombel: {} };
 
-    // TK/PAUD: rombel berdasarkan rombelTypes aktif
     if (config.isPaud && activePaudRombelTypes.length > 0) {
       activePaudRombelTypes.forEach((type) => {
         const val = getValue(formData, `rombel.${type.key}`);
@@ -162,7 +184,6 @@ export default function DataInputForm({ schoolType, embedded = false }) {
       return meta;
     }
 
-    // Sekolah lain: rombel per kelas
     if (config.grades && config.grades.length > 0) {
       config.grades.forEach((grade) => {
         const key = `kelas${grade}`;
@@ -182,58 +203,35 @@ export default function DataInputForm({ schoolType, embedded = false }) {
       const male = Number(getValue(formData, `siswa.kelas${grade}.l`) || 0);
       const female = Number(getValue(formData, `siswa.kelas${grade}.p`) || 0);
 
-      if (male > 0) {
-        classes.push({
-          grade: `kelas${grade}_L`,
-          count: male,
-          extra: null,
-        });
-      }
-
-      if (female > 0) {
-        classes.push({
-          grade: `kelas${grade}_P`,
-          count: female,
-          extra: null,
-        });
-      }
+      if (male > 0) classes.push({ grade: `kelas${grade}_L`, count: male, extra: null });
+      if (female > 0) classes.push({ grade: `kelas${grade}_P`, count: female, extra: null });
     });
 
     return classes;
   };
 
-  useEffect(() => {
-    console.log("config : ", config);
-  }, [config]);
-
   // --- HANDLER STEP & SUBMIT ---
-
   const handleNext = () => {
     const currentFields = sections[currentStep - 1].fields;
-
-    // Validasi field di step saat ini
     if (validate(currentFields)) {
       setCompletedSteps((prev) => ({ ...prev, [currentStep - 1]: true }));
-
-      if (currentStep < sections.length) {
-        setCurrentStep((s) => s + 1);
-      }
-    } else {
-      console.log("Validasi gagal pada step:", currentStep);
+      if (currentStep < sections.length) setCurrentStep((s) => s + 1);
     }
   };
 
   const handlePrev = () => {
-    if (currentStep > 1) {
-      setCurrentStep((s) => s - 1);
-    }
+    if (currentStep > 1) setCurrentStep((s) => s - 1);
   };
 
   const handleSave = async () => {
     const currentFields = sections[currentStep - 1].fields;
 
-    if (!validate(currentFields)) {
-      alert("Mohon lengkapi data di halaman ini terlebih dahulu.");
+    // ✅ Anti loncat step: validasi wajib sebelum simpan
+    const requiredAlways = ["namaSekolah", "npsn", "kecamatan", "desa", "alamat"];
+    const fieldsToValidate = Array.from(new Set([...(currentFields || []), ...requiredAlways]));
+
+    if (!validate(fieldsToValidate)) {
+      alert("Mohon lengkapi data wajib (Nama Sekolah, NPSN, Kecamatan, Desa, Alamat) sebelum menyimpan.");
       return;
     }
 
@@ -245,7 +243,6 @@ export default function DataInputForm({ schoolType, embedded = false }) {
       const rombelMeta = buildRombelMeta();
       const classes = buildClassesArray();
 
-      // Bentuk payload sesuai kontrak RPC insert_school_with_relations
       const location = {
         province: "Jawa Barat",
         district: "Garut",
@@ -255,6 +252,9 @@ export default function DataInputForm({ schoolType, embedded = false }) {
           address_detail: formData.alamat || "",
           latitude: formData.latitude ? Number(formData.latitude) : null,
           longitude: formData.longitude ? Number(formData.longitude) : null,
+          // ✅ simpan kode wilayah untuk konsistensi
+          kecamatan_code: formData.kecamatanCode || null,
+          desa_code: formData.desaCode || null,
         },
       };
 
@@ -263,7 +263,6 @@ export default function DataInputForm({ schoolType, embedded = false }) {
         name: formData.namaSekolah,
         address: formData.alamat || "",
         village_name: formData.desa || "",
-        // gunakan schoolTypeId sebagai FK ke tabel school_types
         school_type_id: config.schoolTypeId ?? null,
         status: formData.status || "UNKNOWN",
         student_count: totalMale + totalFemale,
@@ -278,6 +277,8 @@ export default function DataInputForm({ schoolType, embedded = false }) {
           kecamatan: formData.kecamatan,
           desa: formData.desa,
           alamat: formData.alamat || "",
+          kecamatan_code: formData.kecamatanCode || null,
+          desa_code: formData.desaCode || null,
           is_paud: config.isPaud || false,
           monthly_report_file: formData.monthly_report_file || null,
           bantuan_received: formData.bantuan_received || "",
@@ -288,27 +289,14 @@ export default function DataInputForm({ schoolType, embedded = false }) {
         },
       };
 
-      const payload = {
-        location,
-        school,
-        classes,
-      };
+      const payload = { location, school, classes };
 
-      console.log("Payload yang dikirim:", payload);
+      const { error } = await supabase.rpc("insert_school_with_relations", {
+        p_payload: payload,
+      });
 
-      const { data, error } = await supabase.rpc(
-        "insert_school_with_relations",
-        {
-          p_payload: payload,
-        }
-      );
+      if (error) throw new Error(error.message || "Gagal menyimpan data");
 
-      if (error) {
-        console.error("Supabase Error:", error);
-        throw new Error(error.message || "Gagal menyimpan data");
-      }
-
-      console.log("Berhasil disimpan:", data);
       alert("Data berhasil disimpan!");
       router.push("/dashboard");
     } catch (err) {
@@ -326,11 +314,8 @@ export default function DataInputForm({ schoolType, embedded = false }) {
   };
 
   // --- RENDER CONTENT ---
-
   const renderContent = () => {
     const section = sections[currentStep - 1];
-
-    // Safety check biar gak error "Cannot read properties of undefined"
     if (!formData) return <div>Loading form data...</div>;
 
     switch (section.id) {
@@ -344,6 +329,7 @@ export default function DataInputForm({ schoolType, embedded = false }) {
               error={errors.namaSekolah}
               required
             />
+
             <TextInput
               label="NPSN"
               value={formData.npsn}
@@ -351,22 +337,55 @@ export default function DataInputForm({ schoolType, embedded = false }) {
               error={errors.npsn}
               required
             />
+
             <SelectInput
               label="Kecamatan"
-              value={formData.kecamatan}
-              onChange={(v) => handleChange("kecamatan", v)}
+              value={formData.kecamatanCode || ""}
+              onChange={(kodeKec) => {
+                const namaResmi = kecNameByCode[kodeKec] || "";
+                handleChange("kecamatanCode", kodeKec);
+                handleChange("kecamatan", namaResmi);
+
+                // reset desa saat kecamatan berubah
+                handleChange("desaCode", "");
+                handleChange("desa", "");
+              }}
               error={errors.kecamatan}
               options={kecamatanOptions}
+              placeholder={loadingWilayah ? "Memuat Kecamatan..." : "Pilih Kecamatan..."}
               required
-              disabled={loadingKecamatan || kecamatanOptions.length === 0}
+              disabled={loadingWilayah || kecamatanOptions.length === 0}
             />
-            <TextInput
-              label="Desa/Kelurahan"
-              value={formData.desa}
-              onChange={(v) => handleChange("desa", v)}
-              error={errors.desa}
-              required
-            />
+
+            <div className="space-y-1">
+              <SelectInput
+                label="Desa/Kelurahan"
+                value={formData.desaCode || ""}
+                onChange={(kodeDesa) => {
+                  const opt = desaOptions.find((o) => o.value === kodeDesa);
+                  handleChange("desaCode", kodeDesa);
+                  handleChange("desa", opt?.label || "");
+                }}
+                error={errors.desa}
+                options={desaOptions}
+                placeholder={
+                  !formData.kecamatanCode
+                    ? "Pilih Kecamatan dulu..."
+                    : loadingWilayah
+                      ? "Memuat Desa..."
+                      : "Pilih Desa/Kelurahan..."
+                }
+                required
+                disabled={!formData.kecamatanCode || loadingWilayah || desaOptions.length === 0}
+              />
+
+              {formData.kecamatanCode && !loadingWilayah && desaOptions.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Data desa untuk kecamatan ini kosong. Biasanya ini tanda file master belum sesuai/terbaca.
+                </p>
+              )}
+            </div>
+
             <TextInput
               label="Alamat Lengkap"
               value={formData.alamat}
@@ -374,10 +393,9 @@ export default function DataInputForm({ schoolType, embedded = false }) {
               error={errors.alamat}
               required
             />
+
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Koordinat
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Koordinat</label>
               <div className="grid grid-cols-2 gap-4">
                 <TextInput
                   label="Latitude"
@@ -394,6 +412,7 @@ export default function DataInputForm({ schoolType, embedded = false }) {
                   placeholder="107.5"
                 />
               </div>
+
               <button
                 type="button"
                 onClick={() => setShowMap(true)}
@@ -401,9 +420,9 @@ export default function DataInputForm({ schoolType, embedded = false }) {
               >
                 Pilih Koordinat di Map
               </button>
+
               <p className="text-xs text-gray-500">
-                Anda bisa mengisi koordinat secara manual atau klik tombol di
-                atas.
+                Anda bisa mengisi koordinat secara manual atau klik tombol di atas.
               </p>
             </div>
           </div>
@@ -420,10 +439,7 @@ export default function DataInputForm({ schoolType, embedded = false }) {
 
             {config.grades &&
               config.grades.map((grade) => (
-                <div
-                  key={grade}
-                  className="p-4 border rounded-lg bg-gray-50/50"
-                >
+                <div key={grade} className="p-4 border rounded-lg bg-gray-50/50">
                   <p className="font-medium mb-3">Kelas {grade}</p>
                   <div className="grid grid-cols-2 gap-4">
                     <NumberInput
@@ -443,10 +459,7 @@ export default function DataInputForm({ schoolType, embedded = false }) {
             {config.isPaud &&
               activePaudRombelTypes.length > 0 &&
               activePaudRombelTypes.map((type) => (
-                <div
-                  key={type.key}
-                  className="p-4 border rounded-lg bg-gray-50/50"
-                >
+                <div key={type.key} className="p-4 border rounded-lg bg-gray-50/50">
                   <p className="font-medium mb-3">{type.label}</p>
                   <div className="grid grid-cols-2 gap-4">
                     <NumberInput
@@ -466,7 +479,6 @@ export default function DataInputForm({ schoolType, embedded = false }) {
         );
 
       case "rombel":
-        // TK/PAUD: rombel per jenis (TK A/B atau KB/SPS/TPA)
         if (config.isPaud && activePaudRombelTypes.length > 0) {
           return (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -482,7 +494,6 @@ export default function DataInputForm({ schoolType, embedded = false }) {
           );
         }
 
-        // Sekolah lain: rombel per kelas
         return (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {config.grades &&
@@ -503,16 +514,8 @@ export default function DataInputForm({ schoolType, embedded = false }) {
   };
 
   return (
-    <div
-      className={
-        embedded
-          ? "w-full"
-          : "max-w-4xl mx-auto p-6 border rounded-lg bg-white shadow-sm"
-      }
-    >
-      {!embedded && (
-        <h1 className="text-2xl font-bold mb-6">Input Data {schoolType}</h1>
-      )}
+    <div className={embedded ? "w-full" : "max-w-4xl mx-auto p-6 border rounded-lg bg-white shadow-sm"}>
+      {!embedded && <h1 className="text-2xl font-bold mb-6">Input Data {schoolType}</h1>}
 
       <div className="mb-8">
         <Stepper
@@ -535,9 +538,7 @@ export default function DataInputForm({ schoolType, embedded = false }) {
       </div>
 
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-        }}
+        onSubmit={(e) => e.preventDefault()}
         className="space-y-6"
       >
         {renderContent()}
@@ -573,11 +574,7 @@ export default function DataInputForm({ schoolType, embedded = false }) {
                 disabled={saving}
                 className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
               >
-                {saving ? (
-                  <Loader2 className="animate-spin w-4 h-4 mr-2" />
-                ) : (
-                  <Save className="w-4 h-4 mr-2" />
-                )}
+                {saving ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                 Simpan Data
               </button>
             )}
@@ -609,8 +606,7 @@ export default function DataInputForm({ schoolType, embedded = false }) {
             />
 
             <p className="text-xs text-gray-500">
-              Setelah memilih titik di peta, nilai latitude & longitude akan
-              terisi otomatis.
+              Setelah memilih titik di peta, nilai latitude & longitude akan terisi otomatis.
             </p>
           </div>
         </div>

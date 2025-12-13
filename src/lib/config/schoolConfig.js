@@ -81,13 +81,33 @@ export const createInitialFormData = (config) => {
   const baseData = {
     noUrut: "",
     noUrutSekolah: "",
+
+    // ✅ Wilayah & identitas dasar (biar konsisten dengan DataInputForm terbaru)
     kecamatan: "",
+    kecamatanCode: "",
+    desa: "",
+    desaCode: "",
+    alamat: "",
+    latitude: "",
+    longitude: "",
+
+    // ✅ Identitas sekolah
     npsn: "",
     namaSekolah: "",
     status: "Swasta",
+
+    // ✅ Kontak (dipakai di payload submit)
+    namaOperator: "",
+    hp: "",
+
+    // opsional / future-proof
+    monthly_report_file: null,
+    bantuan_received: "",
+
     siswa: { jumlahSiswa: "" },
     siswaAbk: {},
     rombel: {},
+
     prasarana: {
       ukuran: { tanah: "", bangunan: "", halaman: "" },
       gedung: { jumlah: "" },
@@ -130,6 +150,7 @@ export const createInitialFormData = (config) => {
       },
       chromebook: "",
     },
+
     kelembagaan: {
       peralatanRumahTangga: "Baik",
       pembinaan: "Belum",
@@ -141,6 +162,7 @@ export const createInitialFormData = (config) => {
       perizinan: { pengendalian: "", kelayakan: "" },
       kurikulum: { silabus: "", kompetensiDasar: "" },
     },
+
     guru: {
       jumlahGuru: "",
       pns: "",
@@ -199,47 +221,3 @@ export const createInitialFormData = (config) => {
 
   return baseData;
 };
-// export const GARUT_KECAMATAN_OPTIONS = [
-//   "Banjarwangi",
-//   "Banyuresmi",
-//   "Bayongbong",
-//   "Blubur Limbangan",
-//   "Cibatu",
-//   "Cibiuk",
-//   "Cigedug",
-//   "Cihurip",
-//   "Cikajang",
-//   "Cikelet",
-//   "Cilawu",
-//   "Cisewu",
-//   "Cisompet",
-//   "Cisurupan",
-//   "Garut Kota",
-//   "Kadungora",
-//   "Karangpawitan",
-//   "Karangtengah",
-//   "Kersamanah",
-//   "Leles",
-//   "Leuwigoong",
-//   "Malangbong",
-//   "Mekarmukti",
-//   "Pakenjeng",
-//   "Pameungpeuk",
-//   "Pamulihan",
-//   "Pangatikan",
-//   "Pasirwangi",
-//   "Peundeuy",
-//   "Samarang",
-//   "Selaawi",
-//   "Singajaya",
-//   "Sucinaraja",
-//   "Sukaresmi",
-//   "Sukawening",
-//   "Talegong",
-//   "Tarogong Kaler",
-//   "Tarogong Kidul",
-//   "Wanaraja",
-//   "Caringin",
-//   "Pakenjeng",
-//   "Peundeuy",
-// ].map((nama) => ({ value: nama, label: nama }));
