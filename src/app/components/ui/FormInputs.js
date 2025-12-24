@@ -7,6 +7,8 @@ export const NumberInput = ({
   error,
   placeholder = "0",
   required,
+  disabled = false,
+  readOnly = false,
 }) => (
   <div className="w-full">
     <label className="block text-sm font-medium text-foreground mb-1.5">
@@ -16,7 +18,10 @@ export const NumberInput = ({
       type="number"
       min="0"
       value={value ?? ""}
+      disabled={disabled}
+      readOnly={readOnly}
       onChange={(e) => {
+        if (disabled || readOnly || typeof onChange !== "function") return;
         const val = e.target.value.replace(/[^0-9]/g, "");
         onChange(val === "" ? "" : parseInt(val, 10));
       }}
@@ -25,7 +30,8 @@ export const NumberInput = ({
         "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
         error
           ? "border-destructive focus-visible:ring-destructive"
-          : "border-input"
+          : "border-input",
+        disabled || readOnly ? "cursor-not-allowed opacity-60" : ""
       )}
     />
     {error && <p className="text-sm text-destructive mt-1.5">{error}</p>}

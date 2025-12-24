@@ -51,7 +51,7 @@ const getOperatorLabel = (type) => {
 
 export default function StatCards({ operatorType }) {
   // Gunakan custom hook untuk mendapatkan data
-  const { data: schoolsData, isLoading } = useSchoolData(operatorType);
+  const { data: schoolsData, isLoading, totalSiswa } = useSchoolData(operatorType);
 
   // Hitung statistik secara dinamis menggunakan useMemo
   const calculatedStats = useMemo(() => {
@@ -98,7 +98,7 @@ export default function StatCards({ operatorType }) {
       {
         icon: Users,
         label: "Total Siswa",
-        value: calculatedStats.totalStudents,
+        value: totalSiswa,
       },
       {
         icon: GraduationCap,

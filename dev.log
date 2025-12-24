@@ -1,0 +1,166 @@
+
+> e-plandisdik-operator@0.1.0 dev
+> next dev --turbopack
+
+   ▲ Next.js 15.4.6 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.56.1:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 10.5s
+ ○ Compiling /login ...
+ ✓ Compiled /login in 21.7s
+ GET /login 200 in 24937ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 10.5s
+ GET /dashboard 200 in 10851ms
+ ○ Compiling /dashboard/pkbm ...
+ ✓ Compiled /dashboard/pkbm in 1932ms
+ GET /dashboard/pkbm 200 in 2220ms
+ ○ Compiling /dashboard/pkbm/[npsn] ...
+ ✓ Compiled /dashboard/pkbm/[npsn] in 1412ms
+ GET /dashboard/pkbm/11001100 200 in 4037ms
+ ○ Compiling /dashboard/pkbm/input ...
+ ✓ Compiled /dashboard/pkbm/input in 6.2s
+ GET /dashboard/pkbm/input 200 in 6461ms
+ GET /dashboard/pkbm/input 200 in 436ms
+ GET /dashboard/pkbm/input 200 in 227ms
+ GET /dashboard/pkbm/input 200 in 239ms
+ GET /dashboard/pkbm/input 200 in 249ms
+ GET /dashboard 200 in 322ms
+ GET /dashboard/pkbm 200 in 267ms
+ GET /dashboard/pkbm/88771122 200 in 222ms
+ GET /dashboard/pkbm/88771122 200 in 2952ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 9.4s
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 10097ms
+ GET /dashboard/pkbm/88771122 200 in 640ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 1206ms
+ GET /dashboard/pkbm/88771122 200 in 917ms
+ GET /dashboard/pkbm/88771122 200 in 508ms
+ GET /dashboard/pkbm/88771122 200 in 623ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 645ms
+ GET /dashboard/pkbm/88771122 200 in 1466ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 599ms
+ GET /dashboard/pkbm/input 200 in 342ms
+ GET /dashboard 200 in 295ms
+ GET /dashboard/pkbm 200 in 265ms
+ GET /dashboard/pkbm/55555555 200 in 288ms
+ GET /dashboard/pkbm/55555555 200 in 446ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 1969ms
+ GET /dashboard/pkbm/55555555 200 in 454ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 1335ms
+ ✓ Compiled in 19.1s
+ GET /dashboard/pkbm/55555555 200 in 10054ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 2776ms
+ ✓ Compiled in 6.7s
+ ✓ Compiled in 1284ms
+ ○ Compiling /dashboard/pkbm/[npsn] ...
+ ✓ Compiled in 2.1s
+ ✓ Compiled /dashboard/pkbm/[npsn] in 2.6s
+ GET /dashboard/pkbm/55555555 200 in 4654ms
+ GET /dashboard/pkbm/55555555 200 in 1520ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 1339ms
+ ✓ Compiled in 6.8s
+ ✓ Compiled in 5.9s
+ ✓ Compiled in 11s
+ ✓ Compiled in 499ms
+ ✓ Compiled in 13s
+ ○ Compiling /dashboard/pkbm/[npsn] ...
+ ✓ Compiled /dashboard/pkbm/[npsn] in 2.1s
+ GET /dashboard/pkbm/55555555 200 in 10404ms
+ GET /dashboard/pkbm/55555555 200 in 1053ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 4069ms
+ GET /login 200 in 345ms
+ GET /login 200 in 387ms
+ GET /dashboard 200 in 523ms
+ ○ Compiling /dashboard/smp/input ...
+ ✓ Compiled /dashboard/smp/input in 12.9s
+ GET /dashboard/smp/input 200 in 13162ms
+ GET /dashboard/smp/input 200 in 430ms
+ GET /dashboard/smp/input 200 in 694ms
+ GET /dashboard/smp/input 200 in 373ms
+ GET /dashboard/smp/input 200 in 395ms
+ GET /dashboard 200 in 244ms
+ ○ Compiling /dashboard/smp ...
+ ✓ Compiled /dashboard/smp in 1733ms
+ GET /dashboard/smp 200 in 1897ms
+ ○ Compiling /dashboard/smp/[npsn] ...
+ ✓ Compiled /dashboard/smp/[npsn] in 1116ms
+ GET /dashboard/smp/33338888 200 in 3796ms
+ GET /login 200 in 673ms
+ GET /login 200 in 350ms
+ GET /dashboard 200 in 349ms
+ ○ Compiling /dashboard/paud/input ...
+ ✓ Compiled /dashboard/paud/input in 11.9s
+ GET /dashboard/paud/input 200 in 12210ms
+ GET /dashboard/paud/input 200 in 4477ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 1055ms
+ ○ Compiling /dashboard/paud ...
+ ✓ Compiled /dashboard/paud in 43.1s
+ GET /dashboard/paud 200 in 9743ms
+ GET /dashboard/paud 200 in 20514ms
+ GET /dashboard/paud 200 in 9979ms
+ GET /dashboard/paud 200 in 24586ms
+ GET /dashboard/paud 200 in 20417ms
+ GET /dashboard/paud 200 in 47812ms
+ GET /dashboard/paud 200 in 799ms
+ GET /dashboard 200 in 960ms
+ GET /dashboard 200 in 227ms
+ GET /dashboard/paud 200 in 634ms
+ GET /dashboard/paud 200 in 212ms
+ ○ Compiling /dashboard/paud/[npsn] ...
+ ✓ Compiled /dashboard/paud/[npsn] in 2.3s
+ GET /dashboard/paud/88888889 200 in 5704ms
+ GET /dashboard/paud/88888889 200 in 484ms
+ GET /dashboard/paud/88888889 200 in 475ms
+ GET /dashboard/paud/input 200 in 444ms
+ GET /dashboard/paud 200 in 303ms
+ GET /dashboard/paud/91221881 200 in 329ms
+ GET /dashboard/paud/91221881 200 in 16485ms
+ ✓ Compiled in 863ms
+ GET /dashboard/paud/input 200 in 2976ms
+ ✓ Compiled in 9s
+ GET /dashboard/paud/input 200 in 9086ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 675ms
+ GET /dashboard/paud/91221881 200 in 808ms
+ ✓ Compiled in 16.5s
+ GET /dashboard/paud/91221881 200 in 11020ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 537ms
+ GET /dashboard/paud/input 200 in 946ms
+ GET /dashboard/paud/input?type=TK 200 in 294ms
+ GET /dashboard/paud/input?type=PAUD 200 in 286ms
+ GET /dashboard/paud/input?type=TK 200 in 301ms
+ GET /dashboard/paud/input?type=PAUD 200 in 207ms
+ GET /dashboard/paud/input?type=TK 200 in 384ms
+ GET /dashboard/paud/input?type=PAUD 200 in 263ms
+ GET /dashboard/paud 200 in 838ms
+ GET /dashboard/paud/input 200 in 365ms
+ GET /dashboard/paud/input?type=TK 200 in 234ms
+ GET /dashboard/paud/input?type=PAUD 200 in 308ms
+ GET /dashboard 200 in 310ms
+ GET /dashboard/paud/input 200 in 215ms
+ GET /dashboard/paud/input?type=TK 200 in 201ms
+ ✓ Compiled in 1263ms
+ GET /dashboard 200 in 259ms
+ GET /dashboard/paud 200 in 215ms
+ GET /dashboard/paud/44224422 200 in 233ms
+ GET /dashboard/paud/44224422 200 in 2963ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 1373ms
+ GET /dashboard/paud 200 in 385ms
+ GET /dashboard/paud/22442244 200 in 262ms
+ ✓ Compiled in 24.6s
+ ⚠ Fast Refresh had to perform a full reload when ./src/app/dashboard/paud/[npsn]/page.js changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /dashboard/paud/22442244 200 in 16921ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 2042ms
+ ✓ Compiled in 29.5s
+ ⚠ Fast Refresh had to perform a full reload when ./src/app/dashboard/paud/[npsn]/page.js changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /dashboard/paud/22442244 200 in 26345ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 2404ms
+ ✓ Compiled in 10.2s
+ GET /dashboard/paud/22442244 200 in 9796ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 2476ms
+ GET /dashboard/paud/22442244 200 in 7705ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 3281ms
+ ✓ Compiled in 4.3s

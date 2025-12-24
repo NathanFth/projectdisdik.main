@@ -14,45 +14,42 @@ export const schoolConfigs = {
       { key: "pontren", label: "Pontren" },
       { key: "pkbm", label: "PKBM" },
     ],
+    lanjutDalamKabLabel: "Lanjut Dalam Kab.",
+    lanjutLuarKabLabel: "Lanjut Luar Kab.",
   },
+
   SMP: {
     schoolTypeId: 4,
     grades: [7, 8, 9],
-    lanjutDalamKabOptions: [
-      { key: "sma", label: "SMA" },
-      { key: "smk", label: "SMK" },
-      { key: "ma", label: "MA" },
-      { key: "pontren", label: "Pontren" },
-      { key: "pkbm", label: "PKBM" },
-    ],
-    lanjutLuarKabOptions: [
-      { key: "sma", label: "SMA" },
-      { key: "smk", label: "SMK" },
-      { key: "ma", label: "MA" },
-      { key: "pontren", label: "Pontren" },
-      { key: "pkbm", label: "PKBM" },
-    ],
   },
-  "TK/PAUD": {
-    schoolTypeId: 1,
+
+  // Catatan DB kamu: tidak ada school_types "TK".
+  // Jadi TK dan PAUD harus share school_type_id yang sama (PAUD=1),
+  // pembeda TK vs PAUD mestinya dari jenjang/meta (mis. meta.jenjang).
+  TK: {
+    schoolTypeId: 1, // ✅ PAUD di DB
     isPaud: true,
     rombelTypes: [
       { key: "tka", label: "TK A" },
       { key: "tkb", label: "TK B" },
       { key: "kb", label: "Kelompok Bermain (KB)" },
-      { key: "sps_tpa", label: "SPS / TPA" },
-    ],
-    lanjutDalamKabOptions: [
-      { key: "sd", label: "SD" },
-      { key: "mi", label: "MI" },
-    ],
-    lanjutLuarKabOptions: [
-      { key: "sd", label: "SD" },
-      { key: "mi", label: "MI" },
+      { key: "sps_tpa", label: "SPS/TPA" },
     ],
   },
-  "PKBM Terpadu": {
-    schoolTypeId: 2,
+
+  PAUD: {
+    schoolTypeId: 1, // ✅ FIX: PAUD di DB kamu = 1 (bukan 2)
+    isPaud: true,
+    rombelTypes: [
+      { key: "tka", label: "TK A" },
+      { key: "tkb", label: "TK B" },
+      { key: "kb", label: "Kelompok Bermain (KB)" },
+      { key: "sps_tpa", label: "SPS/TPA" },
+    ],
+  },
+
+  PKBM: {
+    schoolTypeId: 2, // ✅ FIX: PKBM di DB kamu = 2 (bukan 5)
     isPkbm: true,
     pakets: {
       A: { name: "Paket A (Setara SD)", grades: [1, 2, 3, 4, 5, 6] },
@@ -68,41 +65,42 @@ export const schoolConfigs = {
     lanjutPaketC: [
       { key: "pt", label: "Perguruan Tinggi" },
       { key: "bekerja", label: "Bekerja" },
+      { key: "wirausaha", label: "Wirausaha" },
+      { key: "lainnya", label: "Lainnya" },
     ],
   },
-  default: { grades: [], lanjutDalamKabOptions: [], lanjutLuarKabOptions: [] },
+
+  default: {
+    schoolTypeId: null,
+    grades: [],
+  },
 };
 
-schoolConfigs.TK = schoolConfigs["TK/PAUD"];
-schoolConfigs.PAUD = schoolConfigs["TK/PAUD"];
+// alias “PKBM Terpadu” -> PKBM (biar kompatibel kalau ada pemanggilan lama)
+schoolConfigs["PKBM Terpadu"] = schoolConfigs.PKBM;
 schoolConfigs.PKBM = schoolConfigs["PKBM Terpadu"];
 
 export const createInitialFormData = (config) => {
   const baseData = {
     noUrut: "",
     noUrutSekolah: "",
-
-    // ✅ Wilayah & identitas dasar (biar konsisten dengan DataInputForm terbaru)
     kecamatan: "",
-    kecamatanCode: "",
+
+    // ✅ tambahan fondasi lokasi & kontak (biar konsisten dengan form terbaru)
+    kecamatan_code: "",
     desa: "",
-    desaCode: "",
+    desa_code: "",
     alamat: "",
     latitude: "",
     longitude: "",
+    namaOperator: "",
+    hp: "",
+    bantuan_received: "",
+    monthly_report_file: null,
 
-    // ✅ Identitas sekolah
     npsn: "",
     namaSekolah: "",
     status: "Swasta",
-
-    // ✅ Kontak (dipakai di payload submit)
-    namaOperator: "",
-    hp: "",
-
-    // opsional / future-proof
-    monthly_report_file: null,
-    bantuan_received: "",
 
     siswa: { jumlahSiswa: "" },
     siswaAbk: {},
@@ -164,7 +162,6 @@ export const createInitialFormData = (config) => {
     },
 
     guru: {
-      jumlahGuru: "",
       pns: "",
       pppk: "",
       pppkParuhWaktu: "",
@@ -172,50 +169,64 @@ export const createInitialFormData = (config) => {
       nonAsnTidakDapodik: "",
       kekuranganGuru: "",
     },
+
+    lanjutDalamKab: {},
+    lanjutLuarKab: {},
+    lulusanPaketB: {},
+    lulusanPaketC: {},
   };
 
   if (config.isPkbm) {
+    // ✅ pastikan struktur paket konsisten: paketA/paketB/paketC
     baseData.siswa.paketA = {};
     baseData.siswa.paketB = {};
     baseData.siswa.paketC = {};
+
     baseData.siswaAbk.paketA = {};
     baseData.siswaAbk.paketB = {};
     baseData.siswaAbk.paketC = {};
+
     baseData.rombel.paketA = {};
     baseData.rombel.paketB = {};
     baseData.rombel.paketC = {};
+
     baseData.lulusanPaketB = {};
     baseData.lulusanPaketC = {};
 
-    Object.entries(config.pakets).forEach(([k, paket]) => {
-      const key = `paket${k}`;
-      paket.grades.forEach((grade) => {
-        baseData.siswa[key][`kelas${grade}`] = { l: "", p: "" };
-        baseData.siswaAbk[key][`kelas${grade}`] = { l: "", p: "" };
-        baseData.rombel[key][`kelas${grade}`] = "";
+    Object.entries(config.pakets || {}).forEach(([paketKey, paket]) => {
+      const paketName = `paket${paketKey}`; // ✅ FIX: A -> paketA, dst
+
+      (paket.grades || []).forEach((grade) => {
+        baseData.siswa[paketName][`kelas${grade}`] = { l: "", p: "" };
+        baseData.siswaAbk[paketName][`kelas${grade}`] = { l: "", p: "" };
+        baseData.rombel[paketName][`kelas${grade}`] = "";
       });
     });
-  } else if (config.isPaud) {
-    baseData.siswaLanjutDalamKab = {};
-    baseData.siswaLanjutLuarKab = {};
-    baseData.siswaTidakLanjut = "";
 
+    (config.lanjutPaketB || []).forEach((opt) => {
+      baseData.lulusanPaketB[opt.key] = "";
+    });
+    (config.lanjutPaketC || []).forEach((opt) => {
+      baseData.lulusanPaketC[opt.key] = "";
+    });
+  } else if (config.isPaud && config.rombelTypes) {
     config.rombelTypes.forEach((t) => {
       baseData.siswa[t.key] = { l: "", p: "" };
       baseData.siswaAbk[t.key] = { l: "", p: "" };
       baseData.rombel[t.key] = "";
     });
   } else if (config.grades) {
-    baseData.status = "Negeri";
-    baseData.siswaLanjutDalamKab = {};
-    baseData.siswaLanjutLuarKab = {};
-    baseData.siswaTidakLanjut = "";
-    baseData.siswaBekerja = "";
+    config.grades.forEach((grade) => {
+      baseData.siswa[`kelas${grade}`] = { l: "", p: "" };
+      baseData.siswaAbk[`kelas${grade}`] = { l: "", p: "" };
+      baseData.rombel[`kelas${grade}`] = "";
+    });
 
-    config.grades.forEach((g) => {
-      baseData.siswa[`kelas${g}`] = { l: "", p: "" };
-      baseData.siswaAbk[`kelas${g}`] = { l: "", p: "" };
-      baseData.rombel[`kelas${g}`] = "";
+    (config.lanjutDalamKabOptions || []).forEach((opt) => {
+      baseData.lanjutDalamKab[opt.key] = "";
+    });
+    (config.lanjutLuarKabOptions || []).forEach((opt) => {
+      baseData.lanjutLuarKab[opt.key] = "";
     });
   }
 

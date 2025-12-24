@@ -39,258 +39,62 @@ import {
 import { EditSchoolModal } from "./EditSchoolModal";
 import { supabase } from "@/lib/supabase/lib/client";
 
-// --- KONFIGURASI FILE DATA ---
-const DATA_FILES = {
-  SD: "/data/sd_new.json",
-  PAUD: "/data/paud.json",
-  PKBM: "/data/pkbm.json",
-  TK: "/data/paud.json",
-  SMP: "/data/smp.json",
-};
+// Normalizer biar table stabil walau struktur output RPC beda tipis
+function normalizeSchoolRow(row, operatorType) {
+  const npsn = String(row?.npsn ?? row?.id ?? "").trim();
 
-// --- DATA KOSONG SEBAGAI PENGAMAN (PLACEHOLDER) ---
-const EMPTY_SISWA_DETAIL = {
-  kelas1: { l: 0, p: 0 },
-  kelas2: { l: 0, p: 0 },
-  kelas3: { l: 0, p: 0 },
-  kelas4: { l: 0, p: 0 },
-  kelas5: { l: 0, p: 0 },
-  kelas6: { l: 0, p: 0 },
-  kelas7: { l: 0, p: 0 },
-  kelas8: { l: 0, p: 0 },
-  kelas9: { l: 0, p: 0 },
-};
+  const namaSekolah =
+    row?.namaSekolah ??
+    row?.name ??
+    row?.school_name ??
+    row?.nama_sekolah ??
+    "";
 
-const EMPTY_GURU_DETAIL = {
-  jumlahGuru: 0,
-  pns: 0,
-  pppk: 0,
-  pppkParuhWaktu: 0,
-  nonAsnDapodik: 0,
-  nonAsnTidakDapodik: 0,
-  kekuranganGuru: 0,
-};
+  const kecamatan =
+    row?.kecamatan ??
+    row?.meta?.kecamatan ??
+    row?.location?.subdistrict ??
+    row?.subdistrict ??
+    "";
 
-// --- FUNGSI TRANSFORMASI (FALLBACK JSON) ---
-const transformSdData = (schoolData, schoolType) => {
-  const allSchools = Object.entries(schoolData).flatMap(
-    ([kecamatanName, schoolsInKecamatan]) =>
-      schoolsInKecamatan.map((school) => ({
-        ...school,
-        kecamatan: kecamatanName,
-      }))
-  );
+  const status = row?.status ?? row?.school_status ?? row?.type ?? "UNKNOWN";
 
-  return allSchools.map((school) => ({
-    id: school.npsn,
-    namaSekolah: school.name,
-    npsn: school.npsn,
-    kecamatan: school.kecamatan,
-    status: school.type,
-    schoolType: schoolType,
-    jenjang: schoolType,
-    dataStatus:
-      (parseInt(school.student_count, 10) || 0) > 0
-        ? "Aktif"
-        : "Data Belum Lengkap",
-    st_male: Object.keys(school.classes || {})
-      .filter((k) => k.endsWith("_L"))
-      .reduce((sum, key) => sum + (school.classes[key] || 0), 0),
-    st_female: Object.keys(school.classes || {})
-      .filter((k) => k.endsWith("_P"))
-      .reduce((sum, key) => sum + (school.classes[key] || 0), 0),
+  // ✅ jenjang harus utamakan meta_jenjang/meta.jenjang (pembeda TK vs PAUD)
+  const jenjangRaw =
+    row?.meta?.jenjang ?? row?.meta_jenjang ?? row?.jenjang ?? null;
+
+  // Default aman:
+  // - Kalau operatorType TK/PAUD dan jenjangRaw kosong, jangan “memaksa” jadi TK,
+  //   lebih aman jatuh ke PAUD biar TK tidak ketarik salah.
+  const jenjang =
+    jenjangRaw ??
+    (operatorType === "TK" || operatorType === "PAUD" ? "PAUD" : operatorType);
+
+  const jumlahSiswa =
+    row?.siswa?.jumlahSiswa ?? row?.student_count ?? row?.studentCount ?? 0;
+
+  return {
+    id: row?.id ?? npsn,
+    npsn,
+    namaSekolah,
+    kecamatan,
+    status,
+    jenjang,
+    schoolType: row?.schoolType ?? operatorType,
     siswa: {
-      jumlahSiswa: parseInt(school.student_count, 10) || 0,
-      kelas1: {
-        l: parseInt(school.classes?.["1_L"], 10) || 0,
-        p: parseInt(school.classes?.["1_P"], 10) || 0,
-      },
-      kelas2: {
-        l: parseInt(school.classes?.["2_L"], 10) || 0,
-        p: parseInt(school.classes?.["2_P"], 10) || 0,
-      },
-      kelas3: {
-        l: parseInt(school.classes?.["3_L"], 10) || 0,
-        p: parseInt(school.classes?.["3_P"], 10) || 0,
-      },
-      kelas4: {
-        l: parseInt(school.classes?.["4_L"], 10) || 0,
-        p: parseInt(school.classes?.["4_P"], 10) || 0,
-      },
-      kelas5: {
-        l: parseInt(school.classes?.["5_L"], 10) || 0,
-        p: parseInt(school.classes?.["5_P"], 10) || 0,
-      },
-      kelas6: {
-        l: parseInt(school.classes?.["6_L"], 10) || 0,
-        p: parseInt(school.classes?.["6_P"], 10) || 0,
-      },
+      jumlahSiswa: Number(jumlahSiswa) || 0,
+      ...(row?.siswa || {}),
     },
-    rombel: {
-      kelas1: school.rombel?.["1"] || 0,
-      kelas2: school.rombel?.["2"] || 0,
-      kelas3: school.rombel?.["3"] || 0,
-      kelas4: school.rombel?.["4"] || 0,
-      kelas5: school.rombel?.["5"] || 0,
-      kelas6: school.rombel?.["6"] || 0,
-    },
-    prasarana: {
-      ukuran: {
-        tanah: school.facilities?.land_area,
-        bangunan: school.facilities?.building_area,
-        halaman: school.facilities?.yard_area,
-      },
-      ruangKelas: {
-        jumlah: school.class_condition?.total_room,
-        baik: school.class_condition?.classrooms_good,
-        rusakSedang: school.class_condition?.classrooms_moderate_damage,
-        rusakBerat: school.class_condition?.classrooms_heavy_damage,
-      },
-      ruangPerpustakaan: school.library,
-      ruangLaboratorium: school.laboratory,
-      ruangGuru: school.teacher_room,
-      ruangUks: school.uks_room,
-      toiletGuruSiswa: school.toilets,
-      rumahDinas: school.official_residences,
-      mebeulair: school.furniture,
-    },
-    guru: EMPTY_GURU_DETAIL,
-    siswaAbk: {},
-    kelembagaan: {},
-  }));
-};
-
-const transformPaudData = (schoolData, schoolType) => {
-  const allSchools = Object.entries(schoolData).flatMap(
-    ([kecamatanName, schoolsInKecamatan]) =>
-      schoolsInKecamatan.map((school) => ({
-        ...school,
-        kecamatan: kecamatanName,
-        jenjang: school.type,
-      }))
-  );
-
-  return allSchools.map((school) => ({
-    id: school.npsn,
-    namaSekolah: school.name,
-    npsn: school.npsn,
-    kecamatan: school.kecamatan,
-    status: "SWASTA",
-    schoolType: schoolType,
-    jenjang: school.jenjang,
-    dataStatus:
-      (parseInt(school.student_count, 10) || 0) > 0
-        ? "Aktif"
-        : "Data Belum Lengkap",
-    st_male: parseInt(school.st_male, 10) || 0,
-    st_female: parseInt(school.st_female, 10) || 0,
-    siswa: {
-      jumlahSiswa: parseInt(school.student_count, 10) || 0,
-      ...EMPTY_SISWA_DETAIL,
-    },
-    rombel: school.rombel,
-    prasarana: {
-      ukuran: { tanah: school.building_status?.tanah?.land_available },
-      ruangKelas: {
-        jumlah: school.class_condition?.total_room,
-        baik: school.class_condition?.classrooms_good,
-        rusakSedang: school.class_condition?.classrooms_moderate_damage,
-        rusakBerat: school.class_condition?.classrooms_heavy_damage,
-      },
-      toiletGuruSiswa: { jumlah: school.toilets?.n_available },
-    },
-    guru: EMPTY_GURU_DETAIL,
-    siswaAbk: {},
-    kelembagaan: {},
-  }));
-};
-
-const transformPkbmData = (schoolData, schoolType) => {
-  const allSchools = Object.entries(schoolData).flatMap(
-    ([kecamatanName, schoolsInKecamatan]) =>
-      schoolsInKecamatan.map((school) => ({
-        ...school,
-        kecamatan: kecamatanName,
-      }))
-  );
-
-  return allSchools.map((school) => ({
-    id: school.npsn,
-    namaSekolah: school.name,
-    npsn: school.npsn,
-    kecamatan: school.kecamatan,
-    status: "SWASTA",
-    schoolType: schoolType,
-    jenjang: schoolType,
-    dataStatus:
-      (parseInt(school.student_count, 10) || 0) > 0
-        ? "Aktif"
-        : "Data Belum Lengkap",
-    st_male: parseInt(school.st_male, 10) || 0,
-    st_female: parseInt(school.st_female, 10) || 0,
-    siswa: {
-      jumlahSiswa: parseInt(school.student_count, 10) || 0,
-      ...EMPTY_SISWA_DETAIL,
-    },
-    guru: EMPTY_GURU_DETAIL,
-    prasarana: { ukuran: {}, ruangKelas: {}, mebeulair: {} },
-    rombel: {},
-    siswaAbk: {},
-    kelembagaan: {},
-  }));
-};
-
-const transformSmpData = (schoolData, schoolType) => {
-  const allSchools = Object.entries(schoolData).flatMap(
-    ([kecamatanName, schoolsInKecamatan]) =>
-      schoolsInKecamatan.map((school) => ({
-        ...school,
-        kecamatan: kecamatanName,
-      }))
-  );
-
-  return allSchools.map((school) => ({
-    id: school.npsn,
-    namaSekolah: school.name,
-    npsn: school.npsn,
-    kecamatan: school.kecamatan,
-    status: school.type,
-    schoolType: schoolType,
-    jenjang: schoolType,
-    dataStatus:
-      (parseInt(school.student_count, 10) || 0) > 0
-        ? "Aktif"
-        : "Data Belum Lengkap",
-    siswa: {
-      jumlahSiswa: parseInt(school.student_count, 10) || 0,
-      ...EMPTY_SISWA_DETAIL,
-    },
-    rombel: {},
-    // map properti prasarana SMP
-    class_condition: school.class_condition,
-    library: school.library,
-    laboratory_comp: school.laboratory_comp,
-    laboratory_langua: school.laboratory_langua,
-    laboratory_ipa: school.laboratory_ipa,
-    laboratory_fisika: school.laboratory_fisika,
-    laboratory_biologi: school.laboratory_biologi,
-    kepsek_room: school.kepsek_room,
-    teacher_room: school.teacher_room,
-    administration_room: school.administration_room,
-    teachers_toilet: school.teachers_toilet,
-    students_toilet: school.students_toilet,
-    furniture_computer: school.furniture_computer,
-    guru: EMPTY_GURU_DETAIL,
-    siswaAbk: {},
-    kelembagaan: {},
-  }));
-};
+    ...row,
+  };
+}
 
 export default function SchoolsTable({ operatorType }) {
   const [schoolsData, setSchoolsData] = useState([]);
   const [kecamatanList, setKecamatanList] = useState([]);
   const [selectedKecamatan, setSelectedKecamatan] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const [selectedSchool, setSelectedSchool] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -300,92 +104,64 @@ export default function SchoolsTable({ operatorType }) {
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
-    const fetchAndTransformData = async () => {
-      if (!operatorType || !DATA_FILES[operatorType]) {
+    const fetchSchools = async () => {
+      if (!operatorType) {
         setSchoolsData([]);
         setKecamatanList([]);
         setIsLoading(false);
+        setLoadError("");
         return;
       }
 
       setIsLoading(true);
+      setLoadError("");
 
       try {
-        // 1) Coba Supabase dulu. Kalau sukses -> STOP, jangan fetch JSON.
-        const { data: dbData, error: dbErr } = await supabase.rpc(
-          "get_schools_full_report",
-          {
-            jenjang_filter: operatorType,
-          }
-        );
+        const { data, error } = await supabase.rpc("get_schools_full_report", {
+          jenjang_filter: operatorType,
+        });
 
-        if (!dbErr && Array.isArray(dbData) && dbData.length > 0) {
-          setSchoolsData(dbData);
-          const uniqueKecamatan = [
-            ...new Set(dbData.map((s) => s.kecamatan).filter(Boolean)),
-          ].sort();
-          setKecamatanList(uniqueKecamatan);
-          return;
-        }
+        if (error)
+          throw new Error(error.message || "Gagal memuat data dari database");
 
-        // 2) Fallback JSON (kalau DB kosong/error)
-        const dataUrl = DATA_FILES[operatorType];
-        const response = await fetch(dataUrl);
-        if (!response.ok) throw new Error(`Gagal memuat ${dataUrl}`);
-        const rawData = await response.json();
+        // ✅ Unwrap kalau function ngembaliin [{ row_json: [...] }]
+        const rawOuter = Array.isArray(data) ? data : [];
+        const raw =
+          rawOuter.length === 1 && Array.isArray(rawOuter?.[0]?.row_json)
+            ? rawOuter[0].row_json
+            : rawOuter;
 
-        let transformedSchools = [];
+        let normalized = raw.map((r) => normalizeSchoolRow(r, operatorType));
 
-        switch (operatorType) {
-          case "SD":
-            transformedSchools = transformSdData(rawData, operatorType);
-            break;
-          case "SMP":
-            transformedSchools = transformSmpData(rawData, operatorType);
-            break;
-          case "PAUD":
-          case "TK":
-            transformedSchools = transformPaudData(rawData, operatorType);
-            break;
-          case "PKBM":
-            transformedSchools = transformPkbmData(rawData, operatorType);
-            break;
-          default:
-            transformedSchools = [];
-        }
-
-        // filter PAUD/TK
-        let finalFilteredSchools = transformedSchools;
+        // ✅ Filter jelas (tanpa “hasJenjang” yang misleading)
         if (operatorType === "TK") {
-          finalFilteredSchools = transformedSchools.filter(
-            (school) => school.jenjang === "TK"
+          normalized = normalized.filter(
+            (s) => String(s.jenjang || "").toUpperCase() === "TK"
           );
         } else if (operatorType === "PAUD") {
-          finalFilteredSchools = transformedSchools.filter(
-            (school) => school.jenjang !== "TK"
+          normalized = normalized.filter(
+            (s) => String(s.jenjang || "").toUpperCase() !== "TK"
           );
         }
 
-        setSchoolsData(finalFilteredSchools);
+        setSchoolsData(normalized);
+
         const uniqueKecamatan = [
-          ...new Set(
-            finalFilteredSchools.map((s) => s.kecamatan).filter(Boolean)
-          ),
-        ].sort();
+          ...new Set(normalized.map((s) => s.kecamatan).filter(Boolean)),
+        ].sort((a, b) => String(a).localeCompare(String(b), "id"));
+
         setKecamatanList(uniqueKecamatan);
-      } catch (error) {
-        console.error(
-          `Error memuat atau memproses data untuk ${operatorType}:`,
-          error
-        );
+      } catch (err) {
+        console.error(`Error memuat data untuk ${operatorType}:`, err);
         setSchoolsData([]);
         setKecamatanList([]);
+        setLoadError(err?.message || "Terjadi kesalahan saat memuat data");
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchAndTransformData();
+    fetchSchools();
   }, [operatorType]);
 
   const filteredSchools = useMemo(() => {
@@ -401,8 +177,9 @@ export default function SchoolsTable({ operatorType }) {
       const lower = searchTerm.toLowerCase();
       filtered = filtered.filter(
         (school) =>
-          school.namaSekolah?.toLowerCase().includes(lower) ||
-          String(school.npsn || "").includes(searchTerm)
+          String(school.namaSekolah || "")
+            .toLowerCase()
+            .includes(lower) || String(school.npsn || "").includes(searchTerm)
       );
     }
 
@@ -412,10 +189,10 @@ export default function SchoolsTable({ operatorType }) {
   const paginatedSchools = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return filteredSchools?.slice(startIndex, endIndex);
+    return filteredSchools.slice(startIndex, endIndex);
   }, [filteredSchools, currentPage, itemsPerPage]);
 
-  const totalPages = Math.ceil((filteredSchools?.length || 0) / itemsPerPage);
+  const totalPages = Math.ceil((filteredSchools.length || 0) / itemsPerPage);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -438,7 +215,7 @@ export default function SchoolsTable({ operatorType }) {
   const getSearchPlaceholder = () => `Cari nama sekolah atau NPSN...`;
 
   const getDetailHref = (opType, npsn) => {
-    const seg = opType.toLowerCase();
+    const seg = String(opType || "").toLowerCase();
     return `/dashboard/${seg}/${npsn}`;
   };
 
@@ -489,7 +266,13 @@ export default function SchoolsTable({ operatorType }) {
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
               <p>Memuat data sekolah...</p>
             </div>
-          ) : paginatedSchools?.length === 0 ? (
+          ) : loadError ? (
+            <div className="text-center py-16">
+              <div className="inline-block px-4 py-3 rounded-lg border border-destructive/30 text-destructive text-sm">
+                {loadError}
+              </div>
+            </div>
+          ) : paginatedSchools.length === 0 ? (
             <div className="text-center py-20 text-muted-foreground">
               <SchoolIcon className="h-16 w-16 mx-auto mb-4 opacity-50" />
               <p className="font-semibold mb-1">
@@ -518,74 +301,65 @@ export default function SchoolsTable({ operatorType }) {
                 </TableHeader>
 
                 <TableBody>
-                  {paginatedSchools?.map((school, index) => {
-                    const jumlahSiswa =
-                      Number(
-                        school?.siswa?.jumlahSiswa ?? school?.student_count ?? 0
-                      ) || 0;
+                  {paginatedSchools.map((school, index) => (
+                    <TableRow
+                      key={school.id}
+                      className="hover:bg-muted/50 even:bg-muted/20"
+                    >
+                      <TableCell className="font-medium pl-6">
+                        {(currentPage - 1) * itemsPerPage + index + 1}
+                      </TableCell>
 
-                    return (
-                      <TableRow
-                        key={school.id || school.npsn}
-                        className="hover:bg-muted/50 even:bg-muted/20"
-                      >
-                        <TableCell className="font-medium pl-6">
-                          {(currentPage - 1) * itemsPerPage + index + 1}
-                        </TableCell>
+                      <TableCell className="font-medium">
+                        <div>{school.namaSekolah}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {school.kecamatan}
+                        </div>
+                      </TableCell>
 
-                        <TableCell className="font-medium">
-                          <div>{school.namaSekolah}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {school.kecamatan}
-                          </div>
-                        </TableCell>
+                      <TableCell className="font-mono text-sm">
+                        {school.npsn}
+                      </TableCell>
 
-                        <TableCell className="font-mono text-sm">
-                          {school.npsn}
-                        </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className="font-normal capitalize"
+                        >
+                          {String(school.status || "").toLowerCase()}
+                        </Badge>
+                      </TableCell>
 
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className="font-normal capitalize"
-                          >
-                            {String(school.status || "").toLowerCase()}
-                          </Badge>
-                        </TableCell>
+                      <TableCell className="text-center font-medium">
+                        {Number(school?.siswa?.jumlahSiswa || 0)}
+                      </TableCell>
 
-                        <TableCell className="text-center font-medium">
-                          {jumlahSiswa.toLocaleString("id-ID")}
-                        </TableCell>
-
-                        <TableCell className="pr-6">
-                          <div className="flex gap-2 justify-center">
-                            <Link
-                              href={getDetailHref(operatorType, school.npsn)}
-                            >
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 px-3 rounded-full"
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                Detail
-                              </Button>
-                            </Link>
-
+                      <TableCell className="pr-6">
+                        <div className="flex gap-2 justify-center">
+                          <Link href={getDetailHref(operatorType, school.npsn)}>
                             <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full"
-                              onClick={() => handleEditSchool(school)}
-                              title="Edit Data"
+                              variant="outline"
+                              size="sm"
+                              className="h-8 px-3 rounded-full"
                             >
-                              <Edit className="h-4 w-4" />
+                              <Eye className="h-4 w-4 mr-2" />
+                              Detail
                             </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                          </Link>
+
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full"
+                            onClick={() => handleEditSchool(school)}
+                            title="Edit Data"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
@@ -595,8 +369,8 @@ export default function SchoolsTable({ operatorType }) {
         {totalPages > 1 && (
           <div className="flex items-center justify-between p-4 border-top border-border/60">
             <div className="text-sm text-muted-foreground">
-              Menampilkan <strong>{paginatedSchools?.length}</strong> dari{" "}
-              <strong>{filteredSchools?.length}</strong> data
+              Menampilkan <strong>{paginatedSchools.length}</strong> dari{" "}
+              <strong>{filteredSchools.length}</strong> data
             </div>
 
             <div className="flex items-center gap-4">
@@ -604,7 +378,7 @@ export default function SchoolsTable({ operatorType }) {
                 <span className="text-sm">Baris per halaman:</span>
                 <Select
                   value={`${itemsPerPage}`}
-                  onValueChange={(value) => setItemsPerPage(Number(value))}
+                  onValueChange={(v) => setItemsPerPage(Number(v))}
                 >
                   <SelectTrigger className="h-8 w-[70px] bg-background">
                     <SelectValue placeholder={itemsPerPage} />
@@ -632,6 +406,7 @@ export default function SchoolsTable({ operatorType }) {
                 >
                   <ChevronsLeft className="h-4 w-4" />
                 </Button>
+
                 <Button
                   variant="outline"
                   className="h-8 w-8 p-0"
@@ -640,6 +415,7 @@ export default function SchoolsTable({ operatorType }) {
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
+
                 <Button
                   variant="outline"
                   className="h-8 w-8 p-0"
@@ -650,6 +426,7 @@ export default function SchoolsTable({ operatorType }) {
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
+
                 <Button
                   variant="outline"
                   className="h-8 w-8 p-0"

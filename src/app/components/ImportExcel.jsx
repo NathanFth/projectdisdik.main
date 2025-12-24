@@ -1,80 +1,104 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { utils, read } from 'xlsx';
+import { useMemo, useState } from "react";
+import { read, utils } from "xlsx";
 import {
   IMPORT_SCHEMAS,
   SCHEMA_KEYS,
   matchHeaderToField,
   normalizeHeader,
   missingRequiredFields,
-} from '../../lib/importSchemas';
+} from "../../lib/importSchemas";
 
-export default function ImportExcel({ schemaKey = 'SD' }) {
-  const schema = IMPORT_SCHEMAS[schemaKey] || IMPORT_SCHEMAS['SD'];
+export default function ImportExcel({ schemaKey = "SD" }) {
+  const schema = useMemo(() => {
+    return IMPORT_SCHEMAS[schemaKey] || null;
+  }, [schemaKey]);
 
-  const [fileName, setFileName] = useState('');
-  const [headersRaw, setHeadersRaw] = useState([]);
-  const [headerMap, setHeaderMap] = useState({}); // rawHeader -> fieldName
-  const [rows, setRows] = useState([]);
-  const [error, setError] = useState('');
+  const [fileName, setFileName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const hasData = rows.length > 0;
+  const [headersRaw, setHeadersRaw] = useState([]);
+  const [headerMap, setHeaderMap] = useState({});
+  const [rows, setRows] = useState([]);
 
-  // Info skema + validasi
-  const mappedFieldsSet = useMemo(
-    () => new Set(Object.values(headerMap).filter(Boolean)),
-    [headerMap]
-  );
-  const missing = useMemo(
-    () => missingRequiredFields(schema, mappedFieldsSet),
-    [schema, mappedFieldsSet]
-  );
-
-  const handleFile = async (file) => {
-    setError('');
-    setRows([]);
+  const resetAll = () => {
+    setFileName("");
+    setError("");
     setHeadersRaw([]);
     setHeaderMap({});
-    if (!file) return;
+    setRows([]);
+  };
 
-    const allowed =
-      file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv');
-    if (!allowed) {
-      setError('Format tidak didukung. Gunakan .xlsx, .xls, atau .csv');
+  const parseFile = async (file) => {
+    if (!schema) {
+      setError(
+        `SchemaKey "${schemaKey}" tidak dikenali. Pilih salah satu: ${SCHEMA_KEYS.join(
+          ", "
+        )}`
+      );
+      return;
+    }
+
+    const ok =
+      file.name.toLowerCase().endsWith(".xlsx") ||
+      file.name.toLowerCase().endsWith(".xls") ||
+      file.name.toLowerCase().endsWith(".csv");
+
+    if (!ok) {
+      setError("Format tidak didukung. Gunakan .xlsx, .xls, atau .csv");
       return;
     }
 
     setLoading(true);
-    setFileName(file.name);
+    setError("");
 
     try {
-      const buf = await file.arrayBuffer();
-      const wb = read(buf, { type: 'array' });
-      const sheetName = wb.SheetNames[0];
+      let wb;
+
+      if (file.name.toLowerCase().endsWith(".csv")) {
+        const text = await file.text();
+        wb = read(text, { type: "string" });
+      } else {
+        const buf = await file.arrayBuffer();
+        wb = read(buf, { type: "array" });
+      }
+
+      const sheetName = wb.SheetNames?.[0];
+      if (!sheetName) throw new Error("Sheet tidak ditemukan");
+
       const sheet = wb.Sheets[sheetName];
+      if (!sheet) throw new Error("Sheet pertama tidak valid");
 
-      // Ambil header mentah (baris pertama) & JSON rows
-      const headRow = utils.sheet_to_json(sheet, { header: 1, range: 0 })?.[0] || [];
-      const json = utils.sheet_to_json(sheet, { defval: '' });
+      // header mentah baris pertama
+      const headRow =
+        utils.sheet_to_json(sheet, { header: 1, range: 0 })?.[0] || [];
 
-      // Batasi preview 50
-      const limited = json.slice(0, 50);
+      // rows object (key = header mentah), defval biar gak undefined
+      const json = utils.sheet_to_json(sheet, { defval: "" });
 
-      // Otomatis mapping header → field skema (berdasarkan aliases)
+      // Batasi preview 50 baris
+      const limited = Array.isArray(json) ? json.slice(0, 50) : [];
+
+      // Mapping header -> field schema (berdasarkan aliases)
       const map = {};
-      headRow.forEach((raw) => {
+      (headRow || []).forEach((raw) => {
         const field = matchHeaderToField(schema, raw);
-        if (field) map[raw] = field;
+        if (field) map[String(raw)] = field;
       });
 
+      setFileName(file.name);
       setHeadersRaw(headRow);
       setHeaderMap(map);
       setRows(limited);
     } catch (e) {
       console.error(e);
-      setError('Gagal membaca file. Pastikan formatnya benar.');
+      setError(e?.message || "Gagal membaca file. Pastikan formatnya benar.");
+      setFileName("");
+      setHeadersRaw([]);
+      setHeaderMap({});
+      setRows([]);
     } finally {
       setLoading(false);
     }
@@ -82,181 +106,267 @@ export default function ImportExcel({ schemaKey = 'SD' }) {
 
   const onChangeInput = (e) => {
     const f = e.target.files?.[0];
-    if (f) handleFile(f);
+    if (!f) return;
+    resetAll();
+    parseFile(f);
   };
 
-  // Untuk tampilan preview, kita tampilkan kolom berdasarkan header mentah (apa adanya dari file)
-  // Namun, kita beri tanda mana yang berhasil terdeteksi sebagai field skema.
-  const displayHeaders = headersRaw;
+  const mappedFieldsSet = useMemo(() => {
+    return new Set(Object.values(headerMap || {}));
+  }, [headerMap]);
+
+  const missing = useMemo(() => {
+    if (!schema) return [];
+    return missingRequiredFields(schema, mappedFieldsSet);
+  }, [schema, mappedFieldsSet]);
+
+  const unknownHeaders = useMemo(() => {
+    const raw = Array.isArray(headersRaw) ? headersRaw : [];
+    return raw.filter((h) => !headerMap[String(h)]);
+  }, [headersRaw, headerMap]);
+
+  const canProceed = !!schema && fileName && !loading && missing.length === 0;
 
   return (
     <div className="space-y-4">
-      {/* Info Skema Aktif */}
+      {/* Header */}
       <div className="rounded-xl border bg-card text-card-foreground p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold">
-              Import Excel — Skema: <span className="text-primary">{schemaKey}</span>
+              Import Excel — Skema:{" "}
+              <span className="text-primary">{schemaKey}</span>
             </h2>
             <p className="text-sm text-muted-foreground">
-              Kolom wajib: <strong>{schema.required.join(', ')}</strong>
+              Unggah file Excel/CSV untuk pratinjau (maks. 50 baris) dan cek
+              kecocokan header dengan skema.
             </p>
           </div>
-          {/* (opsional) dropdown ganti skema di sini nanti; untuk sekarang tetap via prop */}
+
+          <button
+            type="button"
+            onClick={resetAll}
+            className="rounded-lg border px-3 py-2 text-sm hover:bg-muted"
+            disabled={loading}
+            title="Reset"
+          >
+            Reset
+          </button>
         </div>
-      </div>
 
-      {/* Upload Field */}
-      <div className="rounded-xl border bg-card text-card-foreground p-4">
-        <p className="text-sm text-muted-foreground mb-3">
-          Unggah file Excel/CSV untuk melihat pratinjau (maks. 50 baris pertama) dan periksa
-          kecocokan header dengan skema {schemaKey}.
-        </p>
+        {!schema && (
+          <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50/60 p-3 text-sm">
+            <div className="font-medium">SchemaKey tidak dikenali.</div>
+            <div className="text-muted-foreground">
+              Pilih salah satu:{" "}
+              <span className="font-mono">{SCHEMA_KEYS.join(", ")}</span>
+            </div>
+          </div>
+        )}
 
-        <div className="flex items-center gap-3">
-          <label className="inline-flex items-center rounded-lg border px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground">
+        <div className="mt-4 flex items-center gap-3">
+          <label className="inline-flex items-center rounded-lg border px-3 py-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground">
             <input
               type="file"
               accept=".xlsx,.xls,.csv"
               onChange={onChangeInput}
               className="hidden"
+              disabled={loading || !schema}
             />
-            <span>Pilih File</span>
+            Pilih File
           </label>
 
-          {fileName ? (
-            <span className="text-sm text-muted-foreground">Dipilih: {fileName}</span>
-          ) : (
-            <span className="text-sm text-muted-foreground">Belum ada file</span>
+          {loading && (
+            <div className="text-sm text-muted-foreground flex items-center gap-2">
+              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+              Membaca file...
+            </div>
+          )}
+
+          {fileName && !loading && (
+            <div className="text-sm text-muted-foreground">
+              File: <span className="font-mono">{fileName}</span>
+            </div>
           )}
         </div>
 
-        {loading && <div className="mt-3 text-sm text-muted-foreground">Memproses file…</div>}
-
         {error && (
-          <div className="mt-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
             {error}
           </div>
         )}
       </div>
 
-      {/* Validasi header */}
-      {headersRaw.length > 0 && (
+      {/* Schema info */}
+      {schema && (
         <div className="rounded-xl border bg-card text-card-foreground p-4">
-          <h3 className="font-semibold mb-2">Pencocokan Header</h3>
-          <div className="grid gap-2">
-            {displayHeaders.map((raw) => {
-              const matched = headerMap[raw];
-              const norm = normalizeHeader(raw);
-              return (
-                <div
-                  key={raw}
-                  className={`flex items-center justify-between rounded-lg border px-3 py-2 ${
-                    matched ? 'border-green-300 bg-green-50/60' : 'border-amber-300 bg-amber-50/60'
-                  }`}
-                >
-                  <div className="text-sm">
-                    <div>
-                      <span className="font-medium">Header file:</span> {raw || <em>(kosong)</em>}
-                    </div>
-                    <div className="text-xs text-muted-foreground">normalized: {norm || '-'}</div>
-                  </div>
-                  <div className="text-sm">
-                    {matched ? (
-                      <>
-                        → field: <span className="font-medium text-green-700">{matched}</span>
-                      </>
-                    ) : (
-                      <span className="text-amber-700">belum dikenali</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+          <h3 className="font-semibold mb-2">Aturan Skema</h3>
+          <div className="grid gap-2 text-sm">
+            <div>
+              <span className="font-medium">Wajib:</span>{" "}
+              <span className="font-mono">
+                {(schema.required || []).join(", ")}
+              </span>
+            </div>
+            <div>
+              <span className="font-medium">Opsional:</span>{" "}
+              <span className="font-mono">
+                {(schema.optional || []).join(", ")}
+              </span>
+            </div>
           </div>
-
-          {/* Info kolom wajib yang belum terpenuhi */}
-          {missing.length > 0 ? (
-            <div className="mt-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-              Kolom wajib belum lengkap: <strong>{missing.join(', ')}</strong>. Kamu tetap bisa
-              preview, tapi untuk commit nanti kolom wajib harus dipenuhi (langsung dari file atau
-              nanti lewat mapping manual).
-            </div>
-          ) : (
-            <div className="mt-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-              Semua kolom wajib terdeteksi. Siap ke tahap berikutnya (mapping & commit).
-            </div>
-          )}
         </div>
       )}
 
-      {/* Preview Table */}
-      {hasData && (
-        <div className="rounded-xl border bg-card text-card-foreground">
+      {/* Results */}
+      {schema && fileName && !loading && (
+        <div className="rounded-xl border bg-card text-card-foreground overflow-hidden">
           <div className="p-4 border-b">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm text-muted-foreground">Pratinjau (maks. 50 baris)</div>
-                <div className="text-sm">
-                  {rows.length} baris, {displayHeaders.length} kolom
+            <h3 className="font-semibold mb-1">Validasi Header</h3>
+
+            {missing.length > 0 ? (
+              <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50/60 p-3 text-sm">
+                <div className="font-medium">Kolom wajib belum terpenuhi:</div>
+                <div className="font-mono mt-1">{missing.join(", ")}</div>
+              </div>
+            ) : (
+              <div className="mt-2 rounded-lg border border-green-300 bg-green-50/60 p-3 text-sm">
+                <div className="font-medium">
+                  Header wajib sudah terpenuhi ✅
+                </div>
+                <div className="text-muted-foreground">
+                  Kamu bisa lanjut ke tahap mapping/commit (nanti kita
+                  aktifkan).
                 </div>
               </div>
-              <div className="text-xs text-muted-foreground max-w-[60%] truncate">
-                File: {fileName}
+            )}
+
+            {unknownHeaders.length > 0 && (
+              <div className="mt-3 text-sm text-muted-foreground">
+                Header yang belum dikenali (boleh, tapi tidak dipakai):{" "}
+                <span className="font-mono">
+                  {unknownHeaders.map((h) => normalizeHeader(h)).join(", ")}
+                </span>
               </div>
+            )}
+          </div>
+
+          {/* Header mapping list */}
+          <div className="p-4 border-b">
+            <h4 className="font-semibold mb-2">Pencocokan Header</h4>
+            <div className="grid gap-2">
+              {(headersRaw || []).slice(0, 50).map((raw) => {
+                const matched = headerMap[String(raw)];
+                return (
+                  <div
+                    key={`${raw}`}
+                    className={`flex items-center justify-between rounded-lg border px-3 py-2 ${
+                      matched
+                        ? "border-green-300 bg-green-50/60"
+                        : "border-amber-300 bg-amber-50/60"
+                    }`}
+                  >
+                    <div className="text-sm">
+                      <div>
+                        <span className="font-medium">Header file:</span>{" "}
+                        {String(raw || "") || <em>(kosong)</em>}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Normalized:{" "}
+                        <span className="font-mono">
+                          {normalizeHeader(raw)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-sm">
+                      {matched ? (
+                        <>
+                          <span className="font-medium">→</span>{" "}
+                          <span className="font-mono">{matched}</span>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">
+                          Tidak dipakai
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          <div className="overflow-auto">
-            <table className="min-w-[720px] w-full text-sm">
-              <thead className="bg-muted">
-                <tr className="[&>th]:px-3 [&>th]:py-2 text-left">
-                  {displayHeaders.map((h) => (
-                    <th key={h} className="font-medium">
-                      {h}
-                      {headerMap[h] ? (
-                        <span className="ml-1 text-[10px] text-green-700">({headerMap[h]})</span>
-                      ) : (
-                        <span className="ml-1 text-[10px] text-amber-700">(unknown)</span>
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r, i) => (
-                  <tr key={i} className="[&>td]:px-3 [&>td]:py-2 border-t">
-                    {displayHeaders.map((h) => (
-                      <td key={h + i}>{String(r[h] ?? '')}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {/* Preview */}
+          <div className="p-4">
+            <h4 className="font-semibold mb-2">
+              Preview Data (maks. 50 baris)
+            </h4>
 
-          {/* Tombol aksi berikutnya (disable dulu; next step kita isi mapping & commit) */}
-          <div className="p-4 border-t flex items-center gap-2">
-            <button
-              disabled
-              className="rounded-lg border px-3 py-2 text-muted-foreground"
-              title="Langkah berikutnya: Mapping kolom manual"
-            >
-              Mapping Kolom (segera)
-            </button>
-            <button
-              disabled={missing.length > 0}
-              className={`rounded-lg border px-3 py-2 ${
-                missing.length > 0 ? 'text-muted-foreground' : 'text-foreground'
-              }`}
-              title={
-                missing.length > 0
-                  ? 'Lengkapi kolom wajib dulu'
-                  : 'Langkah berikutnya: Commit ke data'
-              }
-            >
-              Commit Data (segera)
-            </button>
+            {rows.length === 0 ? (
+              <div className="text-sm text-muted-foreground">
+                Tidak ada data untuk ditampilkan.
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-muted/40">
+                    <tr>
+                      {Object.keys(rows[0] || {})
+                        .slice(0, 16)
+                        .map((k) => (
+                          <th
+                            key={k}
+                            className="text-left px-3 py-2 border-b whitespace-nowrap"
+                          >
+                            {k}
+                          </th>
+                        ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.slice(0, 10).map((r, idx) => (
+                      <tr key={idx} className="even:bg-muted/20">
+                        {Object.keys(rows[0] || {})
+                          .slice(0, 16)
+                          .map((k) => (
+                            <td
+                              key={k}
+                              className="px-3 py-2 border-b whitespace-nowrap"
+                            >
+                              {String(r?.[k] ?? "")}
+                            </td>
+                          ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="mt-4 flex items-center gap-2">
+              <button
+                disabled
+                className="rounded-lg border px-3 py-2 text-muted-foreground"
+                title="Langkah berikutnya: Mapping kolom manual"
+              >
+                Mapping Kolom (segera)
+              </button>
+              <button
+                disabled={!canProceed}
+                className={`rounded-lg border px-3 py-2 ${
+                  canProceed
+                    ? "text-foreground hover:bg-muted"
+                    : "text-muted-foreground"
+                }`}
+                title={
+                  canProceed
+                    ? "Langkah berikutnya: Commit ke data"
+                    : "Lengkapi kolom wajib dulu"
+                }
+              >
+                Commit Data (segera)
+              </button>
+            </div>
           </div>
         </div>
       )}

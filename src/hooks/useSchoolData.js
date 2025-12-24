@@ -1,132 +1,114 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/lib/supabase/lib/client";
 
-// --- KONFIGURASI FILE DATA ---
-const DATA_FILES = {
-  SD: "/data/sd_new.json",
-  PAUD: "/data/paud.json",
-  PKBM: "/data/pkbm.json",
-  TK: "/data/paud.json",
-  SMP: "/data/smp.json", // Diaktifkan untuk mendukung SMP
-};
+// Biar StatCards tetap jalan walau bentuk data dari RPC beda-beda
+function normalizeForStats(row, operatorType) {
+  const studentCount =
+    Number(
+      row?.student_count ??
+        row?.studentCount ??
+        row?.siswa?.jumlahSiswa ??
+        row?.siswa?.jumlah_siswa ??
+        0
+    ) || 0;
 
-// --- FUNGSI-FUNGSI TRANSFORMASI DATA ---
+  const heavyDamage =
+    Number(
+      row?.class_condition?.classrooms_heavy_damage ??
+        row?.prasarana?.ruangKelas?.rusakBerat ??
+        row?.prasarana?.ruangKelas?.heavy_damage ??
+        0
+    ) || 0;
 
-const transformSdData = (data, type) => {
-  return Object.entries(data).flatMap(([kecamatan, schools]) =>
-    schools.map((school) => ({
-      ...school,
-      kecamatan,
-      schoolType: type,
-      jenjang: type,
-    }))
-  );
-};
+  // pastikan field yang dipakai StatCards selalu ada
+  const class_condition = {
+    ...(row?.class_condition || {}),
+    classrooms_heavy_damage: heavyDamage,
+  };
 
-const transformPaudData = (data, type) => {
-  return Object.entries(data).flatMap(([kecamatan, schools]) =>
-    schools.map((school) => ({
-      ...school,
-      kecamatan,
-      schoolType: type,
-      jenjang: school.type, // TK, KB, dll.
-    }))
-  );
-};
+  // jenjang defensif (buat filter TK/PAUD kalau perlu)
+  const jenjang = row?.jenjang ?? row?.meta?.jenjang ?? operatorType;
 
-const transformPkbmData = (data, type) => {
-  return Object.entries(data).flatMap(([kecamatan, schools]) =>
-    schools.map((school) => ({
-      ...school,
-      kecamatan,
-      schoolType: type,
-      jenjang: type,
-    }))
-  );
-};
+  return {
+    ...row,
+    jenjang,
+    student_count: studentCount,
+    class_condition,
+  };
+}
 
-// FUNGSI BARU UNTUK MEMPROSES SMP.JSON
-const transformSmpData = (data, type) => {
-  return Object.entries(data).flatMap(([kecamatan, schools]) =>
-    schools.map((school) => ({
-      ...school,
-      kecamatan,
-      schoolType: type,
-      jenjang: type,
-    }))
-  );
-};
-
-// --- CUSTOM HOOK UTAMA ---
 export function useSchoolData(operatorType) {
   const [data, setData] = useState([]);
+  const [totalSiswa, setTotalSiswa] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (!operatorType || !DATA_FILES[operatorType]) {
-      console.warn(`Tipe operator ${operatorType} tidak valid.`);
+  const fetchFromDb = useCallback(async () => {
+    if (!operatorType) {
       setData([]);
       setIsLoading(false);
+      setError(null);
       return;
     }
 
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
-      const dataUrl = DATA_FILES[operatorType];
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        const response = await fetch(dataUrl);
-        if (!response.ok) throw new Error(`Gagal memuat ${dataUrl}`);
-        const rawData = await response.json();
+    try {
+      // ✅ SUPABASE ONLY
+      const { data: dbData, error: dbErr } = await supabase.rpc(
+        "get_schools_full_report",
+        { jenjang_filter: operatorType }
+      );
 
-        let transformedSchools = [];
-        let finalFilteredSchools = [];
+      console.log("sekolah detail : ", dbData);
+      // Menggunakan satu kali reduce untuk mendapatkan total male dan female
+      const totals = dbData.reduce(
+        (acc, school) => {
+          acc.male += school.st_male;
+          acc.female += school.st_female;
+          return acc;
+        },
+        { male: 0, female: 0 }
+      ); // <-- Nilai awal diatur sebagai objek dengan 0
 
-        // Ditambahkan case untuk SMP
-        switch (operatorType) {
-          case "SD":
-            transformedSchools = transformSdData(rawData, operatorType);
-            break;
-          case "SMP":
-            transformedSchools = transformSmpData(rawData, operatorType);
-            break;
-          case "PAUD":
-          case "TK":
-            transformedSchools = transformPaudData(rawData, operatorType);
-            break;
-          case "PKBM":
-            transformedSchools = transformPkbmData(rawData, operatorType);
-            break;
-          default:
-            transformedSchools = [];
-        }
+      const totalSiswa = totals.female + totals.male;
+      setTotalSiswa(totalSiswa);
 
-        if (operatorType === "TK") {
-          finalFilteredSchools = transformedSchools.filter(
-            (school) => school.jenjang === "TK"
+      if (dbErr) throw new Error(dbErr.message || "Gagal memuat data sekolah");
+
+      const raw = Array.isArray(dbData) ? dbData : [];
+      let normalized = raw.map((r) => normalizeForStats(r, operatorType));
+
+      // Filter defensif TK/PAUD jika jenjang tersedia
+      if (operatorType === "TK") {
+        normalized = normalized.filter(
+          (s) => String(s.jenjang || "").toUpperCase() === "TK"
+        );
+      } else if (operatorType === "PAUD") {
+        const hasJenjang = normalized.some((s) => s.jenjang != null);
+        if (hasJenjang) {
+          normalized = normalized.filter(
+            (s) => String(s.jenjang || "").toUpperCase() !== "TK"
           );
-        } else if (operatorType === "PAUD") {
-          finalFilteredSchools = transformedSchools.filter(
-            (school) => school.jenjang !== "TK"
-          );
-        } else {
-          finalFilteredSchools = transformedSchools;
         }
-
-        setData(finalFilteredSchools);
-      } catch (err) {
-        setError(err.message);
-        setData([]);
-      } finally {
-        setIsLoading(false);
       }
-    };
 
-    fetchData();
+      setData(normalized);
+    } catch (err) {
+      setError(err?.message || "Terjadi kesalahan saat memuat data");
+      setData([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [operatorType]);
 
-  return { data, isLoading, error };
+  useEffect(() => {
+    fetchFromDb();
+  }, [fetchFromDb]);
+
+  // expose reload kalau nanti dibutuhkan
+  return { data, isLoading, error, reload: fetchFromDb, totalSiswa };
 }

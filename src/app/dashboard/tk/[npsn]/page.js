@@ -1,18 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 
-import { BookOpen, ArrowLeft, Loader2 } from "lucide-react";
-import { Button } from "@/app/components/ui/button";
-import SchoolDetailsTabs from "@/app/components/SchoolDetailsTabs";
+import Sidebar from "../../../components/Sidebar";
+import { Button } from "../../../components/ui/button";
+import SchoolDetailsTabs from "../../../components/SchoolDetailsTabs";
+import {
+  BookOpen,
+  ArrowLeft,
+  Loader2,
+  PencilLine,
+  RefreshCw,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase/lib/client";
 
-const PAUD_DATA_URL = "/data/paud.json";
-
-// Kita pakai "PAUD" supaya UI detail tetap masuk mode PAUD/TK (isPaud = true)
-const OPERATOR_TYPE = "PAUD";
+const OPERATOR_TYPE = "TK";
 
 const EMPTY_SISWA_DETAIL = {
   kelas1: { l: 0, p: 0 },
@@ -36,56 +40,85 @@ const EMPTY_GURU_DETAIL = {
   kekuranganGuru: 0,
 };
 
-function transformSingleTkSchool(rawSchool, kecamatanName) {
-  const school = {
-    ...rawSchool,
-    kecamatan: kecamatanName,
-    jenjang: rawSchool.type, // "TK", "KB", "SPS", dll
-  };
+function normalizeDbTkDetail(dbDataRaw) {
+  if (!dbDataRaw) return null;
 
-  const totalSiswa = parseInt(school.student_count, 10) || 0;
+  const dbData = Array.isArray(dbDataRaw) ? dbDataRaw[0] : dbDataRaw;
+  if (!dbData) return null;
 
+  // kalau sudah format siap pakai
+  if (dbData.namaSekolah && dbData.npsn) {
+    return {
+      siswa: { jumlahSiswa: 0, ...EMPTY_SISWA_DETAIL, ...(dbData.siswa || {}) },
+      guru: { ...EMPTY_GURU_DETAIL, ...(dbData.guru || {}) },
+      siswaAbk: dbData.siswaAbk || {},
+      kelembagaan: dbData.kelembagaan || {},
+      prasarana: dbData.prasarana || {
+        ukuran: {},
+        ruangKelas: {},
+        toiletGuruSiswa: {},
+      },
+      rombel: dbData.rombel || dbData.meta?.rombel || {},
+      schoolType: dbData.schoolType || OPERATOR_TYPE,
+      jenjang: dbData.jenjang || "TK",
+      status: dbData.status || "SWASTA",
+      dataStatus: dbData.dataStatus || "Aktif",
+      st_male: Number(dbData.st_male || 0),
+      st_female: Number(dbData.st_female || 0),
+      id: dbData.id || dbData.npsn,
+      ...dbData,
+    };
+  }
+
+  // defensif kalau mentah
+  const npsn = String(dbData.npsn || "");
+  const namaSekolah = dbData.name || dbData.school_name || "";
+  const totalSiswa = Number(dbData.student_count || 0) || 0;
+
+  const kecamatan =
+    dbData.meta?.kecamatan ||
+    dbData.location?.subdistrict ||
+    dbData.subdistrict ||
+    dbData.kecamatan ||
+    "";
+
+  const desa =
+    dbData.meta?.desa ||
+    dbData.location?.village ||
+    dbData.village_name ||
+    dbData.desa ||
+    "";
+
+  const rombel = dbData.meta?.rombel || dbData.rombel || {};
+
+  // ✅ PENTING: keep raw fields (meta, staff_summary, dll) supaya Tabs bisa normalize guru
   return {
-    id: school.npsn,
-    namaSekolah: school.name,
-    npsn: school.npsn,
-    kecamatan: school.kecamatan,
-    status: "SWASTA",
-    schoolType: OPERATOR_TYPE, // biar masuk mode PAUD/TK di tabs
-    jenjang: school.jenjang,
+    ...dbData,
+    id: npsn,
+    namaSekolah,
+    npsn,
+    kecamatan,
+    desa,
+    status: dbData.status || "SWASTA",
+    schoolType: OPERATOR_TYPE,
+    jenjang: dbData.jenjang || dbData.meta?.jenjang || "TK",
     dataStatus: totalSiswa > 0 ? "Aktif" : "Data Belum Lengkap",
-
-    st_male: parseInt(school.st_male, 10) || 0,
-    st_female: parseInt(school.st_female, 10) || 0,
-
+    st_male: Number(dbData.st_male || 0),
+    st_female: Number(dbData.st_female || 0),
     siswa: {
       jumlahSiswa: totalSiswa,
       ...EMPTY_SISWA_DETAIL,
+      ...(dbData.siswa || {}),
     },
-
-    rombel: school.rombel || {},
-
-    prasarana: {
-      ukuran: {
-        tanah: school.building_status?.tanah?.land_available,
-      },
-      ruangKelas: {
-        jumlah: school.class_condition?.total_room,
-        baik: school.class_condition?.classrooms_good,
-        rusakSedang: school.class_condition?.classrooms_moderate_damage,
-        rusakBerat: school.class_condition?.classrooms_heavy_damage,
-      },
-      toiletGuruSiswa: {
-        jumlah: school.toilets?.n_available,
-        baik: school.toilets?.good,
-        rusakSedang: school.toilets?.moderate_damage,
-        rusakBerat: school.toilets?.heavy_damage,
-      },
+    rombel,
+    prasarana: dbData.prasarana || {
+      ukuran: {},
+      ruangKelas: {},
+      toiletGuruSiswa: {},
     },
-
-    guru: EMPTY_GURU_DETAIL,
-    siswaAbk: {},
-    kelembagaan: {},
+    guru: { ...EMPTY_GURU_DETAIL, ...(dbData.guru || {}) },
+    siswaAbk: dbData.siswaAbk || {},
+    kelembagaan: dbData.kelembagaan || {},
   };
 }
 
@@ -98,123 +131,133 @@ export default function TkDetailPage() {
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState("");
 
+  const loadDetail = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+      setDetail(null);
+
+      if (!npsnParam) throw new Error("NPSN tidak valid");
+
+      const { data: dbData, error: dbErr } = await supabase.rpc(
+        "get_school_detail_by_npsn",
+        { input_npsn: String(npsnParam) }
+      );
+
+      if (dbErr)
+        throw new Error(dbErr.message || "Gagal memuat detail dari database");
+
+      const normalized = normalizeDbTkDetail(dbData);
+      if (!normalized) throw new Error("Data TK tidak ditemukan di database");
+
+      // TK route harus TK
+      if (String(normalized.jenjang || "").toUpperCase() !== "TK") {
+        throw new Error(
+          "Data ini bukan TK. Coba buka di menu PAUD jika jenjangnya PAUD."
+        );
+      }
+
+      setDetail(normalized);
+    } catch (e) {
+      setError(e?.message || "Terjadi kesalahan saat memuat data");
+    } finally {
+      setLoading(false);
+    }
+  }, [npsnParam]);
+
   useEffect(() => {
     let ignore = false;
 
-    async function load() {
-      try {
-        setLoading(true);
-        setError("");
+    (async () => {
+      if (ignore) return;
+      await loadDetail();
+    })();
 
-        if (!npsnParam) throw new Error("NPSN tidak valid");
-
-        // 1) Coba DB dulu (kalau TK sudah masuk Supabase)
-        try {
-          const { data, error } = await supabase.rpc(
-            "get_school_detail_by_npsn",
-            {
-              input_npsn: npsnParam,
-            }
-          );
-
-          if (!error && data) {
-            if (!ignore) setDetail(data);
-            return;
-          }
-        } catch (_) {
-          // fallback JSON
-        }
-
-        // 2) Fallback JSON statis
-        const res = await fetch(PAUD_DATA_URL);
-        if (!res.ok) throw new Error("Gagal memuat data TK");
-
-        const rawData = await res.json();
-
-        const transformed = Object.entries(rawData).flatMap(
-          ([kecamatanName, schoolsInKecamatan]) =>
-            schoolsInKecamatan.map((s) =>
-              transformSingleTkSchool(s, kecamatanName)
-            )
-        );
-
-        // TK detail: ambil jenjang === "TK"
-        const onlyTk = transformed.filter((s) => s.jenjang === "TK");
-
-        const found = onlyTk.find((s) => String(s.npsn) === String(npsnParam));
-        if (!found)
-          throw new Error("Satuan TK dengan NPSN tersebut tidak ditemukan");
-
-        if (!ignore) setDetail(found);
-      } catch (e) {
-        if (!ignore) {
-          setError(e.message || "Terjadi kesalahan saat memuat data");
-          setDetail(null);
-        }
-      } finally {
-        if (!ignore) setLoading(false);
-      }
-    }
-
-    load();
     return () => {
       ignore = true;
     };
-  }, [npsnParam]);
+  }, [loadDetail]);
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-            <BookOpen className="h-4 w-4" />
-            <span>Detail TK</span>
+    <>
+      <Sidebar />
+      <div className="min-h-screen bg-background md:pl-0">
+        <main className="py-6 px-2 sm:px-3 md:px-4 space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                <BookOpen className="h-4 w-4" />
+                <span>Detail TK</span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
+                Detail TK
+              </h1>
+              {npsnParam && (
+                <p className="text-sm text-muted-foreground">
+                  NPSN: <span className="font-mono">{npsnParam}</span>
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.back()}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Kembali
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadDetail}
+                className="flex items-center gap-2"
+                disabled={loading}
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+                />
+                Coba lagi
+              </Button>
+
+              <Link href="/dashboard/tk">
+                <Button variant="outline" size="sm">
+                  Ke Data TK
+                </Button>
+              </Link>
+
+              {npsnParam && (
+                <Link href={`/dashboard/tk/edit/${npsnParam}`}>
+                  <Button size="sm">
+                    <PencilLine className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
-            Detail TK
-          </h1>
-          {npsnParam && (
-            <p className="text-sm text-muted-foreground">
-              NPSN: <span className="font-mono">{npsnParam}</span>
-            </p>
+
+          {loading && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Memuat detail…
+            </div>
           )}
-        </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.back()}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Kembali
-          </Button>
+          {!loading && error && (
+            <div className="p-4 border border-destructive/30 rounded-lg text-destructive text-sm">
+              {error}
+            </div>
+          )}
 
-          <Link href="/dashboard/tk">
-            <Button variant="outline" size="sm">
-              Ke Data TK
-            </Button>
-          </Link>
-        </div>
+          {!loading && !error && detail && (
+            <SchoolDetailsTabs school={detail} />
+          )}
+        </main>
       </div>
-
-      {/* Konten */}
-      {loading && (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Memuat detail...
-        </div>
-      )}
-
-      {!loading && error && (
-        <div className="p-4 border border-destructive/30 rounded-lg text-destructive text-sm">
-          {error}
-        </div>
-      )}
-
-      {!loading && !error && detail && <SchoolDetailsTabs school={detail} />}
-    </div>
+    </>
   );
 }
