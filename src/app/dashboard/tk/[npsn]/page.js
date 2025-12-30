@@ -18,17 +18,13 @@ import { supabase } from "@/lib/supabase/lib/client";
 
 const OPERATOR_TYPE = "TK";
 
-const EMPTY_SISWA_DETAIL = {
-  kelas1: { l: 0, p: 0 },
-  kelas2: { l: 0, p: 0 },
-  kelas3: { l: 0, p: 0 },
-  kelas4: { l: 0, p: 0 },
-  kelas5: { l: 0, p: 0 },
-  kelas6: { l: 0, p: 0 },
-  kelas7: { l: 0, p: 0 },
-  kelas8: { l: 0, p: 0 },
-  kelas9: { l: 0, p: 0 },
-};
+// ✅ FIX 1: Gunakan struktur data TK/PAUD (TKA, TKB, dll), bukan Kelas 1-9
+const makeEmptySiswaDetail = () => ({
+  tka: { l: 0, p: 0 },
+  tkb: { l: 0, p: 0 },
+  kb: { l: 0, p: 0 },
+  sps_tpa: { l: 0, p: 0 },
+});
 
 const EMPTY_GURU_DETAIL = {
   jumlahGuru: 0,
@@ -40,85 +36,131 @@ const EMPTY_GURU_DETAIL = {
   kekuranganGuru: 0,
 };
 
-function normalizeDbTkDetail(dbDataRaw) {
-  if (!dbDataRaw) return null;
+// ✅ FIX 2: Tambahkan fungsi parser ini (Sama persis dengan di PAUD)
+function buildPaudSiswaFromClasses(rows) {
+  const siswa = makeEmptySiswaDetail();
+  const list = Array.isArray(rows) ? rows : [];
 
+  for (const r of list) {
+    const gradeRaw = String(r?.grade || "").trim();
+    const count = Number(r?.count || 0);
+
+    if (!gradeRaw || !Number.isFinite(count) || count === 0) continue;
+
+    // Ganti underscore jadi spasi biar Regex \b (word boundary) jalan
+    // "kb_L" -> "kb l"
+    const g = gradeRaw.replace(/_/g, " ").toLowerCase();
+
+    // Deteksi gender
+    const isFemale = /perempuan|wanita|\bP\b| p\b/i.test(g);
+    const gender = isFemale ? "p" : "l";
+
+    // --- LOGIC PENCOCOKAN ---
+    if (/\btka\b/.test(g) || /tk a/.test(g) || /kelompok a/.test(g)) {
+      siswa.tka[gender] += count;
+      continue;
+    }
+    if (/\btkb\b/.test(g) || /tk b/.test(g) || /kelompok b/.test(g)) {
+      siswa.tkb[gender] += count;
+      continue;
+    }
+    if (/\bkb\b/.test(g) || /bermain/.test(g) || /kelompok bermain/.test(g)) {
+      siswa.kb[gender] += count;
+      continue;
+    }
+    if (/\bsps\b/.test(g) || /\btpa\b/.test(g) || /sps\/tpa/.test(g)) {
+      siswa.sps_tpa[gender] += count;
+      continue;
+    }
+    // Fallback
+    if (g.includes("kelas1") || /\b1\b/.test(g)) {
+      siswa.tka[gender] += count;
+      continue;
+    }
+    if (g.includes("kelas2") || /\b2\b/.test(g)) {
+      siswa.tkb[gender] += count;
+      continue;
+    }
+  }
+  return siswa;
+}
+
+function normalizeDbTkDetail(dbDataRaw, parsedSiswaClasses) {
+  if (!dbDataRaw) return null;
   const dbData = Array.isArray(dbDataRaw) ? dbDataRaw[0] : dbDataRaw;
   if (!dbData) return null;
 
-  // kalau sudah format siap pakai
-  if (dbData.namaSekolah && dbData.npsn) {
-    return {
-      siswa: { jumlahSiswa: 0, ...EMPTY_SISWA_DETAIL, ...(dbData.siswa || {}) },
-      guru: { ...EMPTY_GURU_DETAIL, ...(dbData.guru || {}) },
-      siswaAbk: dbData.siswaAbk || {},
-      kelembagaan: dbData.kelembagaan || {},
-      prasarana: dbData.prasarana || {
-        ukuran: {},
-        ruangKelas: {},
-        toiletGuruSiswa: {},
-      },
-      rombel: dbData.rombel || dbData.meta?.rombel || {},
-      schoolType: dbData.schoolType || OPERATOR_TYPE,
-      jenjang: dbData.jenjang || "TK",
-      status: dbData.status || "SWASTA",
-      dataStatus: dbData.dataStatus || "Aktif",
-      st_male: Number(dbData.st_male || 0),
-      st_female: Number(dbData.st_female || 0),
-      id: dbData.id || dbData.npsn,
-      ...dbData,
-    };
+  // Ambil jenjang asli dari DB atau fallback ke TK
+  const realJenjang =
+    dbData.meta?.jenjang || dbData.jenjang || dbData.schoolType || "TK";
+
+  const totalSiswaHeader =
+    Number(dbData.student_count || dbData?.siswa?.jumlahSiswa || 0) || 0;
+
+  const stMale = Number(dbData.st_male || 0) || 0;
+  const stFemale = Number(dbData.st_female || 0) || 0;
+
+  // ✅ FIX 3: Gunakan hasil parsing school_classes
+  let siswaDetail = parsedSiswaClasses || makeEmptySiswaDetail();
+
+  // Hitung total dari detail yang berhasil di-parse
+  const totalParsed =
+    (siswaDetail.tka?.l || 0) +
+    (siswaDetail.tka?.p || 0) +
+    (siswaDetail.tkb?.l || 0) +
+    (siswaDetail.tkb?.p || 0) +
+    (siswaDetail.kb?.l || 0) +
+    (siswaDetail.kb?.p || 0) +
+    (siswaDetail.sps_tpa?.l || 0) +
+    (siswaDetail.sps_tpa?.p || 0);
+
+  // Fallback: Jika detail kosong tapi header ada, masukkan ke TKA/TKB (default)
+  // Ini mencegah UI 0 semua padahal ada total siswa
+  if (totalParsed === 0 && totalSiswaHeader > 0) {
+    const reset = makeEmptySiswaDetail();
+    // Asumsi default TK: masuk TKA
+    reset.tka.l = stMale;
+    reset.tka.p = stFemale;
+    siswaDetail = reset;
   }
 
-  // defensif kalau mentah
-  const npsn = String(dbData.npsn || "");
-  const namaSekolah = dbData.name || dbData.school_name || "";
-  const totalSiswa = Number(dbData.student_count || 0) || 0;
+  // Rombel (angka)
+  const rombel = dbData?.meta?.rombel ||
+    dbData?.rombel || {
+      tka: 0,
+      tkb: 0,
+      kb: 0,
+      sps_tpa: 0,
+    };
 
-  const kecamatan =
-    dbData.meta?.kecamatan ||
-    dbData.location?.subdistrict ||
-    dbData.subdistrict ||
-    dbData.kecamatan ||
-    "";
-
-  const desa =
-    dbData.meta?.desa ||
-    dbData.location?.village ||
-    dbData.village_name ||
-    dbData.desa ||
-    "";
-
-  const rombel = dbData.meta?.rombel || dbData.rombel || {};
-
-  // ✅ PENTING: keep raw fields (meta, staff_summary, dll) supaya Tabs bisa normalize guru
   return {
     ...dbData,
-    id: npsn,
-    namaSekolah,
-    npsn,
-    kecamatan,
-    desa,
+    id: dbData.id || dbData.school_id || null,
+    namaSekolah:
+      dbData.namaSekolah || dbData.name || dbData.school_name || "Tanpa Nama",
+    npsn: String(dbData.npsn || ""),
     status: dbData.status || "SWASTA",
-    schoolType: OPERATOR_TYPE,
-    jenjang: dbData.jenjang || dbData.meta?.jenjang || "TK",
-    dataStatus: totalSiswa > 0 ? "Aktif" : "Data Belum Lengkap",
-    st_male: Number(dbData.st_male || 0),
-    st_female: Number(dbData.st_female || 0),
+    schoolType: realJenjang,
+    jenjang: realJenjang,
+    dataStatus: totalSiswaHeader > 0 ? "Aktif" : "Data Belum Lengkap",
+
+    // ✅ Masukkan struktur siswa yang benar (tka/tkb/...)
     siswa: {
-      jumlahSiswa: totalSiswa,
-      ...EMPTY_SISWA_DETAIL,
-      ...(dbData.siswa || {}),
+      jumlahSiswa: totalSiswaHeader,
+      ...siswaDetail,
     },
     rombel,
+    guru: {
+      ...EMPTY_GURU_DETAIL,
+      ...(dbData.guru || dbData.meta?.guru || {}),
+    },
+    siswaAbk: dbData.siswaAbk || {},
+    kelembagaan: dbData.kelembagaan || {},
     prasarana: dbData.prasarana || {
       ukuran: {},
       ruangKelas: {},
       toiletGuruSiswa: {},
     },
-    guru: { ...EMPTY_GURU_DETAIL, ...(dbData.guru || {}) },
-    siswaAbk: dbData.siswaAbk || {},
-    kelembagaan: dbData.kelembagaan || {},
   };
 }
 
@@ -139,44 +181,63 @@ export default function TkDetailPage() {
 
       if (!npsnParam) throw new Error("NPSN tidak valid");
 
-      const { data: dbData, error: dbErr } = await supabase.rpc(
-        "get_school_detail_by_npsn",
-        { input_npsn: String(npsnParam) }
-      );
+      // 1. Ambil data dasar sekolah
+      const { data: schoolBasic, error: schoolErr } = await supabase
+        .from("schools")
+        .select("*")
+        .eq("npsn", String(npsnParam))
+        .maybeSingle();
 
-      if (dbErr)
-        throw new Error(dbErr.message || "Gagal memuat detail dari database");
+      if (schoolErr)
+        throw new Error(schoolErr.message || "Gagal memuat sekolah");
+      if (!schoolBasic) throw new Error("Sekolah tidak ditemukan");
 
-      const normalized = normalizeDbTkDetail(dbData);
-      if (!normalized) throw new Error("Data TK tidak ditemukan di database");
+      let parsedSiswa = makeEmptySiswaDetail();
 
-      // TK route harus TK
-      if (String(normalized.jenjang || "").toUpperCase() !== "TK") {
+      // 2. ✅ FIX 4: Ambil detail kelas dari school_classes
+      if (schoolBasic.id) {
+        const { data: classRows, error: classErr } = await supabase
+          .from("school_classes")
+          .select("grade, count, school_id")
+          .eq("school_id", schoolBasic.id);
+
+        if (!classErr && classRows) {
+          parsedSiswa = buildPaudSiswaFromClasses(classRows);
+        }
+      }
+
+      const normalized = normalizeDbTkDetail(schoolBasic, parsedSiswa);
+
+      // Validasi Longgar (Allow TK & PAUD)
+      const currentJenjang = String(normalized.jenjang || "").toUpperCase();
+      const allowed = ["TK", "PAUD", "KB", "TPA", "SPS"];
+
+      if (!allowed.includes(currentJenjang) && !currentJenjang.includes("TK")) {
         throw new Error(
-          "Data ini bukan TK. Coba buka di menu PAUD jika jenjangnya PAUD."
+          `Data sekolah ini (Jenjang: ${currentJenjang}) tidak sesuai dengan menu TK/PAUD.`
         );
       }
 
       setDetail(normalized);
     } catch (e) {
-      setError(e?.message || "Terjadi kesalahan saat memuat data");
+      console.error(e);
+      setError(e?.message || "Terjadi kesalahan");
     } finally {
       setLoading(false);
     }
   }, [npsnParam]);
 
   useEffect(() => {
-    let ignore = false;
+    if (npsnParam) loadDetail();
+  }, [loadDetail, npsnParam]);
 
-    (async () => {
-      if (ignore) return;
-      await loadDetail();
-    })();
-
-    return () => {
-      ignore = true;
-    };
-  }, [loadDetail]);
+  // Logic Smart Edit Link
+  const getEditLink = () => {
+    if (!npsnParam || !detail) return "#";
+    const j = String(detail.jenjang || "").toUpperCase();
+    const basePath = j === "PAUD" || j === "KB" ? "paud" : "tk";
+    return `/dashboard/${basePath}/edit/${npsnParam}`;
+  };
 
   return (
     <>
@@ -187,10 +248,10 @@ export default function TkDetailPage() {
             <div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                 <BookOpen className="h-4 w-4" />
-                <span>Detail TK</span>
+                <span>Detail TK / PAUD</span>
               </div>
               <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
-                Detail TK
+                {detail?.namaSekolah || "Detail Sekolah"}
               </h1>
               {npsnParam && (
                 <p className="text-sm text-muted-foreground">
@@ -214,8 +275,8 @@ export default function TkDetailPage() {
                 variant="outline"
                 size="sm"
                 onClick={loadDetail}
-                className="flex items-center gap-2"
                 disabled={loading}
+                className="flex items-center gap-2"
               >
                 <RefreshCw
                   className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
@@ -229,11 +290,11 @@ export default function TkDetailPage() {
                 </Button>
               </Link>
 
-              {npsnParam && (
-                <Link href={`/dashboard/tk/edit/${npsnParam}`}>
+              {npsnParam && detail && (
+                <Link href={getEditLink()}>
                   <Button size="sm">
                     <PencilLine className="h-4 w-4 mr-2" />
-                    Edit
+                    Edit Data
                   </Button>
                 </Link>
               )}
@@ -243,12 +304,12 @@ export default function TkDetailPage() {
           {loading && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Memuat detail…
+              Memuat detail...
             </div>
           )}
 
           {!loading && error && (
-            <div className="p-4 border border-destructive/30 rounded-lg text-destructive text-sm">
+            <div className="p-4 border border-destructive/30 rounded-lg text-destructive text-sm bg-destructive/5">
               {error}
             </div>
           )}

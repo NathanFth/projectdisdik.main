@@ -18,8 +18,6 @@ import { supabase } from "@/lib/supabase/lib/client";
 
 const OPERATOR_TYPE = "PAUD";
 
-// Struktur detail siswa PAUD/TK yang konsisten dengan config:
-// rombelTypes: tka, tkb, kb, sps_tpa
 const makeEmptySiswaDetail = () => ({
   tka: { l: 0, p: 0 },
   tkb: { l: 0, p: 0 },
@@ -37,7 +35,6 @@ const EMPTY_GURU_DETAIL = {
   kekuranganGuru: 0,
 };
 
-// Parsing dari tabel school_classes => siswa detail {l,p} per tipe (tka/tkb/kb/sps_tpa)
 function buildPaudSiswaFromClasses(rows) {
   const siswa = makeEmptySiswaDetail();
   const list = Array.isArray(rows) ? rows : [];
@@ -48,14 +45,16 @@ function buildPaudSiswaFromClasses(rows) {
 
     if (!gradeRaw || !Number.isFinite(count) || count === 0) continue;
 
-    // Deteksi gender dari teks grade.
-    // NOTE: grade kamu bisa "tka_L", "tka_P", dll.
-    const isFemale = /perempuan|wanita|\bP\b|_P\b/i.test(gradeRaw);
+    // ✅ FIX UTAMA: Ganti underscore (_) jadi spasi
+    // "kb_L" -> "kb l", "tka_P" -> "tka p"
+    // Ini membuat Regex \b (batas kata) bisa mendeteksi "kb" atau "tka" dengan benar.
+    const g = gradeRaw.replace(/_/g, " ").toLowerCase();
+
+    // Deteksi gender
+    const isFemale = /perempuan|wanita|\bP\b| p\b/i.test(g);
     const gender = isFemale ? "p" : "l";
 
-    // Mapping label grade -> key
-    // Kita bikin toleran: "TK A", "tka", "kelas1", dsb.
-    const g = gradeRaw.toLowerCase();
+    // --- LOGIC PENCOCOKAN ---
 
     // tka
     if (/\btka\b/.test(g) || /tk a/.test(g) || /kelompok a/.test(g)) {
@@ -69,7 +68,7 @@ function buildPaudSiswaFromClasses(rows) {
       continue;
     }
 
-    // kb
+    // kb (Kelompok Bermain)
     if (/\bkb\b/.test(g) || /bermain/.test(g) || /kelompok bermain/.test(g)) {
       siswa.kb[gender] += count;
       continue;
@@ -81,8 +80,7 @@ function buildPaudSiswaFromClasses(rows) {
       continue;
     }
 
-    // Fallback legacy berbasis angka (kalau ada yang nulis "kelas1"/"kelas2")
-    // kelas1 => tka, kelas2 => tkb (asumsi lama)
+    // Fallback legacy (jika ada data lama format kelas1/kelas2)
     if (g.includes("kelas1") || /\b1\b/.test(g)) {
       siswa.tka[gender] += count;
       continue;
@@ -96,11 +94,15 @@ function buildPaudSiswaFromClasses(rows) {
   return siswa;
 }
 
-// Normalisasi akhir untuk dikirim ke SchoolDetailsTabs
 function normalizeDbPaudDetail(dbDataRaw, parsedSiswaClasses) {
   if (!dbDataRaw) return null;
   const dbData = Array.isArray(dbDataRaw) ? dbDataRaw[0] : dbDataRaw;
   if (!dbData) return null;
+
+  // ✅ FIX: Ambil jenjang asli, jangan paksa jadi PAUD kalau aslinya TK
+  // Ini penting agar SchoolDetailsTabs menampilkan kolom yang benar
+  const realJenjang =
+    dbData.meta?.jenjang || dbData.jenjang || dbData.schoolType || "PAUD";
 
   const totalSiswaHeader =
     Number(dbData.student_count || dbData?.siswa?.jumlahSiswa || 0) || 0;
@@ -108,10 +110,8 @@ function normalizeDbPaudDetail(dbDataRaw, parsedSiswaClasses) {
   const stMale = Number(dbData.st_male || 0) || 0;
   const stFemale = Number(dbData.st_female || 0) || 0;
 
-  // siswa detail dari classes
   let siswaDetail = parsedSiswaClasses || makeEmptySiswaDetail();
 
-  // hitung total dari detail
   const totalParsed =
     (siswaDetail.tka?.l || 0) +
     (siswaDetail.tka?.p || 0) +
@@ -122,7 +122,6 @@ function normalizeDbPaudDetail(dbDataRaw, parsedSiswaClasses) {
     (siswaDetail.sps_tpa?.l || 0) +
     (siswaDetail.sps_tpa?.p || 0);
 
-  // Fallback: kalau detail kosong tapi header ada, taruh di tka biar tampil dulu
   if (totalParsed === 0 && totalSiswaHeader > 0) {
     const reset = makeEmptySiswaDetail();
     reset.tka.l = stMale;
@@ -130,12 +129,8 @@ function normalizeDbPaudDetail(dbDataRaw, parsedSiswaClasses) {
     siswaDetail = reset;
   }
 
-  // ⚠️ rombel harus ANGKA (bukan {l,p})
-  // ambil dari meta.rombel (yang memang angka) atau rombel langsung kalau ada
-  const rombel =
-    dbData?.meta?.rombel ||
-    dbData?.rombel ||
-    {
+  const rombel = dbData?.meta?.rombel ||
+    dbData?.rombel || {
       tka: 0,
       tkb: 0,
       kb: 0,
@@ -149,20 +144,18 @@ function normalizeDbPaudDetail(dbDataRaw, parsedSiswaClasses) {
       dbData.namaSekolah || dbData.name || dbData.school_name || "Tanpa Nama",
     npsn: String(dbData.npsn || ""),
     status: dbData.status || "SWASTA",
-    schoolType: OPERATOR_TYPE,
-    jenjang: dbData.meta?.jenjang || dbData.jenjang || "PAUD",
+    schoolType: realJenjang, // Gunakan jenjang asli
+    jenjang: realJenjang,
     dataStatus: totalSiswaHeader > 0 ? "Aktif" : "Data Belum Lengkap",
-
-    // detail siswa bentuk {l,p} per tipe
     siswa: {
       jumlahSiswa: totalSiswaHeader,
       ...siswaDetail,
     },
-
-    // rombel tetap angka agar UI tidak crash
     rombel,
-
-    guru: { ...EMPTY_GURU_DETAIL, ...(dbData.guru || dbData.meta?.guru || {}) },
+    guru: {
+      ...EMPTY_GURU_DETAIL,
+      ...(dbData.guru || dbData.meta?.guru || {}),
+    },
     siswaAbk: dbData.siswaAbk || {},
     kelembagaan: dbData.kelembagaan || {},
     prasarana: dbData.prasarana || {
@@ -196,7 +189,8 @@ export default function PaudDetailPage() {
         .eq("npsn", String(npsnParam))
         .maybeSingle();
 
-      if (schoolErr) throw new Error(schoolErr.message || "Gagal memuat sekolah");
+      if (schoolErr)
+        throw new Error(schoolErr.message || "Gagal memuat sekolah");
       if (!schoolBasic) throw new Error("Sekolah tidak ditemukan");
 
       let parsedSiswa = makeEmptySiswaDetail();
@@ -213,11 +207,6 @@ export default function PaudDetailPage() {
       }
 
       const normalized = normalizeDbPaudDetail(schoolBasic, parsedSiswa);
-
-      // Debug: pastikan rombel angka, bukan object {l,p}
-      console.log(">>> [PAUD FINAL] siswa:", normalized?.siswa);
-      console.log(">>> [PAUD FINAL] rombel:", normalized?.rombel);
-
       setDetail(normalized);
     } catch (e) {
       console.error(e);
@@ -231,6 +220,15 @@ export default function PaudDetailPage() {
     if (npsnParam) loadDetail();
   }, [loadDetail, npsnParam]);
 
+  // ✅ LOGIC SMART EDIT LINK
+  // Arahkan ke TK jika data aslinya TK
+  const getEditLink = () => {
+    if (!npsnParam || !detail) return "#";
+    const j = String(detail.jenjang || "").toUpperCase();
+    const basePath = j === "TK" ? "tk" : "paud";
+    return `/dashboard/${basePath}/edit/${npsnParam}`;
+  };
+
   return (
     <>
       <Sidebar />
@@ -240,10 +238,10 @@ export default function PaudDetailPage() {
             <div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                 <BookOpen className="h-4 w-4" />
-                <span>Detail PAUD</span>
+                <span>Detail PAUD / TK</span>
               </div>
               <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
-                Detail PAUD
+                {detail?.namaSekolah || "Detail Sekolah"}
               </h1>
               {npsnParam && (
                 <p className="text-sm text-muted-foreground">
@@ -281,10 +279,10 @@ export default function PaudDetailPage() {
                 </Button>
               </Link>
 
-              {npsnParam && (
-                <Link href={`/dashboard/paud/edit/${npsnParam}`}>
+              {npsnParam && detail && (
+                <Link href={getEditLink()}>
                   <Button size="sm">
-                    <PencilLine className="h-4 w-4 mr-2" /> Edit
+                    <PencilLine className="h-4 w-4 mr-2" /> Edit Data
                   </Button>
                 </Link>
               )}

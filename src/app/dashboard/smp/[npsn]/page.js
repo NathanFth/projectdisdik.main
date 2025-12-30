@@ -124,11 +124,13 @@ function normalizeDbSmpDetail(dbDataRaw) {
     "";
 
   const rombel = dbData.meta?.rombel || dbData.rombel || {};
+const dbId = dbData.id ?? null;
 
   // SMP sering punya field prasarana tersebar; keep field SMP via ...dbData (di atas)
   return {
     ...dbData, // ✅ base dulu
-    id: npsn,
+    id: dbId, 
+    npsn,
     namaSekolah,
     npsn,
     kecamatan,

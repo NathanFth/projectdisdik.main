@@ -46,8 +46,25 @@ export default function SdDetailPage() {
           throw new Error("Sekolah dengan NPSN tersebut tidak ditemukan");
         }
 
+        // ✅ row didefinisikan DI SINI, jadi bisa dipakai untuk log & setState
+        const row = Array.isArray(data) ? data[0] : data;
+        if (!row) throw new Error("Data kosong dari RPC");
+
+        // ✅ DEBUG (aman, row pasti ada)
+        console.log("RPC row keys:", Object.keys(row || {}));
+        console.log("RPC row sample:", row);
+        console.log("RPC prasarana_json:", row?.prasarana_json);
+        console.log("RPC prasarana:", row?.prasarana);
+        console.log("RPC flat:", {
+          luas_tanah: row?.luas_tanah,
+          luas_bangunan: row?.luas_bangunan,
+          luas_halaman: row?.luas_halaman,
+          jumlah_gedung: row?.jumlah_gedung,
+          chromebook: row?.chromebook,
+        });
+
         if (!ignore) {
-          setDetail(data);
+          setDetail(row);
         }
       } catch (e) {
         if (!ignore) {

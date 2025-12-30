@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import StatCards from "../components/StatCards";
-import { LayoutDashboard, Plus, Edit } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 
 export default function DashboardPage() {
   const { user, roleConfig } = useAuth();
@@ -32,39 +32,10 @@ export default function DashboardPage() {
               Kelola data {roleConfig.description} dengan mudah.
             </p>
           </div>
-
-          <div className="hidden md:flex gap-3">
-            <button
-              onClick={() => go(inputPath)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-            >
-              <Plus className="h-4 w-4" />
-              Input Data Baru
-            </button>
-            <button
-              onClick={() => go(dataPath)}
-              className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg"
-            >
-              <Edit className="h-4 w-4" />
-              Lihat Data
-            </button>
-          </div>
         </div>
       </div>
 
 <StatCards operatorType={roleConfig.title} />
-
-      <div className="bg-blue-50 rounded-xl border border-blue-200 p-6 mt-6">
-        <h3 className="text-lg font-semibold text-blue-900 mb-2">
-          📋 Informasi untuk Operator {roleConfig.title}
-        </h3>
-        <div className="text-sm text-blue-800 space-y-2">
-          <p>• Anda terdaftar sebagai operator tingkat {roleConfig.title}</p>
-          <p>
-            • Data yang Anda input akan otomatis terfilter sesuai jenjang ini.
-          </p>
-        </div>
-      </div>
     </>
   );
 }

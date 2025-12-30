@@ -1,3 +1,5 @@
+// src/lib/config/schoolConfig.js
+
 export const schoolConfigs = {
   SD: {
     schoolTypeId: 3,
@@ -23,11 +25,8 @@ export const schoolConfigs = {
     grades: [7, 8, 9],
   },
 
-  // Catatan DB kamu: tidak ada school_types "TK".
-  // Jadi TK dan PAUD harus share school_type_id yang sama (PAUD=1),
-  // pembeda TK vs PAUD mestinya dari jenjang/meta (mis. meta.jenjang).
   TK: {
-    schoolTypeId: 1, // ✅ PAUD di DB
+    schoolTypeId: 1,
     isPaud: true,
     rombelTypes: [
       { key: "tka", label: "TK A" },
@@ -38,7 +37,7 @@ export const schoolConfigs = {
   },
 
   PAUD: {
-    schoolTypeId: 1, // ✅ FIX: PAUD di DB kamu = 1 (bukan 2)
+    schoolTypeId: 1,
     isPaud: true,
     rombelTypes: [
       { key: "tka", label: "TK A" },
@@ -49,17 +48,25 @@ export const schoolConfigs = {
   },
 
   PKBM: {
-    schoolTypeId: 2, // ✅ FIX: PKBM di DB kamu = 2 (bukan 5)
+    schoolTypeId: 2,
     isPkbm: true,
     pakets: {
       A: { name: "Paket A (Setara SD)", grades: [1, 2, 3, 4, 5, 6] },
       B: { name: "Paket B (Setara SMP)", grades: [7, 8, 9] },
       C: { name: "Paket C (Setara SMA)", grades: [10, 11, 12] },
     },
+    // ✅ TAMBAHAN BARU: Opsi Lanjut Paket A
+    lanjutPaketA: [
+      { key: "smp", label: "SMP" },
+      { key: "mts", label: "MTs" },
+      { key: "pontren", label: "Pontren" },
+      { key: "paketB", label: "Lanjut Paket B" },
+    ],
     lanjutPaketB: [
       { key: "sma", label: "SMA" },
       { key: "smk", label: "SMK" },
       { key: "ma", label: "MA" },
+      { key: "pontren", label: "Pontren" },
       { key: "paketC", label: "Lanjut Paket C" },
     ],
     lanjutPaketC: [
@@ -76,17 +83,13 @@ export const schoolConfigs = {
   },
 };
 
-// alias “PKBM Terpadu” -> PKBM (biar kompatibel kalau ada pemanggilan lama)
 schoolConfigs["PKBM Terpadu"] = schoolConfigs.PKBM;
-schoolConfigs.PKBM = schoolConfigs["PKBM Terpadu"];
 
 export const createInitialFormData = (config) => {
   const baseData = {
     noUrut: "",
     noUrutSekolah: "",
     kecamatan: "",
-
-    // ✅ tambahan fondasi lokasi & kontak (biar konsisten dengan form terbaru)
     kecamatan_code: "",
     desa: "",
     desa_code: "",
@@ -177,7 +180,6 @@ export const createInitialFormData = (config) => {
   };
 
   if (config.isPkbm) {
-    // ✅ pastikan struktur paket konsisten: paketA/paketB/paketC
     baseData.siswa.paketA = {};
     baseData.siswa.paketB = {};
     baseData.siswa.paketC = {};
@@ -190,12 +192,13 @@ export const createInitialFormData = (config) => {
     baseData.rombel.paketB = {};
     baseData.rombel.paketC = {};
 
+    // ✅ INIT FIELD LULUSAN
+    baseData.lulusanPaketA = {}; // Tambahan
     baseData.lulusanPaketB = {};
     baseData.lulusanPaketC = {};
 
     Object.entries(config.pakets || {}).forEach(([paketKey, paket]) => {
-      const paketName = `paket${paketKey}`; // ✅ FIX: A -> paketA, dst
-
+      const paketName = `paket${paketKey}`;
       (paket.grades || []).forEach((grade) => {
         baseData.siswa[paketName][`kelas${grade}`] = { l: "", p: "" };
         baseData.siswaAbk[paketName][`kelas${grade}`] = { l: "", p: "" };
@@ -203,6 +206,10 @@ export const createInitialFormData = (config) => {
       });
     });
 
+    // ✅ LOOP INIT OPSI
+    (config.lanjutPaketA || []).forEach((opt) => {
+      baseData.lulusanPaketA[opt.key] = "";
+    });
     (config.lanjutPaketB || []).forEach((opt) => {
       baseData.lulusanPaketB[opt.key] = "";
     });
