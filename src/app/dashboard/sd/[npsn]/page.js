@@ -1,14 +1,20 @@
 // src/app/dashboard/sd/[npsn]/page.js
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-
-import { BookOpen, ArrowLeft, Loader2, PencilLine } from "lucide-react";
-import { Button } from "@/app/components/ui/button";
+import { Button } from "../../../components/ui/button";
 import SchoolDetailsTabs from "@/app/components/SchoolDetailsTabs";
+import {
+  ArrowLeft,
+  Loader2,
+  PencilLine,
+  RefreshCw,
+  BookOpen,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase/lib/client";
+import { transformSchoolData } from "@/lib/utils/school-data-transformer";
 
 export default function SdDetailPage() {
   const params = useParams();
@@ -19,131 +25,123 @@ export default function SdDetailPage() {
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let ignore = false;
+  const loadDetail = useCallback(async () => {
+    if (!npsnParam) return;
 
-    async function load() {
-      try {
-        setLoading(true);
-        setError("");
+    try {
+      setLoading(true);
+      setError("");
 
-        if (!npsnParam) {
-          throw new Error("NPSN tidak valid");
-        }
+      // 1. Fetch Data Sekolah Utama
+      const { data: schoolRaw, error: schoolErr } = await supabase
+        .from("schools")
+        .select("*")
+        .eq("npsn", String(npsnParam))
+        .maybeSingle();
 
-        const { data, error } = await supabase.rpc(
-          "get_school_detail_by_npsn",
-          {
-            input_npsn: npsnParam,
-          }
-        );
+      if (schoolErr) throw schoolErr;
+      if (!schoolRaw) throw new Error("Data sekolah tidak ditemukan.");
 
-        if (error) {
-          throw new Error(error.message || "Gagal memuat data dari database");
-        }
+      // 2. Fetch Data Kelas (Penting untuk struktur Kelas 1-6 SD)
+      const { data: classRows, error: classErr } = await supabase
+        .from("school_classes")
+        .select("grade, count")
+        .eq("school_id", schoolRaw.id);
 
-        if (!data) {
-          throw new Error("Sekolah dengan NPSN tersebut tidak ditemukan");
-        }
-
-        // ✅ row didefinisikan DI SINI, jadi bisa dipakai untuk log & setState
-        const row = Array.isArray(data) ? data[0] : data;
-        if (!row) throw new Error("Data kosong dari RPC");
-
-        // ✅ DEBUG (aman, row pasti ada)
-        console.log("RPC row keys:", Object.keys(row || {}));
-        console.log("RPC row sample:", row);
-        console.log("RPC prasarana_json:", row?.prasarana_json);
-        console.log("RPC prasarana:", row?.prasarana);
-        console.log("RPC flat:", {
-          luas_tanah: row?.luas_tanah,
-          luas_bangunan: row?.luas_bangunan,
-          luas_halaman: row?.luas_halaman,
-          jumlah_gedung: row?.jumlah_gedung,
-          chromebook: row?.chromebook,
-        });
-
-        if (!ignore) {
-          setDetail(row);
-        }
-      } catch (e) {
-        if (!ignore) {
-          setError(e.message || "Terjadi kesalahan saat memuat data");
-          setDetail(null);
-        }
-      } finally {
-        if (!ignore) setLoading(false);
+      if (classErr) {
+        console.warn("Gagal mengambil data kelas:", classErr.message);
       }
-    }
 
-    load();
-    return () => {
-      ignore = true;
-    };
+      // 3. TRANSFORM DATA (Pusat Logika)
+      // Transformer akan mendeteksi jenjang SD dan menyusun siswa ke Kelas 1-6
+      const cleanData = transformSchoolData(schoolRaw, classRows || []);
+
+      setDetail(cleanData);
+    } catch (e) {
+      console.error("Load Detail Error:", e);
+      setError(e.message || "Gagal memuat data sekolah.");
+    } finally {
+      setLoading(false);
+    }
   }, [npsnParam]);
 
+  useEffect(() => {
+    loadDetail();
+  }, [loadDetail]);
+
+  // Smart Edit Link
+  const getEditHref = () => {
+    if (!detail) return "#";
+    // Untuk SD routingnya pasti ke folder /sd
+    return `/dashboard/sd/edit/${npsnParam}`;
+  };
+
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-            <BookOpen className="h-4 w-4" />
-            <span>Detail SD</span>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
-            Detail SD
-          </h1>
-          {npsnParam && (
-            <p className="text-sm text-muted-foreground">
-              NPSN: <span className="font-mono">{npsnParam}</span>
-            </p>
-          )}
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.back()}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Kembali
-          </Button>
-
-          <Link href="/dashboard/sd">
-            <Button variant="outline" size="sm">
-              Ke Data SD
+    <div className="min-h-screen bg-background md:pl-0">
+      <main className="py-6 px-2 sm:px-3 md:px-4 space-y-4">
+        {/* --- HEADER ACTIONS --- */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="flex flex-col">
+            <Button
+              variant="ghost"
+              onClick={() => router.back()}
+              className="gap-2 pl-0 hover:bg-transparent -ml-2 sm:ml-0 w-fit"
+            >
+              <ArrowLeft className="h-4 w-4" /> Kembali
             </Button>
-          </Link>
+            {detail && (
+              <div className="mt-1 ml-1 hidden sm:block">
+                <h1 className="text-xl font-bold tracking-tight text-gray-900">
+                  {detail.namaSekolah}
+                </h1>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <BookOpen className="h-3 w-3" />
+                  <span>{detail.npsn}</span>
+                  <span>•</span>
+                  <span>{detail.kecamatan}</span>
+                </div>
+              </div>
+            )}
+          </div>
 
-          {npsnParam && (
-            <Link href={`/dashboard/sd/edit/${npsnParam}`}>
-              <Button size="sm">
-                <PencilLine className="h-4 w-4 mr-2" />
-                Edit
+          <div className="flex gap-2 w-full sm:w-auto">
+            {error && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadDetail}
+                className="gap-2"
+              >
+                <RefreshCw className="h-4 w-4" /> Coba Lagi
               </Button>
-            </Link>
-          )}
-        </div>
-      </div>
+            )}
 
-      {/* Konten */}
-      {loading && (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Memuat detail...
+            {detail && (
+              <Link href={getEditHref()} className="w-full sm:w-auto">
+                <Button size="sm" className="gap-2 w-full sm:w-auto">
+                  <PencilLine className="h-4 w-4" /> Edit Data
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
-      )}
 
-      {!loading && error && (
-        <div className="p-4 border border-destructive/30 rounded-lg text-destructive text-sm">
-          {error}
-        </div>
-      )}
-
-      {!loading && !error && detail && <SchoolDetailsTabs school={detail} />}
+        {/* --- CONTENT AREA --- */}
+        {loading ? (
+          <div className="h-96 flex flex-col items-center justify-center text-muted-foreground bg-white rounded-xl border border-dashed">
+            <Loader2 className="h-8 w-8 animate-spin mb-2 text-primary" />
+            <p>Memuat detail sekolah...</p>
+          </div>
+        ) : error ? (
+          <div className="p-6 bg-red-50 text-red-600 rounded-xl border border-red-100 text-center">
+            <p className="font-semibold mb-1">Terjadi Kesalahan</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        ) : (
+          /* Render Tabs Component yang reusable */
+          <SchoolDetailsTabs school={detail} />
+        )}
+      </main>
     </div>
   );
 }

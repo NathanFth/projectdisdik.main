@@ -1,3 +1,4 @@
+// src/app/components/DataInputForm.jsx
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -8,13 +9,13 @@ import {
   Users,
   BookOpen,
   Save,
-  ArrowLeft,
   Loader2,
   User,
   TrendingUp,
   Building,
   ClipboardList,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   schoolConfigs,
@@ -29,7 +30,8 @@ const LocationPickerMap = dynamic(() => import("./LocationPickerMap.jsx"), {
   ssr: false,
 });
 
-// Helper untuk ambil value object bertingkat
+/* --- STATIC HELPERS --- */
+
 const getValue = (obj, path) =>
   path.split(".").reduce((o, k) => (o ? o[k] : undefined), obj);
 
@@ -47,6 +49,7 @@ const normalizeStatus = (v) => {
   if (s === "swasta") return "SWASTA";
   return s.toUpperCase();
 };
+
 const normalizeYesNo = (v) => {
   const s = String(v ?? "")
     .trim()
@@ -64,7 +67,6 @@ const normalizeSudahBelum = (v) => {
   if (!s) return "";
   if (s === "sudah") return "SUDAH";
   if (s === "belum") return "BELUM";
-  // fallback kalau sebelumnya tersimpan YA/TIDAK
   if (s === "ya") return "SUDAH";
   if (s === "tidak") return "BELUM";
   return s.toUpperCase();
@@ -74,14 +76,11 @@ const normalizePeralatanRumahTangga = (v) => {
   const raw = String(v ?? "").trim();
   if (!raw) return "";
   const s = raw.toLowerCase();
-
-  // terima data lama yang mungkin sudah terlanjur tersimpan
   if (s === "baik") return "BAIK";
   if (s === "tidak memiliki" || s === "tidak_memiliki") return "TIDAK_MEMILIKI";
   if (s === "harus diganti" || s === "harus_diganti") return "HARUS_DIGANTI";
   if (s === "perlu rehabilitasi" || s === "perlu_rehabilitasi")
     return "PERLU_REHABILITASI";
-
   return raw.toUpperCase();
 };
 
@@ -94,6 +93,7 @@ const YESNO_OPTIONS = [
   { value: "YA", label: "Ya" },
   { value: "TIDAK", label: "Tidak" },
 ];
+
 const SUDAH_BELUM_OPTIONS = [
   { value: "SUDAH", label: "Sudah" },
   { value: "BELUM", label: "Belum" },
@@ -177,26 +177,19 @@ LANJUT_OPTIONS.TK = LANJUT_OPTIONS.PAUD;
 
 export default function DataInputForm({ schoolType, embedded = false }) {
   const router = useRouter();
-
-  // 1) Config & Initial Data
   const config = useMemo(
     () => schoolConfigs[schoolType] || schoolConfigs.default,
     [schoolType]
   );
   const initialData = useMemo(() => createInitialFormData(config), [config]);
 
-  // 2) Hook Form Data
   const { formData, handleChange, errors, validate } = useDataInput(
     config,
     initialData
   );
 
-  // =========================
-  // 3) MASTER WILAYAH (Kemendagri)
-  // =========================
   const [wilayah, setWilayah] = useState(null);
   const [loadingWilayah, setLoadingWilayah] = useState(false);
-
   const [kecamatanOptions, setKecamatanOptions] = useState([]);
   const [desaOptions, setDesaOptions] = useState([]);
 
@@ -205,89 +198,65 @@ export default function DataInputForm({ schoolType, embedded = false }) {
       try {
         setLoadingWilayah(true);
         const res = await fetch("/data/desa-garut.json");
-        if (!res.ok)
-          throw new Error("Gagal memuat data wilayah desa/kecamatan");
+        if (!res.ok) throw new Error("Gagal memuat data wilayah");
         const data = await res.json();
-
         const kecArr = Array.isArray(data?.kecamatan) ? data.kecamatan : [];
-        const kecOpts = kecArr
-          .map((k) => ({
-            value: k.kode_kecamatan,
-            label: k.nama_kecamatan,
-          }))
-          .sort((a, b) => a.label.localeCompare(b.label, "id"));
-
         setWilayah(data);
-        setKecamatanOptions(kecOpts);
+        setKecamatanOptions(
+          kecArr
+            .map((k) => ({ value: k.kode_kecamatan, label: k.nama_kecamatan }))
+            .sort((a, b) => a.label.localeCompare(b.label, "id"))
+        );
       } catch (err) {
-        console.error("Error memuat wilayah:", err);
+        console.error(err);
         setWilayah(null);
-        setKecamatanOptions([]);
-        setDesaOptions([]);
       } finally {
         setLoadingWilayah(false);
       }
     };
-
     loadWilayah();
   }, []);
 
   useEffect(() => {
     if (!wilayah?.kecamatan) return;
-
     const kecCode = formData?.kecamatan_code || "";
     if (!kecCode) {
       setDesaOptions([]);
       return;
     }
-
     const kec = wilayah.kecamatan.find(
       (k) => String(k.kode_kecamatan) === String(kecCode)
     );
-
     const desaList = Array.isArray(kec?.desa) ? kec.desa : [];
-
-    const opts = desaList
-      .map((d) => ({
-        value: d.kode_desa,
-        label: d.nama_desa,
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label, "id"));
-
-    setDesaOptions(opts);
+    setDesaOptions(
+      desaList
+        .map((d) => ({ value: d.kode_desa, label: d.nama_desa }))
+        .sort((a, b) => a.label.localeCompare(b.label, "id"))
+    );
   }, [wilayah, formData?.kecamatan_code]);
 
-  // =========================
-  // 4) PAUD/TK rombel type filter
-  // =========================
   const activePaudRombelTypes = useMemo(() => {
     if (!config.isPaud || !config.rombelTypes) return [];
-
-    if (schoolType === "TK") {
+    if (schoolType === "TK")
       return config.rombelTypes.filter(
         (t) => t.key === "tka" || t.key === "tkb"
       );
-    }
-    if (schoolType === "PAUD") {
+    if (schoolType === "PAUD")
       return config.rombelTypes.filter(
         (t) => t.key === "kb" || t.key === "sps_tpa"
       );
-    }
     return config.rombelTypes;
   }, [config, schoolType]);
 
-  // 5) Local state
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState({});
   const [showMap, setShowMap] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const isSd = schoolType === "SD";
   const isSmp = schoolType === "SMP";
   const isPaud = schoolType === "PAUD" || schoolType === "TK";
   const isPkbm = schoolType === "PKBM";
 
-  // 6) Sections
   const sections = useMemo(
     () => [
       {
@@ -336,52 +305,45 @@ export default function DataInputForm({ schoolType, embedded = false }) {
     []
   );
 
-  // =========================
-  // Helpers
-  // =========================
   const sumSiswa = (genderKey) => {
-    // PKBM: paket A/B/C per kelas
     if (config.isPkbm && config.pakets) {
       return Object.entries(config.pakets).reduce(
         (total, [paketKey, paket]) => {
-          const paketName = `paket${paketKey}`;
           const grades = Array.isArray(paket?.grades) ? paket.grades : [];
-          const paketSum = grades.reduce((t, grade) => {
-            const val = getValue(
-              formData,
-              `siswa.${paketName}.kelas${grade}.${genderKey}`
-            );
-            return t + (Number(val) || 0);
-          }, 0);
-          return total + paketSum;
+          return (
+            total +
+            grades.reduce((t, grade) => {
+              const val = getValue(
+                formData,
+                `siswa.paket${paketKey}.kelas${grade}.${genderKey}`
+              );
+              return t + (Number(val) || 0);
+            }, 0)
+          );
         },
         0
       );
     }
-
     if (config.isPaud && activePaudRombelTypes.length > 0) {
       return activePaudRombelTypes.reduce((total, type) => {
         const val = getValue(formData, `siswa.${type.key}.${genderKey}`);
         return total + (Number(val) || 0);
       }, 0);
     }
-
-    if (config.grades && config.grades.length > 0) {
+    if (config.grades?.length > 0) {
       return config.grades.reduce((total, grade) => {
         const val = getValue(formData, `siswa.kelas${grade}.${genderKey}`);
         return total + (Number(val) || 0);
       }, 0);
     }
-
     return 0;
   };
 
-  const totalSiswaComputed = useMemo(() => {
-    return sumSiswa("l") + sumSiswa("p");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData, config, activePaudRombelTypes]);
+  const totalSiswaComputed = useMemo(
+    () => sumSiswa("l") + sumSiswa("p"),
+    [formData, config, activePaudRombelTypes]
+  );
 
-  // Guru: jumlah otomatis dari rincian
   const guruTotalComputed = useMemo(() => {
     const g = formData?.guru || {};
     return (
@@ -395,21 +357,20 @@ export default function DataInputForm({ schoolType, embedded = false }) {
 
   const buildRombelMeta = () => {
     const meta = { rombel: {} };
-
-    // PKBM: rombel per paket & kelas
     if (config.isPkbm && config.pakets) {
       Object.entries(config.pakets).forEach(([paketKey, paket]) => {
-        const paketName = `paket${paketKey}`;
         const grades = Array.isArray(paket?.grades) ? paket.grades : [];
-        meta.rombel[paketName] = {};
+        meta.rombel[`paket${paketKey}`] = {};
         grades.forEach((grade) => {
-          const val = getValue(formData, `rombel.${paketName}.kelas${grade}`);
-          meta.rombel[paketName][`kelas${grade}`] = Number(val) || 0;
+          const val = getValue(
+            formData,
+            `rombel.paket${paketKey}.kelas${grade}`
+          );
+          meta.rombel[`paket${paketKey}`][`kelas${grade}`] = Number(val) || 0;
         });
       });
       return meta;
     }
-
     if (config.isPaud && activePaudRombelTypes.length > 0) {
       activePaudRombelTypes.forEach((type) => {
         const val = getValue(formData, `rombel.${type.key}`);
@@ -417,86 +378,138 @@ export default function DataInputForm({ schoolType, embedded = false }) {
       });
       return meta;
     }
-
-    if (config.grades && config.grades.length > 0) {
+    if (config.grades?.length > 0) {
       config.grades.forEach((grade) => {
-        const key = `kelas${grade}`;
-        const val = getValue(formData, `rombel.${key}`);
-        meta.rombel[key] = Number(val) || 0;
+        const val = getValue(formData, `rombel.kelas${grade}`);
+        meta.rombel[`kelas${grade}`] = Number(val) || 0;
       });
     }
-
     return meta;
+  };
+
+  const buildSiswaMeta = () => {
+    const metaSiswa = {};
+    if (config.isPkbm && config.pakets) {
+      Object.entries(config.pakets).forEach(([paketKey, paket]) => {
+        const grades = Array.isArray(paket?.grades) ? paket.grades : [];
+        metaSiswa[`paket${paketKey}`] = {};
+        grades.forEach((grade) => {
+          const l = getValue(
+            formData,
+            `siswa.paket${paketKey}.kelas${grade}.l`
+          );
+          const p = getValue(
+            formData,
+            `siswa.paket${paketKey}.kelas${grade}.p`
+          );
+          metaSiswa[`paket${paketKey}`][`kelas${grade}`] = {
+            l: toNum(l),
+            p: toNum(p),
+          };
+        });
+      });
+      return { siswa: metaSiswa };
+    }
+    if (config.isPaud && activePaudRombelTypes.length > 0) {
+      activePaudRombelTypes.forEach((type) => {
+        const l = getValue(formData, `siswa.${type.key}.l`);
+        const p = getValue(formData, `siswa.${type.key}.p`);
+        metaSiswa[type.key] = { l: toNum(l), p: toNum(p) };
+      });
+      return { siswa: metaSiswa };
+    }
+    if (config.grades?.length > 0) {
+      config.grades.forEach((grade) => {
+        const l = getValue(formData, `siswa.kelas${grade}.l`);
+        const p = getValue(formData, `siswa.kelas${grade}.p`);
+        metaSiswa[`kelas${grade}`] = { l: toNum(l), p: toNum(p) };
+      });
+    }
+    return { siswa: metaSiswa };
+  };
+
+  // ✅ HELPER BARU UNTUK ABK (INPUT MODE)
+  const buildSiswaAbkMeta = () => {
+    const metaSiswaAbk = {};
+    if (config.isPkbm && config.pakets) {
+      Object.entries(config.pakets).forEach(([paketKey, paket]) => {
+        const grades = Array.isArray(paket?.grades) ? paket.grades : [];
+        metaSiswaAbk[`paket${paketKey}`] = {};
+        grades.forEach((grade) => {
+          const l = getValue(
+            formData,
+            `siswaAbk.paket${paketKey}.kelas${grade}.l`
+          );
+          const p = getValue(
+            formData,
+            `siswaAbk.paket${paketKey}.kelas${grade}.p`
+          );
+          metaSiswaAbk[`paket${paketKey}`][`kelas${grade}`] = {
+            l: toNum(l),
+            p: toNum(p),
+          };
+        });
+      });
+      return { siswaAbk: metaSiswaAbk };
+    }
+    if (config.isPaud && activePaudRombelTypes.length > 0) {
+      activePaudRombelTypes.forEach((type) => {
+        const l = getValue(formData, `siswaAbk.${type.key}.l`);
+        const p = getValue(formData, `siswaAbk.${type.key}.p`);
+        metaSiswaAbk[type.key] = { l: toNum(l), p: toNum(p) };
+      });
+      return { siswaAbk: metaSiswaAbk };
+    }
+    if (config.grades?.length > 0) {
+      config.grades.forEach((grade) => {
+        const l = getValue(formData, `siswaAbk.kelas${grade}.l`);
+        const p = getValue(formData, `siswaAbk.kelas${grade}.p`);
+        metaSiswaAbk[`kelas${grade}`] = { l: toNum(l), p: toNum(p) };
+      });
+    }
+    return { siswaAbk: metaSiswaAbk };
   };
 
   const buildClassesArray = () => {
     const classes = [];
-
-    // ✅ FIX: Hapus "if (config.isPaud) return []"
-    // Biarkan logic ini jalan untuk PAUD/TK juga agar data tersimpan di tabel school_classes
-    if (
-      (config.isPaud || schoolType === "TK" || schoolType === "PAUD") &&
-      activePaudRombelTypes.length > 0
-    ) {
+    if ((config.isPaud || isPaud) && activePaudRombelTypes.length > 0) {
       activePaudRombelTypes.forEach((type) => {
-        // type.key bisa "tka", "tkb", "kb", "sps_tpa"
         const male = Number(getValue(formData, `siswa.${type.key}.l`) || 0);
         const female = Number(getValue(formData, `siswa.${type.key}.p`) || 0);
-
-        if (male > 0) {
-          classes.push({
-            grade: `${type.key}_L`, // Contoh: "kb_L"
-            count: male,
-            extra: null,
-          });
-        }
-        if (female > 0) {
-          classes.push({
-            grade: `${type.key}_P`, // Contoh: "kb_P"
-            count: female,
-            extra: null,
-          });
-        }
+        if (male > 0)
+          classes.push({ grade: `${type.key}_L`, count: male, extra: null });
+        if (female > 0)
+          classes.push({ grade: `${type.key}_P`, count: female, extra: null });
       });
-      // Jangan return dulu jika ingin logic lain jalan, tapi untuk PAUD cukup ini
       return classes;
     }
-
-    // Logic PKBM
     if (config.isPkbm && config.pakets) {
       Object.entries(config.pakets).forEach(([paketKey, paket]) => {
-        const paketName = `paket${paketKey}`;
         const grades = Array.isArray(paket?.grades) ? paket.grades : [];
         grades.forEach((grade) => {
-          const base = `siswa.${paketName}.kelas${grade}`;
+          const base = `siswa.paket${paketKey}.kelas${grade}`;
           const male = Number(getValue(formData, `${base}.l`) || 0);
           const female = Number(getValue(formData, `${base}.p`) || 0);
-
-          if (male > 0) {
+          if (male > 0)
             classes.push({
-              grade: `${paketName}_kelas${grade}_L`,
+              grade: `paket${paketKey}_kelas${grade}_L`,
               count: male,
               extra: null,
             });
-          }
-          if (female > 0) {
+          if (female > 0)
             classes.push({
-              grade: `${paketName}_kelas${grade}_P`,
+              grade: `paket${paketKey}_kelas${grade}_P`,
               count: female,
               extra: null,
             });
-          }
         });
       });
       return classes;
     }
-
-    // Logic SD/SMP
     if (config.grades) {
       config.grades.forEach((grade) => {
         const male = Number(getValue(formData, `siswa.kelas${grade}.l`) || 0);
         const female = Number(getValue(formData, `siswa.kelas${grade}.p`) || 0);
-
         if (male > 0)
           classes.push({ grade: `kelas${grade}_L`, count: male, extra: null });
         if (female > 0)
@@ -507,24 +520,19 @@ export default function DataInputForm({ schoolType, embedded = false }) {
           });
       });
     }
-
     return classes;
   };
 
   const normalizeGuru = () => {
     const g = formData?.guru || {};
-
     const pns = toNum(g.pns);
     const pppk = toNum(g.pppk);
     const pppkParuhWaktu = toNum(g.pppkParuhWaktu);
     const nonAsnDapodik = toNum(g.nonAsnDapodik);
     const nonAsnTidakDapodik = toNum(g.nonAsnTidakDapodik);
-
-    const jumlahGuru =
-      pns + pppk + pppkParuhWaktu + nonAsnDapodik + nonAsnTidakDapodik;
-
     return {
-      jumlahGuru,
+      jumlahGuru:
+        pns + pppk + pppkParuhWaktu + nonAsnDapodik + nonAsnTidakDapodik,
       pns,
       pppk,
       pppkParuhWaktu,
@@ -535,13 +543,6 @@ export default function DataInputForm({ schoolType, embedded = false }) {
   };
 
   const buildStaffSummaryPayload = (guruMeta) => {
-    const total =
-      guruMeta.pns +
-      guruMeta.pppk +
-      guruMeta.pppkParuhWaktu +
-      guruMeta.nonAsnDapodik +
-      guruMeta.nonAsnTidakDapodik;
-
     return [
       { role: "guru_pns", count: guruMeta.pns, details: null },
       { role: "guru_pppk", count: guruMeta.pppk, details: null },
@@ -565,51 +566,44 @@ export default function DataInputForm({ schoolType, embedded = false }) {
         count: guruMeta.kekuranganGuru,
         details: null,
       },
-      { role: "guru_total", count: total, details: null },
+      { role: "guru_total", count: guruMeta.jumlahGuru, details: null },
     ];
   };
 
   const buildLanjutPayload = () => {
     if (isPkbm) {
-      const paketA = getValue(formData, "lanjut.paketA") || {}; // ✅ New
-      const paketB = getValue(formData, "lanjut.paketB") || {};
-      const paketC = getValue(formData, "lanjut.paketC") || {};
+      const get = (p) => getValue(formData, p) || {};
       return {
-        // ✅ Payload Baru
         lulusanPaketA: {
-          smp: toNum(paketA.smp),
-          mts: toNum(paketA.mts),
-          pontren: toNum(paketA.pontren),
-          paketB: toNum(paketA.paketB),
+          smp: toNum(get("lanjut.paketA").smp),
+          mts: toNum(get("lanjut.paketA").mts),
+          pontren: toNum(get("lanjut.paketA").pontren),
+          paketB: toNum(get("lanjut.paketA").paketB),
         },
         lulusanPaketB: {
-          sma: toNum(paketB.sma),
-          smk: toNum(paketB.smk),
-          ma: toNum(paketB.ma),
-          pontren: toNum(paketB.pontren),
-          paketC: toNum(paketB.paketC),
+          sma: toNum(get("lanjut.paketB").sma),
+          smk: toNum(get("lanjut.paketB").smk),
+          ma: toNum(get("lanjut.paketB").ma),
+          pontren: toNum(get("lanjut.paketB").pontren),
+          paketC: toNum(get("lanjut.paketB").paketC),
         },
         lulusanPaketC: {
-          pt: toNum(paketC.pt),
-          bekerja: toNum(paketC.bekerja),
+          pt: toNum(get("lanjut.paketC").pt),
+          bekerja: toNum(get("lanjut.paketC").bekerja),
         },
       };
     }
-
-    const dalamKab = getValue(formData, "lanjut.dalamKab") || {};
-    const luarKab = getValue(formData, "lanjut.luarKab") || {};
-
     return {
       siswaLanjutDalamKab: Object.fromEntries(
         (LANJUT_OPTIONS[schoolType]?.dalamKab || []).map((o) => [
           o.key,
-          toNum(dalamKab[o.key]),
+          toNum(getValue(formData, `lanjut.dalamKab.${o.key}`)),
         ])
       ),
       siswaLanjutLuarKab: Object.fromEntries(
         (LANJUT_OPTIONS[schoolType]?.luarKab || []).map((o) => [
           o.key,
-          toNum(luarKab[o.key]),
+          toNum(getValue(formData, `lanjut.luarKab.${o.key}`)),
         ])
       ),
       siswaTidakLanjut: toNum(getValue(formData, "lanjut.tidakLanjut")),
@@ -620,24 +614,13 @@ export default function DataInputForm({ schoolType, embedded = false }) {
   const buildPrasaranaPayload = () => {
     const pr = getValue(formData, "prasarana") || {};
     const kg = getValue(formData, "kegiatanFisik") || {};
-
-    const classrooms = pr.classrooms || {};
-    const rooms = pr.rooms || {};
-    const toiletsGuru = pr.teachers_toilet || {};
-    const toiletsSiswa = pr.students_toilet || {};
-
-    const normalizeToiletGender = (x) => ({
+    const normT = (x) => ({
       total: toNum(x?.total),
       good: toNum(x?.good),
       moderate_damage: toNum(x?.moderate_damage),
       heavy_damage: toNum(x?.heavy_damage),
     });
 
-    const furniture = pr.furniture || {};
-    const tables = furniture.tables || {};
-    const chairs = furniture.chairs || {};
-
-    // ✅ SMP labs: simpan per-jenis supaya tab SMP bisa munculin banyak lab
     const labs = pr.labs || {};
     const labPayload = isSmp
       ? {
@@ -674,6 +657,11 @@ export default function DataInputForm({ schoolType, embedded = false }) {
         }
       : {};
 
+    const lahanVal =
+      getValue(formData, "prasarana.classrooms.lahan") ||
+      getValue(formData, "prasarana.ruangKelas.lahan") ||
+      "";
+
     return {
       prasarana: {
         ukuran: {
@@ -681,94 +669,43 @@ export default function DataInputForm({ schoolType, embedded = false }) {
           bangunan: toNum(pr?.ukuran?.bangunan),
           halaman: toNum(pr?.ukuran?.halaman),
         },
-        gedung: {
-          jumlah: toNum(pr?.gedung?.jumlah),
-        },
-
+        gedung: { jumlah: toNum(pr?.gedung?.jumlah) },
         classrooms: {
-          total_room: toNum(classrooms.total_room),
-          classrooms_good: toNum(classrooms.classrooms_good),
-          rusakRingan: toNum(classrooms.rusakRingan),
+          total_room: toNum(pr.classrooms?.total_room),
+          classrooms_good: toNum(pr.classrooms?.classrooms_good),
+          rusakRingan: toNum(pr.classrooms?.rusakRingan),
           classrooms_moderate_damage: toNum(
-            classrooms.classrooms_moderate_damage
+            pr.classrooms?.classrooms_moderate_damage
           ),
-          heavy_damage: toNum(classrooms.heavy_damage),
-          rusakTotal: toNum(classrooms.rusakTotal),
-          kurangRkb: toNum(classrooms.kurangRkb),
-          kelebihan: toNum(classrooms.kelebihan),
-          rkbTambahan: toNum(classrooms.rkbTambahan),
-          lahan: classrooms.lahan || "",
+          heavy_damage: toNum(pr.classrooms?.heavy_damage),
+          rusakTotal: toNum(pr.classrooms?.rusakTotal),
+          kurangRkb: toNum(pr.classrooms?.kurangRkb),
+          kelebihan: toNum(pr.classrooms?.kelebihan),
+          rkbTambahan: toNum(pr.classrooms?.rkbTambahan),
+          lahan: lahanVal,
         },
-
-        // ✅ lab per-jenis (SMP)
         ...labPayload,
-
-        // ruangan lain (umum)
-        library: {
-          total: toNum(rooms.library?.total),
-          good: toNum(rooms.library?.good),
-          moderate_damage: toNum(rooms.library?.moderate_damage),
-          heavy_damage: toNum(rooms.library?.heavy_damage),
-        },
-        laboratory: {
-          total: toNum(rooms.laboratory?.total),
-          good: toNum(rooms.laboratory?.good),
-          moderate_damage: toNum(rooms.laboratory?.moderate_damage),
-          heavy_damage: toNum(rooms.laboratory?.heavy_damage),
-        },
-        teacher_room: {
-          total: toNum(rooms.teacher_room?.total),
-          good: toNum(rooms.teacher_room?.good),
-          moderate_damage: toNum(rooms.teacher_room?.moderate_damage),
-          heavy_damage: toNum(rooms.teacher_room?.heavy_damage),
-        },
-        uks_room: {
-          total: toNum(rooms.uks_room?.total),
-          good: toNum(rooms.uks_room?.good),
-          moderate_damage: toNum(rooms.uks_room?.moderate_damage),
-          heavy_damage: toNum(rooms.uks_room?.heavy_damage),
-        },
-        toilets: {
-          total: toNum(rooms.toilets?.total),
-          good: toNum(rooms.toilets?.good),
-          moderate_damage: toNum(rooms.toilets?.moderate_damage),
-          heavy_damage: toNum(rooms.toilets?.heavy_damage),
-        },
         teachers_toilet: {
-          male: normalizeToiletGender(toiletsGuru?.male),
-          female: normalizeToiletGender(toiletsGuru?.female),
+          male: normT(pr.teachers_toilet?.male),
+          female: normT(pr.teachers_toilet?.female),
         },
         students_toilet: {
-          male: normalizeToiletGender(toiletsSiswa?.male),
-          female: normalizeToiletGender(toiletsSiswa?.female),
+          male: normT(pr.students_toilet?.male),
+          female: normT(pr.students_toilet?.female),
         },
-
-        official_residences: {
-          total: toNum(rooms.official_residences?.total),
-          good: toNum(rooms.official_residences?.good),
-          moderate_damage: toNum(rooms.official_residences?.moderate_damage),
-          heavy_damage: toNum(rooms.official_residences?.heavy_damage),
-        },
-
+        library: normT(pr.rooms?.library),
+        laboratory: normT(pr.rooms?.laboratory),
+        teacher_room: normT(pr.rooms?.teacher_room),
+        uks_room: normT(pr.rooms?.uks_room),
+        toilets: normT(pr.rooms?.toilets),
+        official_residences: normT(pr.rooms?.official_residences),
         mebeulair: {
-          tables: {
-            total: toNum(tables.total),
-            good: toNum(tables.good),
-            moderate_damage: toNum(tables.moderate_damage),
-            heavy_damage: toNum(tables.heavy_damage),
-          },
-          chairs: {
-            total: toNum(chairs.total),
-            good: toNum(chairs.good),
-            moderate_damage: toNum(chairs.moderate_damage),
-            heavy_damage: toNum(chairs.heavy_damage),
-          },
-          computer: toNum(furniture.computer),
+          tables: normT(pr.furniture?.tables),
+          chairs: normT(pr.furniture?.chairs),
+          computer: toNum(pr.furniture?.computer),
         },
-
         chromebook: toNum(pr.chromebook),
       },
-
       kegiatanFisik: {
         rehabRuangKelas: toNum(kg.rehabRuangKelas),
         pembangunanRKB: toNum(kg.pembangunanRKB),
@@ -806,12 +743,8 @@ export default function DataInputForm({ schoolType, embedded = false }) {
     };
   };
 
-  // =========================
-  // Step handlers
-  // =========================
   const handleNext = () => {
-    const currentFields = sections[currentStep - 1].fields;
-    if (validate(currentFields)) {
+    if (validate(sections[currentStep - 1].fields)) {
       setCompletedSteps((prev) => ({ ...prev, [currentStep - 1]: true }));
       if (currentStep < sections.length) setCurrentStep((s) => s + 1);
     }
@@ -822,36 +755,23 @@ export default function DataInputForm({ schoolType, embedded = false }) {
   };
 
   const handleSave = async () => {
-    const currentFields = sections[currentStep - 1].fields;
-
-    if (!validate(currentFields)) {
-      alert("Mohon lengkapi data di halaman ini terlebih dahulu.");
+    if (!validate(sections[currentStep - 1].fields)) {
+      toast.warning("Mohon lengkapi data di halaman ini terlebih dahulu.");
       return;
     }
-
     setSaving(true);
-
     try {
-      const totalMale = sumSiswa("l");
-      const totalFemale = sumSiswa("p");
-      const rombelMeta = buildRombelMeta();
-      const classes = buildClassesArray();
-
       const kecOpt = kecamatanOptions.find(
         (o) => String(o.value) === String(formData.kecamatan_code)
       );
       const desaOpt = desaOptions.find(
         (o) => String(o.value) === String(formData.desa_code)
       );
-
-      const kecamatanName = formData.kecamatan || kecOpt?.label || "";
-      const desaName = formData.desa || desaOpt?.label || "";
-
       const location = {
         province: "Jawa Barat",
         district: "Garut",
-        subdistrict: kecamatanName,
-        village: desaName,
+        subdistrict: formData.kecamatan || kecOpt?.label || "",
+        village: formData.desa || desaOpt?.label || "",
         extra: {
           address_detail: formData.alamat || "",
           latitude: formData.latitude ? Number(formData.latitude) : null,
@@ -862,32 +782,30 @@ export default function DataInputForm({ schoolType, embedded = false }) {
       };
 
       const guruMeta = normalizeGuru();
-      const staff_summary = buildStaffSummaryPayload(guruMeta);
-
-      const lanjutPayload = buildLanjutPayload();
-      const prasaranaPayload = buildPrasaranaPayload();
-      const kelembagaanPayload = buildKelembagaanPayload();
-
       const school = {
         npsn: formData.npsn,
         name: formData.namaSekolah,
         address: formData.alamat || "",
-        village_name: desaName || "",
+        village_name: formData.desa || desaOpt?.label || "",
+        // ✅ FIX PENTING: Sertakan kecamatan di root payload agar RPC insert mengisi kolom fisik 'kecamatan'
+        kecamatan: formData.kecamatan || kecOpt?.label || "",
+
         school_type_id: config.schoolTypeId ?? null,
-        status: normalizeStatus(formData.status) || "UNKNOWN",
-        student_count: totalMale + totalFemale,
-        st_male: totalMale,
-        st_female: totalFemale,
+        status: normalizeStatus(formData.status),
+        student_count: totalSiswaComputed,
+        st_male: sumSiswa("l"),
+        st_female: sumSiswa("p"),
         lat: formData.latitude ? Number(formData.latitude) : null,
         lng: formData.longitude ? Number(formData.longitude) : null,
         facilities: null,
         class_condition: null,
-
         meta: {
-          ...rombelMeta,
+          ...buildSiswaMeta(),
+          ...buildSiswaAbkMeta(), // ✅ INCLUDE DATA ABK KE META
+          ...buildRombelMeta(),
           jenjang: schoolType,
-          kecamatan: kecamatanName,
-          desa: desaName,
+          kecamatan: formData.kecamatan || kecOpt?.label || "",
+          desa: formData.desa || desaOpt?.label || "",
           kecamatan_code: formData.kecamatan_code || null,
           desa_code: formData.desa_code || null,
           alamat: formData.alamat || "",
@@ -896,33 +814,33 @@ export default function DataInputForm({ schoolType, embedded = false }) {
           bantuan_received: formData.bantuan_received || "",
           guru: guruMeta,
           is_test: formData.is_test ?? false,
-
-          ...lanjutPayload,
-          ...prasaranaPayload,
-          ...kelembagaanPayload,
+          ...buildLanjutPayload(),
+          ...buildPrasaranaPayload(),
+          ...buildKelembagaanPayload(), // ✅ PAYLOAD KELEMBAGAAN AMAN
         },
-
         contact: {
           operator_name: formData.namaOperator || "",
           operator_phone: formData.hp || "",
         },
       };
 
-      const payload = { location, school, classes, staff_summary };
-      console.log("SAVE schoolType:", schoolType);
-      console.log("SAVE meta.jenjang:", school.meta?.jenjang);
+      const payload = {
+        location,
+        school,
+        classes: buildClassesArray(),
+        staff_summary: buildStaffSummaryPayload(guruMeta),
+      };
 
       const { error } = await supabase.rpc("insert_school_with_relations", {
         p_payload: payload,
       });
 
       if (error) throw new Error(error.message || "Gagal menyimpan data");
-
-      alert("Data berhasil disimpan!");
+      toast.success("Data berhasil disimpan!");
       router.push("/dashboard");
     } catch (err) {
       console.error(err);
-      alert(err.message || "Terjadi kesalahan saat menyimpan data");
+      toast.error(err.message || "Terjadi kesalahan saat menyimpan data");
     } finally {
       setSaving(false);
     }
@@ -934,9 +852,6 @@ export default function DataInputForm({ schoolType, embedded = false }) {
     setShowMap(false);
   };
 
-  // =========================
-  // Render content
-  // =========================
   const renderContent = () => {
     const section = sections[currentStep - 1];
     if (!formData) return <div>Loading form data...</div>;
@@ -952,7 +867,6 @@ export default function DataInputForm({ schoolType, embedded = false }) {
               error={errors.namaSekolah}
               required
             />
-
             <TextInput
               label="NPSN"
               value={formData.npsn || ""}
@@ -960,82 +874,73 @@ export default function DataInputForm({ schoolType, embedded = false }) {
               error={errors.npsn}
               required
             />
-
             <SelectInput
               label="Status Sekolah"
-              value={normalizeStatus(formData.status || "SWASTA")}
+              value={normalizeStatus(formData.status)}
               onChange={(v) => handleChange("status", v)}
               error={errors.status}
               options={STATUS_OPTIONS}
               placeholder="Pilih Status..."
             />
-
             <SelectInput
               label="Kecamatan"
               value={formData.kecamatan_code || ""}
-              onChange={(kode) => {
+              onChange={(k) => {
                 const opt = kecamatanOptions.find(
-                  (o) => String(o.value) === String(kode)
+                  (o) => String(o.value) === String(k)
                 );
-                handleChange("kecamatan_code", kode);
+                handleChange("kecamatan_code", k);
                 handleChange("kecamatan", opt?.label || "");
-
                 handleChange("desa_code", "");
                 handleChange("desa", "");
               }}
               error={errors.kecamatan_code}
               options={kecamatanOptions}
               placeholder={loadingWilayah ? "Memuat..." : "Pilih Kecamatan..."}
-              disabled={loadingWilayah || kecamatanOptions.length === 0}
+              disabled={loadingWilayah || !kecamatanOptions.length}
             />
-
             <div className="space-y-1">
               <SelectInput
                 label="Desa/Kelurahan"
                 value={formData.desa_code || ""}
-                onChange={(kode) => {
+                onChange={(k) => {
                   const opt = desaOptions.find(
-                    (o) => String(o.value) === String(kode)
+                    (o) => String(o.value) === String(k)
                   );
-                  handleChange("desa_code", kode);
+                  handleChange("desa_code", k);
                   handleChange("desa", opt?.label || "");
                 }}
                 error={errors.desa_code}
                 options={desaOptions}
                 placeholder={
                   formData.kecamatan_code
-                    ? "Pilih Desa/Kelurahan..."
+                    ? "Pilih Desa..."
                     : "Pilih Kecamatan dulu..."
                 }
                 disabled={
                   !formData.kecamatan_code ||
                   loadingWilayah ||
-                  desaOptions.length === 0
+                  !desaOptions.length
                 }
               />
-
               {formData.kecamatan_code &&
                 !loadingWilayah &&
-                desaOptions.length === 0 && (
+                !desaOptions.length && (
                   <p className="text-xs text-muted-foreground">
-                    Data desa untuk kecamatan ini tidak ditemukan (cek file
-                    desa-garut.json).
+                    Data desa tidak ditemukan.
                   </p>
                 )}
             </div>
-
             <TextInput
               label="Alamat Lengkap"
               value={formData.alamat || ""}
               onChange={(v) => handleChange("alamat", v)}
               error={errors.alamat}
             />
-
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 Koordinat
               </label>
-
               <div className="grid grid-cols-2 gap-4">
                 <TextInput
                   label="Latitude"
@@ -1052,22 +957,16 @@ export default function DataInputForm({ schoolType, embedded = false }) {
                   placeholder="107.5"
                 />
               </div>
-
               <button
                 type="button"
                 onClick={() => setShowMap(true)}
-                className="mt-2 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                className="mt-2 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
               >
                 Pilih Koordinat di Map
               </button>
-
-              <p className="text-xs text-gray-500">
-                Isi koordinat manual atau pilih titik di peta.
-              </p>
             </div>
           </div>
         );
-
       case "guru":
         return (
           <div className="space-y-4">
@@ -1111,7 +1010,6 @@ export default function DataInputForm({ schoolType, embedded = false }) {
             </div>
           </div>
         );
-
       case "siswa":
         return (
           <div className="space-y-6">
@@ -1122,106 +1020,178 @@ export default function DataInputForm({ schoolType, embedded = false }) {
               </h4>
             </div>
 
-            {/* PKBM */}
+            {/* Bagian Siswa Reguler */}
             {config.isPkbm && config.pakets ? (
               <div className="space-y-4">
-                {Object.entries(config.pakets).map(([paketKey, paket]) => {
-                  const paketName = `paket${paketKey}`;
-                  const grades = Array.isArray(paket?.grades)
-                    ? paket.grades
-                    : [];
-                  return (
-                    <div
-                      key={paketName}
-                      className="p-4 border rounded-lg bg-gray-50/50 space-y-4"
-                    >
-                      <p className="font-medium">{paket?.name || paketName}</p>
-                      {grades.map((grade) => (
-                        <div
-                          key={`${paketName}-kelas${grade}`}
-                          className="grid grid-cols-2 gap-4"
-                        >
-                          <NumberInput
-                            label={`Kelas ${grade} - Laki-laki`}
-                            value={getValue(
-                              formData,
-                              `siswa.${paketName}.kelas${grade}.l`
-                            )}
-                            onChange={(v) =>
-                              handleChange(
-                                `siswa.${paketName}.kelas${grade}.l`,
-                                v
-                              )
-                            }
-                          />
-                          <NumberInput
-                            label={`Kelas ${grade} - Perempuan`}
-                            value={getValue(
-                              formData,
-                              `siswa.${paketName}.kelas${grade}.p`
-                            )}
-                            onChange={(v) =>
-                              handleChange(
-                                `siswa.${paketName}.kelas${grade}.p`,
-                                v
-                              )
-                            }
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <>
-                {config.grades &&
-                  config.grades.map((grade) => (
-                    <div
-                      key={grade}
-                      className="p-4 border rounded-lg bg-gray-50/50"
-                    >
-                      <p className="font-medium mb-3">Kelas {grade}</p>
-                      <div className="grid grid-cols-2 gap-4">
+                {Object.entries(config.pakets).map(([pk, p]) => (
+                  <div
+                    key={pk}
+                    className="p-4 border rounded-lg bg-gray-50/50 space-y-4"
+                  >
+                    <p className="font-medium">{p?.name || `paket${pk}`}</p>
+                    {(p.grades || []).map((g) => (
+                      <div
+                        key={`${pk}-${g}`}
+                        className="grid grid-cols-2 gap-4"
+                      >
                         <NumberInput
-                          label="Laki-laki"
-                          value={getValue(formData, `siswa.kelas${grade}.l`)}
+                          label={`Kelas ${g} - L`}
+                          value={getValue(
+                            formData,
+                            `siswa.paket${pk}.kelas${g}.l`
+                          )}
                           onChange={(v) =>
-                            handleChange(`siswa.kelas${grade}.l`, v)
+                            handleChange(`siswa.paket${pk}.kelas${g}.l`, v)
                           }
                         />
                         <NumberInput
-                          label="Perempuan"
-                          value={getValue(formData, `siswa.kelas${grade}.p`)}
+                          label={`Kelas ${g} - P`}
+                          value={getValue(
+                            formData,
+                            `siswa.paket${pk}.kelas${g}.p`
+                          )}
                           onChange={(v) =>
-                            handleChange(`siswa.kelas${grade}.p`, v)
+                            handleChange(`siswa.paket${pk}.kelas${g}.p`, v)
                           }
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <>
+                {config.grades?.map((g) => (
+                  <div key={g} className="p-4 border rounded-lg bg-gray-50/50">
+                    <p className="font-medium mb-3">Kelas {g}</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <NumberInput
+                        label="Laki-laki"
+                        value={getValue(formData, `siswa.kelas${g}.l`)}
+                        onChange={(v) => handleChange(`siswa.kelas${g}.l`, v)}
+                      />
+                      <NumberInput
+                        label="Perempuan"
+                        value={getValue(formData, `siswa.kelas${g}.p`)}
+                        onChange={(v) => handleChange(`siswa.kelas${g}.p`, v)}
+                      />
+                    </div>
+                  </div>
+                ))}
+                {config.isPaud &&
+                  activePaudRombelTypes.map((t) => (
+                    <div
+                      key={t.key}
+                      className="p-4 border rounded-lg bg-gray-50/50"
+                    >
+                      <p className="font-medium mb-3">{t.label}</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <NumberInput
+                          label="Laki-laki"
+                          value={getValue(formData, `siswa.${t.key}.l`)}
+                          onChange={(v) => handleChange(`siswa.${t.key}.l`, v)}
+                        />
+                        <NumberInput
+                          label="Perempuan"
+                          value={getValue(formData, `siswa.${t.key}.p`)}
+                          onChange={(v) => handleChange(`siswa.${t.key}.p`, v)}
                         />
                       </div>
                     </div>
                   ))}
+              </>
+            )}
 
-                {config.isPaud &&
-                  activePaudRombelTypes.length > 0 &&
-                  activePaudRombelTypes.map((type) => (
-                    <div
-                      key={type.key}
-                      className="p-4 border rounded-lg bg-gray-50/50"
-                    >
-                      <p className="font-medium mb-3">{type.label}</p>
-                      <div className="grid grid-cols-2 gap-4">
+            {/* ✅ SECTION BARU: Siswa Berkebutuhan Khusus (ABK) */}
+            <h3 className="font-bold text-lg mt-8 mb-4 border-b pb-2">
+              Data Siswa Berkebutuhan Khusus (ABK)
+            </h3>
+            {config.isPkbm && config.pakets ? (
+              <div className="space-y-4">
+                {Object.entries(config.pakets).map(([pk, p]) => (
+                  <div
+                    key={`abk-${pk}`}
+                    className="p-4 border rounded-lg bg-orange-50/50 space-y-4"
+                  >
+                    <p className="font-medium">
+                      ABK - {p?.name || `paket${pk}`}
+                    </p>
+                    {(p.grades || []).map((g) => (
+                      <div
+                        key={`abk-${pk}-${g}`}
+                        className="grid grid-cols-2 gap-4"
+                      >
                         <NumberInput
-                          label="Laki-laki"
-                          value={getValue(formData, `siswa.${type.key}.l`)}
+                          label={`Kelas ${g} - L (ABK)`}
+                          value={getValue(
+                            formData,
+                            `siswaAbk.paket${pk}.kelas${g}.l`
+                          )}
                           onChange={(v) =>
-                            handleChange(`siswa.${type.key}.l`, v)
+                            handleChange(`siswaAbk.paket${pk}.kelas${g}.l`, v)
                           }
                         />
                         <NumberInput
-                          label="Perempuan"
-                          value={getValue(formData, `siswa.${type.key}.p`)}
+                          label={`Kelas ${g} - P (ABK)`}
+                          value={getValue(
+                            formData,
+                            `siswaAbk.paket${pk}.kelas${g}.p`
+                          )}
                           onChange={(v) =>
-                            handleChange(`siswa.${type.key}.p`, v)
+                            handleChange(`siswaAbk.paket${pk}.kelas${g}.p`, v)
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <>
+                {config.grades?.map((g) => (
+                  <div
+                    key={`abk-kelas${g}`}
+                    className="p-4 border rounded-lg bg-orange-50/50"
+                  >
+                    <p className="font-medium mb-3">ABK - Kelas {g}</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <NumberInput
+                        label="Laki-laki (ABK)"
+                        value={getValue(formData, `siswaAbk.kelas${g}.l`)}
+                        onChange={(v) =>
+                          handleChange(`siswaAbk.kelas${g}.l`, v)
+                        }
+                      />
+                      <NumberInput
+                        label="Perempuan (ABK)"
+                        value={getValue(formData, `siswaAbk.kelas${g}.p`)}
+                        onChange={(v) =>
+                          handleChange(`siswaAbk.kelas${g}.p`, v)
+                        }
+                      />
+                    </div>
+                  </div>
+                ))}
+                {config.isPaud &&
+                  activePaudRombelTypes.map((t) => (
+                    <div
+                      key={`abk-${t.key}`}
+                      className="p-4 border rounded-lg bg-orange-50/50"
+                    >
+                      <p className="font-medium mb-3">ABK - {t.label}</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <NumberInput
+                          label="Laki-laki (ABK)"
+                          value={getValue(formData, `siswaAbk.${t.key}.l`)}
+                          onChange={(v) =>
+                            handleChange(`siswaAbk.${t.key}.l`, v)
+                          }
+                        />
+                        <NumberInput
+                          label="Perempuan (ABK)"
+                          value={getValue(formData, `siswaAbk.${t.key}.p`)}
+                          onChange={(v) =>
+                            handleChange(`siswaAbk.${t.key}.p`, v)
                           }
                         />
                       </div>
@@ -1231,146 +1201,94 @@ export default function DataInputForm({ schoolType, embedded = false }) {
             )}
           </div>
         );
-
       case "rombel":
-        if (config.isPkbm && config.pakets) {
-          return (
-            <div className="space-y-4">
-              {Object.entries(config.pakets).map(([paketKey, paket]) => {
-                const paketName = `paket${paketKey}`;
-                const grades = Array.isArray(paket?.grades) ? paket.grades : [];
-                return (
-                  <div
-                    key={paketName}
-                    className="p-4 border rounded-lg bg-gray-50/50"
-                  >
-                    <p className="font-medium mb-3">
-                      {paket?.name || paketName}
-                    </p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {grades.map((grade) => (
-                        <NumberInput
-                          key={`${paketName}-rombel-kelas${grade}`}
-                          label={`Rombel Kelas ${grade}`}
-                          value={getValue(
-                            formData,
-                            `rombel.${paketName}.kelas${grade}`
-                          )}
-                          onChange={(v) =>
-                            handleChange(`rombel.${paketName}.kelas${grade}`, v)
-                          }
-                        />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        }
-
-        if (config.isPaud && activePaudRombelTypes.length > 0) {
-          return (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {activePaudRombelTypes.map((type) => (
-                <NumberInput
-                  key={`rombel-${type.key}`}
-                  label={`Rombel ${type.label}`}
-                  value={getValue(formData, `rombel.${type.key}`)}
-                  onChange={(v) => handleChange(`rombel.${type.key}`, v)}
-                />
-              ))}
-            </div>
-          );
-        }
-
         return (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {config.grades &&
-              config.grades.map((grade) => (
-                <NumberInput
-                  key={`rombel-${grade}`}
-                  label={`Rombel Kelas ${grade}`}
-                  value={getValue(formData, `rombel.kelas${grade}`)}
-                  onChange={(v) => handleChange(`rombel.kelas${grade}`, v)}
-                />
-              ))}
+          <div className="space-y-4">
+            {config.isPkbm && config.pakets ? (
+              Object.entries(config.pakets).map(([pk, p]) => (
+                <div key={pk} className="p-4 border rounded-lg bg-gray-50/50">
+                  <p className="font-medium mb-3">{p?.name}</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {(p.grades || []).map((g) => (
+                      <NumberInput
+                        key={g}
+                        label={`Rombel Kls ${g}`}
+                        value={getValue(
+                          formData,
+                          `rombel.paket${pk}.kelas${g}`
+                        )}
+                        onChange={(v) =>
+                          handleChange(`rombel.paket${pk}.kelas${g}`, v)
+                        }
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))
+            ) : config.isPaud ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {activePaudRombelTypes.map((t) => (
+                  <NumberInput
+                    key={t.key}
+                    label={`Rombel ${t.label}`}
+                    value={getValue(formData, `rombel.${t.key}`)}
+                    onChange={(v) => handleChange(`rombel.${t.key}`, v)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {config.grades?.map((g) => (
+                  <NumberInput
+                    key={g}
+                    label={`Rombel Kls ${g}`}
+                    value={getValue(formData, `rombel.kelas${g}`)}
+                    onChange={(v) => handleChange(`rombel.kelas${g}`, v)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         );
-
-      case "lanjut": {
+      case "lanjut":
+        if (!LANJUT_OPTIONS[schoolType]) return <p>Tidak berlaku.</p>;
         const opt = LANJUT_OPTIONS[schoolType];
-        if (!opt) {
-          return (
-            <p className="text-muted-foreground">
-              Tidak berlaku untuk jenjang ini.
-            </p>
-          );
-        }
-
         if (isPkbm) {
+          const grps = [
+            { k: "paketA", l: "Lulusan Paket A" },
+            { k: "paketB", l: "Lulusan Paket B" },
+            { k: "paketC", l: "Lulusan Paket C" },
+          ];
           return (
             <div className="space-y-6">
-              {/* ✅ Form Paket A Baru */}
-              <div className="p-4 border rounded-lg bg-gray-50/50">
-                <p className="font-medium mb-3">Kelanjutan Lulusan Paket A</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {opt.paketA?.map((o) => (
-                    <NumberInput
-                      key={`lanjut-paketA-${o.key}`}
-                      label={o.label}
-                      value={getValue(formData, `lanjut.paketA.${o.key}`)}
-                      onChange={(v) =>
-                        handleChange(`lanjut.paketA.${o.key}`, v)
-                      }
-                    />
-                  ))}
+              {grps.map((g) => (
+                <div key={g.k} className="p-4 border rounded-lg bg-gray-50/50">
+                  <p className="font-medium mb-3">{g.l}</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {(opt[g.k] || []).map((o) => (
+                      <NumberInput
+                        key={o.key}
+                        label={o.label}
+                        value={getValue(formData, `lanjut.${g.k}.${o.key}`)}
+                        onChange={(v) =>
+                          handleChange(`lanjut.${g.k}.${o.key}`, v)
+                        }
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-
-              <div className="p-4 border rounded-lg bg-gray-50/50">
-                <p className="font-medium mb-3">Kelanjutan Lulusan Paket B</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {opt.paketB?.map((o) => (
-                    <NumberInput
-                      key={`lanjut-paketB-${o.key}`}
-                      label={o.label}
-                      value={getValue(formData, `lanjut.paketB.${o.key}`)}
-                      onChange={(v) =>
-                        handleChange(`lanjut.paketB.${o.key}`, v)
-                      }
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="p-4 border rounded-lg bg-gray-50/50">
-                <p className="font-medium mb-3">Kelanjutan Lulusan Paket C</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {opt.paketC?.map((o) => (
-                    <NumberInput
-                      key={`lanjut-paketC-${o.key}`}
-                      label={o.label}
-                      value={getValue(formData, `lanjut.paketC.${o.key}`)}
-                      onChange={(v) =>
-                        handleChange(`lanjut.paketC.${o.key}`, v)
-                      }
-                    />
-                  ))}
-                </div>
-              </div>
+              ))}
             </div>
           );
         }
-
         return (
           <div className="space-y-6">
             <div className="p-4 border rounded-lg bg-gray-50/50">
-              <p className="font-medium mb-3">Melanjutkan Dalam Kabupaten</p>
+              <p className="font-medium mb-3">Dalam Kabupaten</p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {(opt.dalamKab || []).map((o) => (
                   <NumberInput
-                    key={`lanjut-dalam-${o.key}`}
+                    key={o.key}
                     label={o.label}
                     value={getValue(formData, `lanjut.dalamKab.${o.key}`)}
                     onChange={(v) =>
@@ -1380,13 +1298,12 @@ export default function DataInputForm({ schoolType, embedded = false }) {
                 ))}
               </div>
             </div>
-
             <div className="p-4 border rounded-lg bg-gray-50/50">
-              <p className="font-medium mb-3">Melanjutkan Luar Kabupaten</p>
+              <p className="font-medium mb-3">Luar Kabupaten</p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {(opt.luarKab || []).map((o) => (
                   <NumberInput
-                    key={`lanjut-luar-${o.key}`}
+                    key={o.key}
                     label={o.label}
                     value={getValue(formData, `lanjut.luarKab.${o.key}`)}
                     onChange={(v) => handleChange(`lanjut.luarKab.${o.key}`, v)}
@@ -1394,12 +1311,11 @@ export default function DataInputForm({ schoolType, embedded = false }) {
                 ))}
               </div>
             </div>
-
             <div className="p-4 border rounded-lg bg-gray-50/50">
-              <p className="font-medium mb-3">Tidak Melanjutkan / Bekerja</p>
+              <p className="font-medium mb-3">Lainnya</p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <NumberInput
-                  label="Tidak Melanjutkan"
+                  label="Tidak Lanjut"
                   value={getValue(formData, "lanjut.tidakLanjut")}
                   onChange={(v) => handleChange("lanjut.tidakLanjut", v)}
                 />
@@ -1412,129 +1328,68 @@ export default function DataInputForm({ schoolType, embedded = false }) {
             </div>
           </div>
         );
-      }
-
-      case "prasarana": {
-        // ✅ daftar lab SMP (key = yang dipakai SchoolDetailsTabs)
-        const SMP_LABS = [
-          { key: "laboratory_comp", label: "Lab. Komputer" },
-          { key: "laboratory_langua", label: "Lab. Bahasa" },
-          { key: "laboratory_ipa", label: "Lab. IPA" },
-          { key: "laboratory_fisika", label: "Lab. Fisika" },
-          { key: "laboratory_biologi", label: "Lab. Biologi" },
-        ];
-
+      case "prasarana":
         return (
           <div className="space-y-6">
             <div className="p-4 border rounded-lg bg-gray-50/50">
               <p className="font-medium mb-3">Ukuran & Gedung</p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <NumberInput
-                  label="Luas Tanah (m²)"
+                  label="Tanah (m²)"
                   value={getValue(formData, "prasarana.ukuran.tanah")}
                   onChange={(v) => handleChange("prasarana.ukuran.tanah", v)}
                 />
                 <NumberInput
-                  label="Luas Bangunan (m²)"
+                  label="Bangunan (m²)"
                   value={getValue(formData, "prasarana.ukuran.bangunan")}
                   onChange={(v) => handleChange("prasarana.ukuran.bangunan", v)}
                 />
                 <NumberInput
-                  label="Luas Halaman (m²)"
+                  label="Halaman (m²)"
                   value={getValue(formData, "prasarana.ukuran.halaman")}
                   onChange={(v) => handleChange("prasarana.ukuran.halaman", v)}
                 />
                 <NumberInput
-                  label="Jumlah Gedung"
+                  label="Jml Gedung"
                   value={getValue(formData, "prasarana.gedung.jumlah")}
                   onChange={(v) => handleChange("prasarana.gedung.jumlah", v)}
                 />
               </div>
             </div>
-
             <div className="p-4 border rounded-lg bg-gray-50/50">
               <p className="font-medium mb-3">Kondisi Ruang Kelas</p>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <NumberInput
-                  label="Total Ruang"
-                  value={getValue(formData, "prasarana.classrooms.total_room")}
-                  onChange={(v) =>
-                    handleChange("prasarana.classrooms.total_room", v)
-                  }
-                />
-                <NumberInput
-                  label="Baik"
-                  value={getValue(
-                    formData,
-                    "prasarana.classrooms.classrooms_good"
-                  )}
-                  onChange={(v) =>
-                    handleChange("prasarana.classrooms.classrooms_good", v)
-                  }
-                />
-                <NumberInput
-                  label="Rusak Ringan"
-                  value={getValue(formData, "prasarana.classrooms.rusakRingan")}
-                  onChange={(v) =>
-                    handleChange("prasarana.classrooms.rusakRingan", v)
-                  }
-                />
-                <NumberInput
-                  label="Rusak Sedang"
-                  value={getValue(
-                    formData,
-                    "prasarana.classrooms.classrooms_moderate_damage"
-                  )}
-                  onChange={(v) =>
-                    handleChange(
-                      "prasarana.classrooms.classrooms_moderate_damage",
-                      v
-                    )
-                  }
-                />
-                <NumberInput
-                  label="Rusak Berat"
-                  value={getValue(
-                    formData,
-                    "prasarana.classrooms.heavy_damage"
-                  )}
-                  onChange={(v) =>
-                    handleChange("prasarana.classrooms.heavy_damage", v)
-                  }
-                />
-                <NumberInput
-                  label="Rusak Total"
-                  value={getValue(formData, "prasarana.classrooms.rusakTotal")}
-                  onChange={(v) =>
-                    handleChange("prasarana.classrooms.rusakTotal", v)
-                  }
-                />
+                {[
+                  "total_room",
+                  "classrooms_good",
+                  "rusakRingan",
+                  "classrooms_moderate_damage",
+                  "heavy_damage",
+                  "rusakTotal",
+                ].map((k) => (
+                  <NumberInput
+                    key={k}
+                    label={k.replace(/_/g, " ").replace("classrooms ", "")}
+                    value={getValue(formData, `prasarana.classrooms.${k}`)}
+                    onChange={(v) =>
+                      handleChange(`prasarana.classrooms.${k}`, v)
+                    }
+                  />
+                ))}
               </div>
-
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                <NumberInput
-                  label="Kurang RKB"
-                  value={getValue(formData, "prasarana.classrooms.kurangRkb")}
-                  onChange={(v) =>
-                    handleChange("prasarana.classrooms.kurangRkb", v)
-                  }
-                />
-                <NumberInput
-                  label="Kelebihan (Tak Terawat)"
-                  value={getValue(formData, "prasarana.classrooms.kelebihan")}
-                  onChange={(v) =>
-                    handleChange("prasarana.classrooms.kelebihan", v)
-                  }
-                />
-                <NumberInput
-                  label="RKB Tambahan"
-                  value={getValue(formData, "prasarana.classrooms.rkbTambahan")}
-                  onChange={(v) =>
-                    handleChange("prasarana.classrooms.rkbTambahan", v)
-                  }
-                />
+                {["kurangRkb", "kelebihan", "rkbTambahan"].map((k) => (
+                  <NumberInput
+                    key={k}
+                    label={k}
+                    value={getValue(formData, `prasarana.classrooms.${k}`)}
+                    onChange={(v) =>
+                      handleChange(`prasarana.classrooms.${k}`, v)
+                    }
+                  />
+                ))}
                 <SelectInput
-                  label="Ketersediaan Lahan"
+                  label="Lahan"
                   value={getValue(formData, "prasarana.classrooms.lahan") || ""}
                   onChange={(v) =>
                     handleChange("prasarana.classrooms.lahan", v)
@@ -1544,64 +1399,116 @@ export default function DataInputForm({ schoolType, embedded = false }) {
                 />
               </div>
             </div>
-
-            {/* ✅ BARU: Laboratorium (SMP) per jenis */}
             {isSmp && (
               <div className="p-4 border rounded-lg bg-gray-50/50">
-                <p className="font-medium mb-3">Laboratorium (SMP)</p>
+                <p className="font-medium mb-3">Laboratorium SMP</p>
                 <div className="space-y-4">
-                  {SMP_LABS.map((lab) => (
+                  {[
+                    { k: "laboratory_comp", l: "Komputer" },
+                    { k: "laboratory_langua", l: "Bahasa" },
+                    { k: "laboratory_ipa", l: "IPA" },
+                    { k: "laboratory_fisika", l: "Fisika" },
+                    { k: "laboratory_biologi", l: "Biologi" },
+                  ].map((lb) => (
+                    <div key={lb.k} className="p-3 border rounded-lg bg-white">
+                      <p className="font-medium mb-2">{lb.l}</p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {[
+                          "total_all",
+                          "good",
+                          "moderate_damage",
+                          "heavy_damage",
+                        ].map((stat) => (
+                          <NumberInput
+                            key={stat}
+                            label={stat.replace("_", " ")}
+                            value={getValue(
+                              formData,
+                              `prasarana.labs.${lb.k}.${stat}`
+                            )}
+                            onChange={(v) =>
+                              handleChange(`prasarana.labs.${lb.k}.${stat}`, v)
+                            }
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Detail Toilet SMP */}
+            {isSmp && (
+              <div className="p-4 border rounded-lg bg-gray-50/50">
+                <p className="font-medium mb-3">Detail Toilet (SMP)</p>
+                <div className="space-y-4">
+                  {[
+                    {
+                      label: "Toilet Guru (Laki-laki)",
+                      path: "teachers_toilet.male",
+                    },
+                    {
+                      label: "Toilet Guru (Perempuan)",
+                      path: "teachers_toilet.female",
+                    },
+                    {
+                      label: "Toilet Siswa (Laki-laki)",
+                      path: "students_toilet.male",
+                    },
+                    {
+                      label: "Toilet Siswa (Perempuan)",
+                      path: "students_toilet.female",
+                    },
+                  ].map((item) => (
                     <div
-                      key={lab.key}
+                      key={item.path}
                       className="p-3 border rounded-lg bg-white"
                     >
-                      <p className="font-medium mb-3">{lab.label}</p>
+                      <p className="font-medium mb-2">{item.label}</p>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <NumberInput
                           label="Total"
                           value={getValue(
                             formData,
-                            `prasarana.labs.${lab.key}.total_all`
+                            `prasarana.${item.path}.total`
                           )}
                           onChange={(v) =>
-                            handleChange(
-                              `prasarana.labs.${lab.key}.total_all`,
-                              v
-                            )
+                            handleChange(`prasarana.${item.path}.total`, v)
                           }
                         />
                         <NumberInput
                           label="Baik"
                           value={getValue(
                             formData,
-                            `prasarana.labs.${lab.key}.good`
+                            `prasarana.${item.path}.good`
                           )}
                           onChange={(v) =>
-                            handleChange(`prasarana.labs.${lab.key}.good`, v)
+                            handleChange(`prasarana.${item.path}.good`, v)
                           }
                         />
                         <NumberInput
-                          label="Rusak Sedang"
+                          label="R. Sedang"
                           value={getValue(
                             formData,
-                            `prasarana.labs.${lab.key}.moderate_damage`
+                            `prasarana.${item.path}.moderate_damage`
                           )}
                           onChange={(v) =>
                             handleChange(
-                              `prasarana.labs.${lab.key}.moderate_damage`,
+                              `prasarana.${item.path}.moderate_damage`,
                               v
                             )
                           }
                         />
                         <NumberInput
-                          label="Rusak Berat"
+                          label="R. Berat"
                           value={getValue(
                             formData,
-                            `prasarana.labs.${lab.key}.heavy_damage`
+                            `prasarana.${item.path}.heavy_damage`
                           )}
                           onChange={(v) =>
                             handleChange(
-                              `prasarana.labs.${lab.key}.heavy_damage`,
+                              `prasarana.${item.path}.heavy_damage`,
                               v
                             )
                           }
@@ -1610,264 +1517,106 @@ export default function DataInputForm({ schoolType, embedded = false }) {
                     </div>
                   ))}
                 </div>
-
-                <p className="text-xs text-muted-foreground mt-3">
-                  Ini akan tersimpan ke <code>meta.prasarana.laboratory_*</code>{" "}
-                  supaya tab Prasarana SMP bisa menampilkan lab per jenis.
-                </p>
               </div>
             )}
 
             <div className="p-4 border rounded-lg bg-gray-50/50">
-              <p className="font-medium mb-3">Kondisi Ruangan Lainnya</p>
-              {isSmp && (
-                <div className="p-4 border rounded-lg bg-gray-50/50">
-                  <p className="font-medium mb-3">Rincian Toilet (SMP)</p>
-
-                  {[
-                    { key: "teachers_toilet", label: "Toilet Guru" },
-                    { key: "students_toilet", label: "Toilet Siswa" },
-                  ].map((group) => (
-                    <div key={group.key} className="mb-4">
-                      <p className="font-medium mb-2">{group.label}</p>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {[
-                          { g: "male", label: "Pria" },
-                          { g: "female", label: "Wanita" },
-                        ].map((sex) => (
-                          <div
-                            key={sex.g}
-                            className="p-3 border rounded-lg bg-white"
-                          >
-                            <p className="text-sm font-medium mb-2">
-                              {sex.label}
-                            </p>
-
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                              <NumberInput
-                                label="Total"
-                                value={getValue(
-                                  formData,
-                                  `prasarana.${group.key}.${sex.g}.total`
-                                )}
-                                onChange={(v) =>
-                                  handleChange(
-                                    `prasarana.${group.key}.${sex.g}.total`,
-                                    v
-                                  )
-                                }
-                              />
-                              <NumberInput
-                                label="Baik"
-                                value={getValue(
-                                  formData,
-                                  `prasarana.${group.key}.${sex.g}.good`
-                                )}
-                                onChange={(v) =>
-                                  handleChange(
-                                    `prasarana.${group.key}.${sex.g}.good`,
-                                    v
-                                  )
-                                }
-                              />
-                              <NumberInput
-                                label="Rusak Sedang"
-                                value={getValue(
-                                  formData,
-                                  `prasarana.${group.key}.${sex.g}.moderate_damage`
-                                )}
-                                onChange={(v) =>
-                                  handleChange(
-                                    `prasarana.${group.key}.${sex.g}.moderate_damage`,
-                                    v
-                                  )
-                                }
-                              />
-                              <NumberInput
-                                label="Rusak Berat"
-                                value={getValue(
-                                  formData,
-                                  `prasarana.${group.key}.${sex.g}.heavy_damage`
-                                )}
-                                onChange={(v) =>
-                                  handleChange(
-                                    `prasarana.${group.key}.${sex.g}.heavy_damage`,
-                                    v
-                                  )
-                                }
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
+              <p className="font-medium mb-3">Ruangan Lainnya</p>
               <div className="space-y-4">
                 {[
-                  { key: "library", label: "Perpustakaan" },
-                  { key: "laboratory", label: "Laboratorium (Umum)" },
-                  { key: "teacher_room", label: "Ruang Guru" },
-                  { key: "uks_room", label: "UKS" },
-                  { key: "toilets", label: "Toilet" },
-                  { key: "official_residences", label: "Rumah Dinas" },
+                  { k: "library", l: "Perpus" },
+                  // ✅ LOGIC BARU: Lab Umum hanya muncul jika BUKAN SMP dan BUKAN PAUD
+                  ...(!isSmp && !isPaud
+                    ? [{ k: "laboratory", l: "Lab Umum" }]
+                    : []),
+                  { k: "teacher_room", l: "R. Guru" },
+                  { k: "uks_room", l: "UKS" },
+                  // Sembunyikan Toilet Umum jika SMP (karena ada detail toilet di atas)
+                  ...(!isSmp ? [{ k: "toilets", l: "Toilet" }] : []),
+                  { k: "official_residences", l: "Rumah Dinas" },
                 ].map((r) => (
                   <div
-                    key={r.key}
+                    key={r.k}
                     className="grid grid-cols-2 md:grid-cols-4 gap-4"
                   >
                     <NumberInput
-                      label={`${r.label} - Total`}
-                      value={getValue(
-                        formData,
-                        `prasarana.rooms.${r.key}.total`
-                      )}
+                      label={`${r.l} Total`}
+                      value={getValue(formData, `prasarana.rooms.${r.k}.total`)}
                       onChange={(v) =>
-                        handleChange(`prasarana.rooms.${r.key}.total`, v)
+                        handleChange(`prasarana.rooms.${r.k}.total`, v)
                       }
                     />
                     <NumberInput
                       label="Baik"
-                      value={getValue(
-                        formData,
-                        `prasarana.rooms.${r.key}.good`
-                      )}
+                      value={getValue(formData, `prasarana.rooms.${r.k}.good`)}
                       onChange={(v) =>
-                        handleChange(`prasarana.rooms.${r.key}.good`, v)
+                        handleChange(`prasarana.rooms.${r.k}.good`, v)
                       }
                     />
                     <NumberInput
-                      label="Rusak Sedang"
+                      label="R. Sedang"
                       value={getValue(
                         formData,
-                        `prasarana.rooms.${r.key}.moderate_damage`
+                        `prasarana.rooms.${r.k}.moderate_damage`
                       )}
                       onChange={(v) =>
                         handleChange(
-                          `prasarana.rooms.${r.key}.moderate_damage`,
+                          `prasarana.rooms.${r.k}.moderate_damage`,
                           v
                         )
                       }
                     />
                     <NumberInput
-                      label="Rusak Berat"
+                      label="R. Berat"
                       value={getValue(
                         formData,
-                        `prasarana.rooms.${r.key}.heavy_damage`
+                        `prasarana.rooms.${r.k}.heavy_damage`
                       )}
                       onChange={(v) =>
-                        handleChange(`prasarana.rooms.${r.key}.heavy_damage`, v)
+                        handleChange(`prasarana.rooms.${r.k}.heavy_damage`, v)
                       }
                     />
                   </div>
                 ))}
               </div>
             </div>
-
             <div className="p-4 border rounded-lg bg-gray-50/50">
-              <p className="font-medium mb-3">Mebeulair & TIK</p>
+              <p className="font-medium mb-3">Mebeulair</p>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <NumberInput
-                  label="Meja - Total"
-                  value={getValue(formData, "prasarana.furniture.tables.total")}
-                  onChange={(v) =>
-                    handleChange("prasarana.furniture.tables.total", v)
-                  }
-                />
-                <NumberInput
-                  label="Meja - Baik"
-                  value={getValue(formData, "prasarana.furniture.tables.good")}
-                  onChange={(v) =>
-                    handleChange("prasarana.furniture.tables.good", v)
-                  }
-                />
-                <NumberInput
-                  label="Meja - Rusak Sedang"
-                  value={getValue(
-                    formData,
-                    "prasarana.furniture.tables.moderate_damage"
-                  )}
-                  onChange={(v) =>
-                    handleChange(
-                      "prasarana.furniture.tables.moderate_damage",
-                      v
+                {["tables", "chairs"].map((i) =>
+                  ["total", "good", "moderate_damage", "heavy_damage"].map(
+                    (s) => (
+                      <NumberInput
+                        key={`${i}-${s}`}
+                        label={`${i} ${s}`}
+                        value={getValue(
+                          formData,
+                          `prasarana.furniture.${i}.${s}`
+                        )}
+                        onChange={(v) =>
+                          handleChange(`prasarana.furniture.${i}.${s}`, v)
+                        }
+                      />
                     )
-                  }
-                />
+                  )
+                )}
                 <NumberInput
-                  label="Meja - Rusak Berat"
-                  value={getValue(
-                    formData,
-                    "prasarana.furniture.tables.heavy_damage"
-                  )}
-                  onChange={(v) =>
-                    handleChange("prasarana.furniture.tables.heavy_damage", v)
-                  }
-                />
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                <NumberInput
-                  label="Kursi - Total"
-                  value={getValue(formData, "prasarana.furniture.chairs.total")}
-                  onChange={(v) =>
-                    handleChange("prasarana.furniture.chairs.total", v)
-                  }
-                />
-                <NumberInput
-                  label="Kursi - Baik"
-                  value={getValue(formData, "prasarana.furniture.chairs.good")}
-                  onChange={(v) =>
-                    handleChange("prasarana.furniture.chairs.good", v)
-                  }
-                />
-                <NumberInput
-                  label="Kursi - Rusak Sedang"
-                  value={getValue(
-                    formData,
-                    "prasarana.furniture.chairs.moderate_damage"
-                  )}
-                  onChange={(v) =>
-                    handleChange(
-                      "prasarana.furniture.chairs.moderate_damage",
-                      v
-                    )
-                  }
-                />
-                <NumberInput
-                  label="Kursi - Rusak Berat"
-                  value={getValue(
-                    formData,
-                    "prasarana.furniture.chairs.heavy_damage"
-                  )}
-                  onChange={(v) =>
-                    handleChange("prasarana.furniture.chairs.heavy_damage", v)
-                  }
-                />
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                <NumberInput
-                  label="Jumlah Komputer"
+                  label="Komputer"
                   value={getValue(formData, "prasarana.furniture.computer")}
                   onChange={(v) =>
                     handleChange("prasarana.furniture.computer", v)
                   }
                 />
                 <NumberInput
-                  label="Jumlah Chromebook"
+                  label="Chromebook"
                   value={getValue(formData, "prasarana.chromebook")}
                   onChange={(v) => handleChange("prasarana.chromebook", v)}
                 />
               </div>
             </div>
-
             <div className="p-4 border rounded-lg bg-gray-50/50">
-              <p className="font-medium mb-3">Rencana Kegiatan Fisik (DAK)</p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <p className="font-medium mb-3">Rencana Kegiatan Fisik</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <NumberInput
                   label="Rehab Ruang Kelas"
                   value={getValue(formData, "kegiatanFisik.rehabRuangKelas")}
@@ -1898,18 +1647,16 @@ export default function DataInputForm({ schoolType, embedded = false }) {
             </div>
           </div>
         );
-      }
-
       case "kelembagaan":
         return (
           <div className="space-y-6">
             <div className="p-4 border rounded-lg bg-gray-50/50">
-              <p className="font-medium mb-3">Status Kelembagaan</p>
+              <p className="font-medium mb-3">Status</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <SelectInput
-                  label="Peralatan Rumah Tangga"
+                  label="Alat Rumah Tangga"
                   value={normalizePeralatanRumahTangga(
-                    getValue(formData, "kelembagaan.peralatanRumahTangga") || ""
+                    getValue(formData, "kelembagaan.peralatanRumahTangga")
                   )}
                   onChange={(v) =>
                     handleChange("kelembagaan.peralatanRumahTangga", v)
@@ -1917,98 +1664,61 @@ export default function DataInputForm({ schoolType, embedded = false }) {
                   options={PERALATAN_RUMAH_TANGGA_OPTIONS}
                   placeholder="Pilih..."
                 />
-
                 <SelectInput
                   label="Pembinaan"
                   value={normalizeSudahBelum(
-                    getValue(formData, "kelembagaan.pembinaan") || ""
+                    getValue(formData, "kelembagaan.pembinaan")
                   )}
                   onChange={(v) => handleChange("kelembagaan.pembinaan", v)}
                   options={SUDAH_BELUM_OPTIONS}
                   placeholder="Pilih..."
                 />
-
                 <SelectInput
                   label="Asesmen"
                   value={normalizeSudahBelum(
-                    getValue(formData, "kelembagaan.asesmen") || ""
+                    getValue(formData, "kelembagaan.asesmen")
                   )}
                   onChange={(v) => handleChange("kelembagaan.asesmen", v)}
                   options={SUDAH_BELUM_OPTIONS}
                   placeholder="Pilih..."
                 />
-
-                <SelectInput
-                  label="Menyelenggarakan Belajar"
-                  value={
-                    getValue(formData, "kelembagaan.menyelenggarakanBelajar") ||
-                    ""
-                  }
-                  onChange={(v) =>
-                    handleChange("kelembagaan.menyelenggarakanBelajar", v)
-                  }
-                  options={YESNO_OPTIONS}
-                  placeholder="Pilih..."
-                />
-                <SelectInput
-                  label="Melaksanakan Rekomendasi"
-                  value={
-                    getValue(formData, "kelembagaan.melaksanakanRekomendasi") ||
-                    ""
-                  }
-                  onChange={(v) =>
-                    handleChange("kelembagaan.melaksanakanRekomendasi", v)
-                  }
-                  options={YESNO_OPTIONS}
-                  placeholder="Pilih..."
-                />
-                <SelectInput
-                  label="Siap Dievaluasi"
-                  value={getValue(formData, "kelembagaan.siapDievaluasi") || ""}
-                  onChange={(v) =>
-                    handleChange("kelembagaan.siapDievaluasi", v)
-                  }
-                  options={YESNO_OPTIONS}
-                  placeholder="Pilih..."
-                />
+                {[
+                  "menyelenggarakanBelajar",
+                  "melaksanakanRekomendasi",
+                  "siapDievaluasi",
+                ].map((k) => (
+                  <SelectInput
+                    key={k}
+                    label={k.replace(/([A-Z])/g, " $1").trim()}
+                    value={getValue(formData, `kelembagaan.${k}`) || ""}
+                    onChange={(v) => handleChange(`kelembagaan.${k}`, v)}
+                    options={YESNO_OPTIONS}
+                    placeholder="Pilih..."
+                  />
+                ))}
               </div>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="p-4 border rounded-lg bg-gray-50/50">
                 <p className="font-medium mb-3">BOP</p>
                 <div className="space-y-4">
-                  <SelectInput
-                    label="Pengelola"
-                    value={
-                      getValue(formData, "kelembagaan.bop.pengelola") || ""
-                    }
-                    onChange={(v) =>
-                      handleChange("kelembagaan.bop.pengelola", v)
-                    }
-                    options={YESNO_OPTIONS}
-                    placeholder="Pilih..."
-                  />
-                  <SelectInput
-                    label="Tenaga Ditingkatkan"
-                    value={
-                      getValue(formData, "kelembagaan.bop.tenagaPeningkatan") ||
-                      ""
-                    }
-                    onChange={(v) =>
-                      handleChange("kelembagaan.bop.tenagaPeningkatan", v)
-                    }
-                    options={YESNO_OPTIONS}
-                    placeholder="Pilih..."
-                  />
+                  {["pengelola", "tenagaPeningkatan"].map((k) => (
+                    <SelectInput
+                      key={k}
+                      label={k}
+                      value={getValue(formData, `kelembagaan.bop.${k}`) || ""}
+                      onChange={(v) => handleChange(`kelembagaan.bop.${k}`, v)}
+                      options={YESNO_OPTIONS}
+                      placeholder="Pilih..."
+                    />
+                  ))}
                 </div>
               </div>
-
               <div className="p-4 border rounded-lg bg-gray-50/50">
-                <p className="font-medium mb-3">Perizinan</p>
+                <p className="font-medium mb-3">Perizinan & Kurikulum</p>
                 <div className="space-y-4">
                   <SelectInput
-                    label="Pengendalian"
+                    label="Izin Pengendalian"
                     value={
                       getValue(
                         formData,
@@ -2022,7 +1732,7 @@ export default function DataInputForm({ schoolType, embedded = false }) {
                     placeholder="Pilih..."
                   />
                   <SelectInput
-                    label="Kelayakan"
+                    label="Izin Kelayakan"
                     value={
                       getValue(formData, "kelembagaan.perizinan.kelayakan") ||
                       ""
@@ -2033,43 +1743,36 @@ export default function DataInputForm({ schoolType, embedded = false }) {
                     options={YESNO_OPTIONS}
                     placeholder="Pilih..."
                   />
+                  <SelectInput
+                    label="Silabus"
+                    value={
+                      getValue(formData, "kelembagaan.kurikulum.silabus") || ""
+                    }
+                    onChange={(v) =>
+                      handleChange("kelembagaan.kurikulum.silabus", v)
+                    }
+                    options={YESNO_OPTIONS}
+                    placeholder="Pilih..."
+                  />
+                  <SelectInput
+                    label="Kompetensi Dasar"
+                    value={
+                      getValue(
+                        formData,
+                        "kelembagaan.kurikulum.kompetensiDasar"
+                      ) || ""
+                    }
+                    onChange={(v) =>
+                      handleChange("kelembagaan.kurikulum.kompetensiDasar", v)
+                    }
+                    options={YESNO_OPTIONS}
+                    placeholder="Pilih..."
+                  />
                 </div>
-              </div>
-            </div>
-
-            <div className="p-4 border rounded-lg bg-gray-50/50">
-              <p className="font-medium mb-3">Kurikulum</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <SelectInput
-                  label="Silabus"
-                  value={
-                    getValue(formData, "kelembagaan.kurikulum.silabus") || ""
-                  }
-                  onChange={(v) =>
-                    handleChange("kelembagaan.kurikulum.silabus", v)
-                  }
-                  options={YESNO_OPTIONS}
-                  placeholder="Pilih..."
-                />
-                <SelectInput
-                  label="Kompetensi Dasar"
-                  value={
-                    getValue(
-                      formData,
-                      "kelembagaan.kurikulum.kompetensiDasar"
-                    ) || ""
-                  }
-                  onChange={(v) =>
-                    handleChange("kelembagaan.kurikulum.kompetensiDasar", v)
-                  }
-                  options={YESNO_OPTIONS}
-                  placeholder="Pilih..."
-                />
               </div>
             </div>
           </div>
         );
-
       default:
         return <div>Konten belum tersedia</div>;
     }
@@ -2086,7 +1789,6 @@ export default function DataInputForm({ schoolType, embedded = false }) {
       {!embedded && (
         <h1 className="text-2xl font-bold mb-6">Input Data {schoolType}</h1>
       )}
-
       <div className="mb-8">
         <Stepper
           sections={sections}
@@ -2095,15 +1797,12 @@ export default function DataInputForm({ schoolType, embedded = false }) {
           completedSteps={completedSteps}
         />
       </div>
-
       <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
         {renderContent()}
-
         <div className="flex justify-between items-center pt-6 border-t mt-6">
           <div className="text-sm text-gray-500">
             Langkah {currentStep} dari {sections.length}
           </div>
-
           <div className="flex gap-3">
             {currentStep > 1 && (
               <button
@@ -2114,7 +1813,6 @@ export default function DataInputForm({ schoolType, embedded = false }) {
                 Kembali
               </button>
             )}
-
             {currentStep < sections.length ? (
               <button
                 type="button"
@@ -2134,14 +1832,13 @@ export default function DataInputForm({ schoolType, embedded = false }) {
                   <Loader2 className="animate-spin w-4 h-4 mr-2" />
                 ) : (
                   <Save className="w-4 h-4 mr-2" />
-                )}
+                )}{" "}
                 Simpan Data
               </button>
             )}
           </div>
         </div>
       </form>
-
       {showMap && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-3xl">
@@ -2155,7 +1852,6 @@ export default function DataInputForm({ schoolType, embedded = false }) {
                 ✕
               </button>
             </div>
-
             <LocationPickerMap
               onSelectLocation={handleLocationSelected}
               initialCoordinates={
@@ -2164,7 +1860,6 @@ export default function DataInputForm({ schoolType, embedded = false }) {
                   : [-7.2167, 107.9]
               }
             />
-
             <p className="text-xs text-gray-500">
               Setelah pilih titik, latitude & longitude terisi otomatis.
             </p>

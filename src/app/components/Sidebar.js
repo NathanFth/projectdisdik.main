@@ -1,88 +1,124 @@
-'use client';
+// src/app/components/Sidebar.jsx
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import { LayoutDashboard, BookOpen, Plus, Baby, Menu, X, User, LogOut } from 'lucide-react';
+import Link from "next/link";
+import Image from "next/image"; // ✅ Import Image untuk logo
+import { usePathname } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import {
+  LayoutDashboard,
+  BookOpen,
+  Plus,
+  Baby,
+  GraduationCap,
+  School,
+  FileText,
+} from "lucide-react";
 
-const IconMap = { LayoutDashboard, BookOpen, Plus, Baby };
+// Mapping Icon
+const IconMap = {
+  LayoutDashboard,
+  BookOpen,
+  Plus,
+  Baby,
+  GraduationCap,
+  School,
+  FileText,
+};
 
 export default function Sidebar() {
-  const { user, roleConfig, logout } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
+  const { roleConfig } = useAuth();
   const pathname = usePathname();
 
   return (
-    <>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-white shadow-lg"
-      >
-        {isOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
-
-      <div
-        className={`fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-40 transition-transform ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:translate-x-0`}
-      >
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-800">DISDIK Operator</h2>
-          <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
-            <User size={16} />
-            <div>
-              <div className="font-medium truncate w-40">{user?.email}</div>
-              <div className="text-xs text-blue-600 font-bold">{roleConfig?.title}</div>
-            </div>
-          </div>
+    // Sidebar Container
+    <aside className="w-64 min-h-[calc(100vh-4rem)] bg-white border-r border-gray-200 flex flex-col shadow-[2px_0_20px_-10px_rgba(0,0,0,0.05)] z-30">
+      {/* === 1. BRANDING HEADER (Official Look) === */}
+      <div className="flex flex-col items-center justify-center py-8 border-b border-gray-100 bg-gradient-to-b from-white to-gray-50/50">
+        {/* Logo Garut (Perisai) */}
+        <div className="relative w-14 h-16 mb-3 drop-shadow-sm filter">
+          <Image
+            src="/images/garut-logo.png" // ✅ Pastikan file ada di public/images/
+            alt="Logo Kabupaten Garut"
+            fill
+            className="object-contain"
+            priority
+          />
         </div>
 
-        <nav className="flex-1 p-4">
-          <ul className="space-y-2">
-            {roleConfig?.menu.map((item) => {
-              const IconComponent = IconMap[item.icon] || LayoutDashboard;
-              const fullPath =
-                item.path === '' ? roleConfig.basePath : `${roleConfig.basePath}${item.path}`;
-              const isActive = pathname === fullPath;
-
-              return (
-                <li key={item.name}>
-                  <Link
-                    href={fullPath}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                        : 'text-gray-600 hover:bg-gray-50'
-                    }`}
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <IconComponent size={20} />
-                    <span className="font-medium">{item.name}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-
-        <div className="p-4 border-t border-gray-200">
-          <button
-            onClick={logout}
-            className="flex items-center gap-3 w-full px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg"
-          >
-            <LogOut size={20} />
-            <span className="font-medium">Logout</span>
-          </button>
+        {/* Teks Branding (Dibuat dengan Code agar Tajam) */}
+        <div className="text-center space-y-0.5">
+          <h1 className="text-2xl font-extrabold text-gray-800 tracking-tight leading-none">
+            DISDIK
+          </h1>
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">
+            Kabupaten Garut
+          </p>
         </div>
       </div>
 
-      {isOpen && (
-        <div
-          className="md:hidden fixed inset-0 bg-black/50 z-30"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-    </>
+      {/* === 2. NAVIGATION LABEL === */}
+      <div className="px-6 pt-6 pb-2">
+        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+          Menu Utama
+        </h3>
+      </div>
+
+      {/* === 3. NAVIGATION LIST === */}
+      <nav className="flex-1 px-3 py-2 space-y-1">
+        {roleConfig?.menu.map((item) => {
+          const IconComponent = IconMap[item.icon] || LayoutDashboard;
+
+          const fullPath =
+            item.path === ""
+              ? roleConfig.basePath
+              : `${roleConfig.basePath}${item.path}`;
+
+          // Logic Exact Match (Sesuai request agar tidak double active)
+          const isActive = pathname === fullPath;
+
+          return (
+            <Link
+              key={item.name}
+              href={fullPath}
+              className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                isActive
+                  ? "bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100" // Style Aktif (Lebih Tegas)
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900" // Style Inaktif
+              }`}
+            >
+              <IconComponent
+                size={18}
+                className={`transition-colors ${
+                  isActive
+                    ? "text-blue-600"
+                    : "text-gray-400 group-hover:text-gray-600"
+                }`}
+              />
+              {item.name}
+
+              {/* Active Indicator (Dot Biru di Kanan) */}
+              {isActive && (
+                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.5)]" />
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* === 4. FOOTER INFO === */}
+      <div className="p-4 m-3 mt-auto border border-gray-100 rounded-xl bg-gray-50/80">
+        <div className="flex flex-col gap-1 text-center">
+          <p className="text-xs font-semibold text-gray-600">
+            e-PlanDISDIK Operator
+          </p>
+          <p className="text-[10px] text-gray-400">
+            © 2025 Dinas Pendidikan
+            <br />
+            Versi 1.0.0 (Beta)
+          </p>
+        </div>
+      </div>
+    </aside>
   );
 }

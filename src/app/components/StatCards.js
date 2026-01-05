@@ -148,82 +148,74 @@ const getInfrastructureStats = (school) => {
   return { heavy, destroyed, totalRooms };
 };
 
-// ✅ SUPER MINING FUNCTION: TIK, Toilet, Mebeulair
+// ✅ FIXED & OPTIMIZED MINING FUNCTION
 const getFacilityStats = (school) => {
   if (!school) return { computers: 0, toilets: 0, goodChairs: 0 };
 
-  // Ambil object prasarana dari meta (prioritas) atau root
   const meta = safeParse(school.meta);
   const prasarana = meta?.prasarana || school.prasarana || {};
 
   // ==========================
   // 1. MINING TIK (Komputer)
   // ==========================
-  // Cek Chromebook (biasanya di root prasarana)
   const chromebook = Number(prasarana.chromebook) || 0;
-
-  // Cek PC (biasanya nested di furniture/mebeulair)
   const pc1 = Number(prasarana.furniture?.computer) || 0;
-  const pc2 = Number(prasarana.mebeulair?.computer) || 0; // Kadang tersimpan di sini
-  const pc3 = Number(prasarana.mebeulair?.komputer) || 0; // Bahasa Indo
-  const pc4 = Number(prasarana.laboratorium_komputer) || 0; // Legacy
+  const pc2 = Number(prasarana.mebeulair?.computer) || 0;
+  const pc3 = Number(prasarana.mebeulair?.komputer) || 0;
+  const pc4 = Number(prasarana.laboratorium_komputer) || 0;
 
   const computers = chromebook + Math.max(pc1, pc2, pc3, pc4);
 
   // ==========================
-  // 2. MINING TOILET (BAIK)
+  // 2. MINING TOILET (BAIK) - AGGREGATION FIX
   // ==========================
-  let toilets = 0;
+  // Kita jumlahkan semua sumber yang mungkin ada isinya.
+  // Karena form biasanya memisahkan field, penjumlahan aman dilakukan.
 
-  // A. Cek struktur "rooms" (Standard Form Baru)
-  // path: prasarana.rooms.toilets.good
+  let toiletSum = 0;
+
+  // Sumber A: General Rooms (SD/PAUD/Umum)
   if (prasarana.rooms?.toilets) {
-    const t = prasarana.rooms.toilets;
-    // Ambil good atau baik, fallback ke total jika good tidak didefinisikan tapi total ada
-    toilets = Number(t.good) || Number(t.baik) || 0;
-  }
-
-  // B. Cek struktur SMP (Rinci: Male/Female)
-  // path: prasarana.students_toilet.male.good
-  else if (prasarana.students_toilet) {
-    const stMale = Number(prasarana.students_toilet?.male?.good) || 0;
-    const stFemale = Number(prasarana.students_toilet?.female?.good) || 0;
-    // Kita fokus toilet siswa untuk rasio, atau bisa ditambah toilet guru
-    const tGuruMale = Number(prasarana.teachers_toilet?.male?.good) || 0;
-    const tGuruFemale = Number(prasarana.teachers_toilet?.female?.good) || 0;
-    toilets = stMale + stFemale + tGuruMale + tGuruFemale;
-  }
-
-  // C. Cek struktur Legacy/Indo
-  // path: prasarana.toiletGuruSiswa.baik
-  else if (prasarana.toiletGuruSiswa) {
-    toilets =
-      Number(prasarana.toiletGuruSiswa.baik) ||
-      Number(prasarana.toiletGuruSiswa.jumlah) ||
+    toiletSum +=
+      Number(prasarana.rooms.toilets.good) ||
+      Number(prasarana.rooms.toilets.baik) ||
       0;
   }
 
-  // D. Cek struktur Root Simple
-  // path: prasarana.toilets.good
-  else if (prasarana.toilets) {
-    toilets =
+  // Sumber B: Rincian Toilet (SMP/Detail)
+  if (prasarana.students_toilet || prasarana.teachers_toilet) {
+    const sMale = Number(prasarana.students_toilet?.male?.good) || 0;
+    const sFemale = Number(prasarana.students_toilet?.female?.good) || 0;
+    const tMale = Number(prasarana.teachers_toilet?.male?.good) || 0;
+    const tFemale = Number(prasarana.teachers_toilet?.female?.good) || 0;
+    toiletSum += sMale + sFemale + tMale + tFemale;
+  }
+
+  // Sumber C: Legacy / Format Lama
+  if (prasarana.toiletGuruSiswa) {
+    const legacyVal =
+      Number(prasarana.toiletGuruSiswa.baik) ||
+      Number(prasarana.toiletGuruSiswa.jumlah) ||
+      0;
+    // Hanya tambahkan jika sumber A & B kosong untuk menghindari double count jika migrasi data
+    if (toiletSum === 0) toiletSum += legacyVal;
+  } else if (prasarana.toilets && !prasarana.rooms?.toilets) {
+    // Format root level (jarang, tapi ada di beberapa versi lama)
+    toiletSum +=
       Number(prasarana.toilets.good) || Number(prasarana.toilets.total) || 0;
   }
+
+  const toilets = toiletSum;
 
   // ==========================
   // 3. MINING KURSI (BAIK)
   // ==========================
-  // path: prasarana.furniture.chairs.good
   const c1 = Number(prasarana.furniture?.chairs?.good) || 0;
-  // path: prasarana.mebeulair.chairs.good (varian typo)
   const c2 = Number(prasarana.mebeulair?.chairs?.good) || 0;
-  // path: prasarana.mebeulair.kursi.baik (Legacy Indo)
   const c3 = Number(prasarana.mebeulair?.kursi?.baik) || 0;
-  // path: prasarana.mebeulair.kursi.jumlah (Legacy Indo - Fallback)
   const c4 = Number(prasarana.mebeulair?.kursi?.jumlah) || 0;
 
-  // Ambil nilai terbesar yang ditemukan (karena biasanya data cuma ada di salah satu format)
-  const goodChairs = Math.max(c1, c2, c3);
+  const goodChairs = Math.max(c1, c2, c3, c4);
 
   return { computers, toilets, goodChairs };
 };
@@ -425,7 +417,7 @@ export default function StatCards({ operatorType }) {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-8 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
           <div key={i} className="h-32 rounded-xl bg-gray-100 animate-pulse" />
         ))}

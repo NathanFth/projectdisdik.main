@@ -1,9 +1,11 @@
-'use client';
+// src/app/dashboard/layout.js (atau layout utama dashboardmu)
+"use client";
 
-import { AuthProvider, useAuth } from '@/context/AuthContext';
-import Sidebar from '../components/Sidebar';
-import TopNavbar from '../components/TopNavbar';
-import { Loader2 } from 'lucide-react';
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import Sidebar from "../components/Sidebar";
+import TopNavbar from "../components/TopNavbar";
+import { Loader2 } from "lucide-react";
+import { Toaster } from "sonner"; // ✅ 1. IMPORT INI WAJIB
 
 function DashboardContent({ children }) {
   const { loading, user } = useAuth();
@@ -22,14 +24,19 @@ function DashboardContent({ children }) {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex">
-        <Sidebar />
-        <div className="flex-1 md:pl-64">
-          <TopNavbar />
-          <main className="p-6 space-y-8 fade-in">{children}</main>
-        </div>
+    <div className="flex h-screen overflow-hidden bg-background">
+      <Sidebar />
+
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <TopNavbar />
+
+        <main className="flex-1 overflow-y-auto p-6 space-y-8 fade-in scroll-smooth">
+          {children}
+        </main>
       </div>
+
+      {/* ✅ 2. PASANG SPEAKERNYA DI SINI */}
+      <Toaster position="top-center" richColors closeButton />
     </div>
   );
 }

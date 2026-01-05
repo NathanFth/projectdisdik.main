@@ -130,7 +130,7 @@ export default function PkbmEditPage() {
   // ===== READY =====
   return (
     <EditSchoolForm
-      key={npsn} // penting: reset state saat ganti sekolah
+      key={npsn} 
       schoolType="PKBM"
       initialData={initialData}
     />

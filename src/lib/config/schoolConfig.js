@@ -55,7 +55,6 @@ export const schoolConfigs = {
       B: { name: "Paket B (Setara SMP)", grades: [7, 8, 9] },
       C: { name: "Paket C (Setara SMA)", grades: [10, 11, 12] },
     },
-    // ✅ TAMBAHAN BARU: Opsi Lanjut Paket A
     lanjutPaketA: [
       { key: "smp", label: "SMP" },
       { key: "mts", label: "MTs" },
@@ -144,12 +143,28 @@ export const createInitialFormData = (config) => {
         rusakSedang: "",
         rusakBerat: "",
       },
+      // ✅ NEW: Struktur Toilet Detail untuk SMP
+      teachers_toilet: {
+        male: { total: "", good: "", moderate_damage: "", heavy_damage: "" },
+        female: { total: "", good: "", moderate_damage: "", heavy_damage: "" },
+      },
+      students_toilet: {
+        male: { total: "", good: "", moderate_damage: "", heavy_damage: "" },
+        female: { total: "", good: "", moderate_damage: "", heavy_damage: "" },
+      },
       rumahDinas: { jumlah: "", baik: "", rusakSedang: "", rusakBerat: "" },
       mebeulair: {
         meja: { jumlah: "", baik: "", rusak: "" },
         kursi: { jumlah: "", baik: "", rusak: "" },
       },
       chromebook: "",
+    },
+
+    kegiatanFisik: {
+      rehabRuangKelas: "",
+      pembangunanRKB: "",
+      rehabToilet: "",
+      pembangunanToilet: "",
     },
 
     kelembagaan: {
@@ -192,8 +207,7 @@ export const createInitialFormData = (config) => {
     baseData.rombel.paketB = {};
     baseData.rombel.paketC = {};
 
-    // ✅ INIT FIELD LULUSAN
-    baseData.lulusanPaketA = {}; // Tambahan
+    baseData.lulusanPaketA = {};
     baseData.lulusanPaketB = {};
     baseData.lulusanPaketC = {};
 
@@ -206,7 +220,6 @@ export const createInitialFormData = (config) => {
       });
     });
 
-    // ✅ LOOP INIT OPSI
     (config.lanjutPaketA || []).forEach((opt) => {
       baseData.lulusanPaketA[opt.key] = "";
     });

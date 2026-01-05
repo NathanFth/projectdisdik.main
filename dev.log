@@ -8,6 +8,5 @@
    - Environments: .env
 
  ✓ Starting...
-Slow filesystem detected. The benchmark took 102ms. If C:\Project\project_disdik-operator-main\.next is a network drive, consider moving it to a local folder. If you have an antivirus enabled, consider excluding your project directory.
- ✓ Ready in 6.8s
+ ✓ Ready in 4.2s
  ○ Compiling /login ...
