@@ -305,3 +305,52 @@
  GET /dashboard/pkbm/input 200 in 322ms
  ✓ Compiled in 6s
  ✓ Compiled in 882ms
+ ✓ Compiled in 12.2s
+ ✓ Compiled in 5.6s
+ ✓ Compiled in 4.1s
+ ✓ Compiled in 820ms
+ ✓ Compiled in 912ms
+ ✓ Compiled in 1654ms
+ ✓ Compiled in 550ms
+ ✓ Compiled in 562ms
+ ✓ Compiled in 628ms
+ ✓ Compiled in 1172ms
+ ✓ Compiled in 2.4s
+ ✓ Compiled in 8.5s
+ GET /dashboard/pkbm/input 200 in 11086ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 544ms
+ GET /dashboard/smp 200 in 2253ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 648ms
+ GET /dashboard/smp/input 200 in 3969ms
+ ✓ Compiled in 1626ms
+ ✓ Compiled in 18.6s
+ ✓ Compiled in 1045ms
+ ✓ Compiled in 1019ms
+ GET /dashboard/smp/input 200 in 11759ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 1130ms
+ ✓ Compiled in 6.6s
+ ✓ Compiled in 810ms
+ ✓ Compiled in 692ms
+ ✓ Compiled in 983ms
+ ✓ Compiled in 885ms
+ ✓ Compiled in 1209ms
+ ✓ Compiled in 3.2s
+ ○ Compiling /dashboard/smp/input ...
+ ✓ Compiled /dashboard/smp/input in 540ms
+ GET /dashboard/smp/input 200 in 2128ms
+ GET /dashboard/pkbm/input 200 in 2636ms
+ GET /dashboard/smp/input 200 in 1008ms
+ GET /dashboard/smp/input 200 in 887ms
+ GET /dashboard/pkbm/input 200 in 2023ms
+ GET /dashboard/pkbm/input 200 in 392ms
+ ✓ Compiled in 716ms
+ ✓ Compiled in 4.1s
+ ✓ Compiled in 3.6s
+ ✓ Compiled in 898ms
+ ✓ Compiled in 11.8s
+ ✓ Compiled in 1180ms
+ ✓ Compiled in 2.1s
+ ✓ Compiled in 992ms
+ ✓ Compiled in 1632ms
+ ✓ Compiled in 664ms
+ ✓ Compiled in 567ms
