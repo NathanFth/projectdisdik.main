@@ -1,16 +1,18 @@
-import { useState, useCallback, useEffect } from 'react';
-import { dataInputService } from '@/services/dataInputService';
+// src/hooks/useDataInput.js
+import { useState, useCallback, useEffect } from "react";
+import { dataInputService } from "@/services/dataInputService";
 
 export function useDataInput(config, initialData) {
   const [formData, setFormData] = useState(initialData);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
 
+  // Fungsi existing: Update satu field manual (ketik satu-satu)
   const handleChange = useCallback(
     (path, value) => {
       setFormData((prev) => {
         const newData = JSON.parse(JSON.stringify(prev));
-        const keys = path.split('.');
+        const keys = path.split(".");
         let current = newData;
         for (let i = 0; i < keys.length - 1; i++) {
           current[keys[i]] = current[keys[i]] || {};
@@ -20,6 +22,7 @@ export function useDataInput(config, initialData) {
         return newData;
       });
 
+      // Hapus error jika field tersebut diubah
       if (errors[path]) {
         setErrors((prev) => {
           const next = { ...prev };
@@ -31,6 +34,15 @@ export function useDataInput(config, initialData) {
     [errors]
   );
 
+  // ✅ FUNGSI BARU: Bulk Update (Khusus untuk Import Excel)
+  // Menimpa seluruh state formData sekaligus tanpa memicu re-render berkali-kali
+  const handleBulkUpdate = useCallback((newData) => {
+    setFormData(newData);
+    // Kita reset error juga karena asumsinya user baru import data baru
+    setErrors({});
+  }, []);
+
+  // Fungsi existing: Auto-hitung total siswa saat data siswa berubah
   useEffect(() => {
     let total = 0;
 
@@ -57,19 +69,23 @@ export function useDataInput(config, initialData) {
       }, 0);
     }
 
+    // Hanya update jika total berbeda untuk menghindari infinite loop
     if (Number(formData.siswa.jumlahSiswa) !== total) {
-      handleChange('siswa.jumlahSiswa', total);
+      handleChange("siswa.jumlahSiswa", total);
     }
   }, [formData.siswa, config, handleChange]);
 
+  // Fungsi existing: Validasi field wajib
   const validate = (fields) => {
     const newErrors = {};
     let isValid = true;
 
     fields.forEach((field) => {
-      const val = field.split('.').reduce((o, k) => (o ? o[k] : undefined), formData);
-      if ((val === '' || val === undefined) && field !== 'optional') {
-        newErrors[field] = 'Wajib diisi';
+      const val = field
+        .split(".")
+        .reduce((o, k) => (o ? o[k] : undefined), formData);
+      if ((val === "" || val === undefined) && field !== "optional") {
+        newErrors[field] = "Wajib diisi";
         isValid = false;
       }
     });
@@ -78,6 +94,7 @@ export function useDataInput(config, initialData) {
     return isValid;
   };
 
+  // Fungsi existing: Submit data
   const submit = async (schoolType) => {
     setSaving(true);
     const result = await dataInputService.submitData(schoolType, formData);
@@ -85,9 +102,13 @@ export function useDataInput(config, initialData) {
     return result;
   };
 
-  return { formData, handleChange, errors, validate, submit, saving };
+  return {
+    formData,
+    handleChange,
+    handleBulkUpdate, // ✅ Diekspor agar bisa dipakai di komponen
+    errors,
+    validate,
+    submit,
+    saving,
+  };
 }
-
-
-
-

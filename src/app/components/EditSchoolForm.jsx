@@ -26,6 +26,7 @@ import { Label } from "./ui/label";
 import { useDataInput } from "@/hooks/useDataInput";
 import { NumberInput, TextInput, SelectInput } from "./ui/FormInputs";
 import Stepper from "./Stepper";
+import ExcelImportButton from "./ExcelImportButton";
 import { supabase } from "@/lib/supabase/lib/client";
 
 const LocationPickerMap = dynamic(() => import("./LocationPickerMap.jsx"), {
@@ -248,10 +249,8 @@ export default function EditSchoolForm({
     };
   }, [initialData]);
 
-  const { formData, handleChange, errors, validate } = useDataInput(
-    config,
-    normalizedInitialData
-  );
+  const { formData, handleChange, handleBulkUpdate, errors, validate } =
+    useDataInput(config, normalizedInitialData);
 
   const [wilayah, setWilayah] = useState(null);
   const [loadingWilayah, setLoadingWilayah] = useState(false);
@@ -1903,6 +1902,15 @@ export default function EditSchoolForm({
       {!embedded && (
         <h1 className="text-2xl font-bold mb-6">Edit Data {schoolType}</h1>
       )}
+
+      <ExcelImportButton
+        config={config}
+        schoolType={schoolType}
+        currentFormData={formData}
+        onImportSuccess={handleBulkUpdate}
+        isEditMode={true} // PENTING: Set true agar validasi NPSN jalan
+      />
+
       <div className="mb-8">
         <Stepper
           sections={sections}

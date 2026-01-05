@@ -16,7 +16,7 @@ import {
   ClipboardList,
 } from "lucide-react";
 import { toast } from "sonner";
-
+import ExcelImportButton from "./ExcelImportButton";
 import {
   schoolConfigs,
   createInitialFormData,
@@ -183,10 +183,8 @@ export default function DataInputForm({ schoolType, embedded = false }) {
   );
   const initialData = useMemo(() => createInitialFormData(config), [config]);
 
-  const { formData, handleChange, errors, validate } = useDataInput(
-    config,
-    initialData
-  );
+  const { formData, handleChange, handleBulkUpdate, errors, validate } =
+    useDataInput(config, initialData);
 
   const [wilayah, setWilayah] = useState(null);
   const [loadingWilayah, setLoadingWilayah] = useState(false);
@@ -1789,6 +1787,15 @@ export default function DataInputForm({ schoolType, embedded = false }) {
       {!embedded && (
         <h1 className="text-2xl font-bold mb-6">Input Data {schoolType}</h1>
       )}
+
+      <ExcelImportButton
+        config={config}
+        schoolType={schoolType}
+        currentFormData={formData}
+        onImportSuccess={handleBulkUpdate}
+        isEditMode={false}
+      />
+
       <div className="mb-8">
         <Stepper
           sections={sections}
