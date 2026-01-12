@@ -1,28 +1,46 @@
 // src/hooks/useDataInput.js
+"use client";
+
 import { useState, useCallback, useEffect } from "react";
 import { dataInputService } from "@/services/dataInputService";
 
 export function useDataInput(config, initialData) {
+  // Inisialisasi awal dengan data dari Supabase
   const [formData, setFormData] = useState(initialData);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
 
-  // Fungsi existing: Update satu field manual (ketik satu-satu)
+  // Sinkronisasi formData jika initialData berubah (saat fetch dari Supabase selesai)
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    }
+  }, [initialData]);
+
   const handleChange = useCallback(
     (path, value) => {
       setFormData((prev) => {
+        if (!prev) return prev;
+
+        // Deep copy untuk mencegah mutasi state langsung
         const newData = JSON.parse(JSON.stringify(prev));
         const keys = path.split(".");
         let current = newData;
+
         for (let i = 0; i < keys.length - 1; i++) {
           current[keys[i]] = current[keys[i]] || {};
           current = current[keys[i]];
         }
-        current[keys[keys.length - 1]] = value;
-        return newData;
+
+        // Hanya update jika nilainya berbeda untuk menghindari looping
+        if (current[keys[keys.length - 1]] !== value) {
+          current[keys[keys.length - 1]] = value;
+          return newData;
+        }
+        return prev;
       });
 
-      // Hapus error jika field tersebut diubah
+      // Hapus error saat input diperbaiki
       if (errors[path]) {
         setErrors((prev) => {
           const next = { ...prev };
@@ -34,27 +52,25 @@ export function useDataInput(config, initialData) {
     [errors]
   );
 
-  // ✅ FUNGSI BARU: Bulk Update (Khusus untuk Import Excel)
-  // Menimpa seluruh state formData sekaligus tanpa memicu re-render berkali-kali
   const handleBulkUpdate = useCallback((newData) => {
     setFormData(newData);
-    // Kita reset error juga karena asumsinya user baru import data baru
     setErrors({});
   }, []);
 
-  // Fungsi existing: Auto-hitung total siswa saat data siswa berubah
+  // Auto-hitung total siswa berdasarkan config sekolah
   useEffect(() => {
-    let total = 0;
+    if (!formData?.siswa || !config) return;
 
+    let total = 0;
     if (config.isPkbm && config.pakets) {
       total = Object.entries(config.pakets).reduce((sum, [key, paket]) => {
         const pKey = `paket${key}`;
         return (
           sum +
-          paket.grades.reduce((t, g) => {
+          (paket.grades?.reduce((t, g) => {
             const kelas = formData.siswa[pKey]?.[`kelas${g}`] || { l: 0, p: 0 };
             return t + (Number(kelas.l) || 0) + (Number(kelas.p) || 0);
-          }, 0)
+          }, 0) || 0)
         );
       }, 0);
     } else if (config.isPaud && config.rombelTypes) {
@@ -69,16 +85,16 @@ export function useDataInput(config, initialData) {
       }, 0);
     }
 
-    // Hanya update jika total berbeda untuk menghindari infinite loop
     if (Number(formData.siswa.jumlahSiswa) !== total) {
       handleChange("siswa.jumlahSiswa", total);
     }
-  }, [formData.siswa, config, handleChange]);
+  }, [formData?.siswa, config, handleChange]);
 
-  // Fungsi existing: Validasi field wajib
   const validate = (fields) => {
     const newErrors = {};
     let isValid = true;
+
+    if (!fields || fields.length === 0) return true;
 
     fields.forEach((field) => {
       const val = field
@@ -94,7 +110,6 @@ export function useDataInput(config, initialData) {
     return isValid;
   };
 
-  // Fungsi existing: Submit data
   const submit = async (schoolType) => {
     setSaving(true);
     const result = await dataInputService.submitData(schoolType, formData);
@@ -105,7 +120,7 @@ export function useDataInput(config, initialData) {
   return {
     formData,
     handleChange,
-    handleBulkUpdate, // ✅ Diekspor agar bisa dipakai di komponen
+    handleBulkUpdate,
     errors,
     validate,
     submit,

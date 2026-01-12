@@ -829,6 +829,8 @@ export default function DataInputForm({ schoolType, embedded = false }) {
         staff_summary: buildStaffSummaryPayload(guruMeta),
       };
 
+      console.log('data indit : ', payload);
+
       const { error } = await supabase.rpc("insert_school_with_relations", {
         p_payload: payload,
       });

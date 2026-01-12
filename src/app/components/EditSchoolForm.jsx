@@ -16,7 +16,6 @@ import {
   Building,
   ClipboardList,
   AlertCircle,
-  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -201,7 +200,6 @@ export default function EditSchoolForm({
 }) {
   const router = useRouter();
 
-  // Optimized ID Finder
   const schoolIdFinal = useMemo(() => {
     if (schoolIdProp) return schoolIdProp;
     if (!initialData) return null;
@@ -232,20 +230,29 @@ export default function EditSchoolForm({
     [schoolType]
   );
 
-  // Normalisasi Initial Data
   const normalizedInitialData = useMemo(() => {
     if (!initialData) return null;
-    const meta = initialData.meta || {};
+    const meta = initialData.meta || initialData.__metaRaw || {};
+
     return {
       ...initialData,
+      namaSekolah: initialData.name || initialData.namaSekolah || "",
       kecamatan_code: initialData.kecamatan_code || meta.kecamatan_code || "",
       desa_code: initialData.desa_code || meta.desa_code || "",
-      kecamatan: initialData.kecamatan || meta.kecamatan || "",
-      desa: initialData.desa || meta.desa || "",
-      siswa: initialData.siswa || meta.siswa || {},
-      siswaAbk: initialData.siswaAbk || meta.siswaAbk || {}, // ✅ Added siswaAbk
-      // ✅ Ensure kegiatanFisik is populated from root (transformer) or meta
-      kegiatanFisik: initialData.kegiatanFisik || meta.kegiatanFisik || {},
+      kecamatan:
+        initialData.kecamatan ||
+        initialData.kecamatan_name ||
+        meta.kecamatan ||
+        "",
+      desa: initialData.village_name || initialData.village || meta.desa || "",
+      alamat: initialData.alamat || initialData.address || meta.alamat || "",
+      latitude: initialData.latitude || initialData.lat || "",
+      longitude: initialData.longitude || initialData.lng || "",
+      siswa: initialData.siswa || {},
+      siswaAbk: initialData.siswaAbk || {},
+      guru: initialData.guru || {},
+      prasarana: initialData.prasarana || {},
+      kegiatanFisik: initialData.kegiatanFisik || {},
     };
   }, [initialData]);
 
@@ -257,6 +264,7 @@ export default function EditSchoolForm({
   const [kecamatanOptions, setKecamatanOptions] = useState([]);
   const [desaOptions, setDesaOptions] = useState([]);
 
+  // 1. Load Data Wilayah JSON
   useEffect(() => {
     const loadWilayah = async () => {
       try {
@@ -268,7 +276,7 @@ export default function EditSchoolForm({
         const kecArr = Array.isArray(data?.kecamatan) ? data.kecamatan : [];
         const kecOpts = kecArr
           .map((k) => ({
-            value: k.kode_kecamatan,
+            value: String(k.kode_kecamatan),
             label: k.nama_kecamatan,
           }))
           .sort((a, b) => a.label.localeCompare(b.label, "id"));
@@ -277,7 +285,6 @@ export default function EditSchoolForm({
         setKecamatanOptions(kecOpts);
       } catch (err) {
         console.error("Error wilayah:", err);
-        setWilayah(null);
       } finally {
         setLoadingWilayah(false);
       }
@@ -285,28 +292,72 @@ export default function EditSchoolForm({
     loadWilayah();
   }, []);
 
+  // 2. Logika Sinkronisasi Dropdown Desa berdasarkan Kecamatan yang terpilih
   useEffect(() => {
-    if (!wilayah?.kecamatan) return;
-    const kecCode = formData?.kecamatan_code || "";
-
-    if (!kecCode) {
+    if (!wilayah || !wilayah.kecamatan || !formData.kecamatan_code) {
       setDesaOptions([]);
       return;
     }
 
-    const kec = wilayah.kecamatan.find(
-      (k) => String(k.kode_kecamatan) === String(kecCode)
+    const foundKec = wilayah.kecamatan.find(
+      (k) => String(k.kode_kecamatan) === String(formData.kecamatan_code)
     );
-    const desaList = Array.isArray(kec?.desa) ? kec.desa : [];
-    const opts = desaList
-      .map((d) => ({
-        value: d.kode_desa,
-        label: d.nama_desa,
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label, "id"));
 
-    setDesaOptions(opts);
-  }, [wilayah, formData?.kecamatan_code]);
+    if (foundKec && foundKec.desa) {
+      const opts = foundKec.desa
+        .map((d) => ({
+          value: String(d.kode_desa),
+          label: d.nama_desa,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label, "id"));
+      setDesaOptions(opts);
+    } else {
+      setDesaOptions([]);
+    }
+  }, [formData.kecamatan_code, wilayah]);
+
+  // 3. LOGIKA PENYELAMAT: Konversi Nama ke Kode secara otomatis untuk EDIT mode
+  useEffect(() => {
+    if (!wilayah || !wilayah.kecamatan) return;
+
+    // A. Cari Kode Kecamatan jika data Supabase hanya memberi Nama (kecamatan_name)
+    if (!formData.kecamatan_code || isNaN(formData.kecamatan_code)) {
+      const namaKecDb = formData.kecamatan || "";
+      if (namaKecDb) {
+        const foundKec = wilayah.kecamatan.find(
+          (k) =>
+            k.nama_kecamatan.toLowerCase().trim() ===
+            namaKecDb.toLowerCase().trim()
+        );
+        if (foundKec) {
+          handleChange("kecamatan_code", String(foundKec.kode_kecamatan));
+        }
+      }
+    }
+
+    // B. Cari Kode Desa jika data Supabase hanya memberi Nama (village_name)
+    // Logika ini dipisah agar bisa jalan meskipun kecamatan_code sudah ada
+    if (!formData.desa_code || isNaN(formData.desa_code)) {
+      const namaDesaDb = formData.desa || "";
+      if (namaDesaDb && formData.kecamatan_code) {
+        // Cari di dalam kecamatan yang sedang aktif
+        const curKec = wilayah.kecamatan.find(
+          (k) => String(k.kode_kecamatan) === String(formData.kecamatan_code)
+        );
+
+        if (curKec && curKec.desa) {
+          const foundDesa = curKec.desa.find(
+            (d) =>
+              d.nama_desa.toLowerCase().trim() ===
+              namaDesaDb.toLowerCase().trim()
+          );
+          if (foundDesa) {
+            handleChange("desa_code", String(foundDesa.kode_desa));
+          }
+        }
+      }
+    }
+  }, [wilayah, formData.kecamatan, formData.desa, formData.kecamatan_code]);
 
   const activePaudRombelTypes = useMemo(() => {
     if (!config.isPaud || !config.rombelTypes) return [];
@@ -338,7 +389,7 @@ export default function EditSchoolForm({
         id: "info",
         title: "Info Sekolah",
         icon: <School className="w-5 h-5" />,
-        fields: ["namaSekolah", "npsn"],
+        fields: ["namaSekolah", "status", "kecamatan_code", "desa_code"],
       },
       {
         id: "guru",
@@ -503,7 +554,6 @@ export default function EditSchoolForm({
     return { siswa: metaSiswa };
   };
 
-  // ✅ HELPER BARU UNTUK ABK (EDIT MODE)
   const buildSiswaAbkMeta = () => {
     const metaSiswaAbk = {};
     if (config.isPkbm && config.pakets) {
@@ -781,9 +831,8 @@ export default function EditSchoolForm({
         },
         chromebook: toNum(pr.chromebook),
       },
-      // ✅ Payload logic (Include 3 new fields + rehabRuangKelas if exists)
       kegiatanFisik: {
-        rehabRuangKelas: toNum(kg.rehabRuangKelas), // 🔥 ITEM BARU DITAMBAHKAN
+        rehabRuangKelas: toNum(kg.rehabRuangKelas),
         pembangunanRKB: toNum(kg.pembangunanRKB),
         rehabToilet: toNum(kg.rehabToilet),
         pembangunanToilet: toNum(kg.pembangunanToilet),
@@ -837,9 +886,7 @@ export default function EditSchoolForm({
     }
 
     if (!schoolIdFinal) {
-      toast.error(
-        "Gagal menyimpan: ID Sekolah tidak terdeteksi. Silakan muat ulang halaman."
-      );
+      toast.error("Gagal menyimpan: ID Sekolah tidak terdeteksi.");
       return;
     }
 
@@ -851,6 +898,7 @@ export default function EditSchoolForm({
       const desaOpt = desaOptions.find(
         (o) => String(o.value) === String(formData.desa_code)
       );
+
       const location = {
         province: "Jawa Barat",
         district: "Garut",
@@ -873,9 +921,7 @@ export default function EditSchoolForm({
         name: formData.namaSekolah,
         address: formData.alamat || "",
         village_name: formData.desa || desaOpt?.label || "",
-        // ✅ FIX PENTING: Update kolom kecamatan & desa di ROOT payload agar dibaca oleh RPC baru
         kecamatan: formData.kecamatan || kecOpt?.label || "",
-
         school_type_id: config.schoolTypeId ?? null,
         status: normalizeStatus(formData.status),
         student_count: totalSiswaComputed,
@@ -883,26 +929,21 @@ export default function EditSchoolForm({
         st_female: sumSiswa("p"),
         lat: formData.latitude ? Number(formData.latitude) : null,
         lng: formData.longitude ? Number(formData.longitude) : null,
-        facilities: null,
-        class_condition: null,
         meta: {
           ...metaLama,
           ...buildSiswaMeta(),
-          ...buildSiswaAbkMeta(), // ✅ INCLUDE DATA ABK
+          ...buildSiswaAbkMeta(),
           ...buildRombelMeta(),
           ...buildLanjutPayload(),
           ...buildPrasaranaPayload(),
-          ...buildKelembagaanPayload(), // ✅ PAYLOAD KELEMBAGAAN AMAN
+          ...buildKelembagaanPayload(),
           kecamatan: formData.kecamatan || kecOpt?.label || "",
           desa: formData.desa || desaOpt?.label || "",
           kecamatan_code: formData.kecamatan_code || null,
           desa_code: formData.desa_code || null,
           alamat: formData.alamat || "",
           is_paud: config.isPaud || false,
-          monthly_report_file: formData.monthly_report_file || null,
-          bantuan_received: formData.bantuan_received || "",
           guru: guruMeta,
-          is_test: formData.is_test ?? false,
           jenjang: schoolType,
         },
         contact: {
@@ -923,7 +964,7 @@ export default function EditSchoolForm({
         p_payload: payload,
       });
 
-      if (error) throw new Error(error.message || "Gagal update data sekolah");
+      if (error) throw new Error(error.message);
 
       toast.success("Data berhasil diperbarui!");
       router.push("/dashboard");
@@ -967,12 +1008,12 @@ export default function EditSchoolForm({
             />
             <SelectInput
               label="Kecamatan"
-              value={formData.kecamatan_code || ""}
+              value={String(formData.kecamatan_code || "")}
               onChange={(k) => {
                 const opt = kecamatanOptions.find(
                   (o) => String(o.value) === String(k)
                 );
-                handleChange("kecamatan_code", k);
+                handleChange("kecamatan_code", String(k));
                 handleChange("kecamatan", opt?.label || "");
                 handleChange("desa_code", "");
                 handleChange("desa", "");
@@ -985,12 +1026,12 @@ export default function EditSchoolForm({
             <div className="space-y-1">
               <SelectInput
                 label="Desa/Kelurahan"
-                value={formData.desa_code || ""}
+                value={String(formData.desa_code || "")}
                 onChange={(k) => {
                   const opt = desaOptions.find(
                     (o) => String(o.value) === String(k)
                   );
-                  handleChange("desa_code", k);
+                  handleChange("desa_code", String(k));
                   handleChange("desa", opt?.label || "");
                 }}
                 error={errors.desa_code}
@@ -1006,13 +1047,6 @@ export default function EditSchoolForm({
                   !desaOptions.length
                 }
               />
-              {formData.kecamatan_code &&
-                !loadingWilayah &&
-                !desaOptions.length && (
-                  <p className="text-xs text-muted-foreground">
-                    Data desa tidak ditemukan.
-                  </p>
-                )}
             </div>
             <TextInput
               label="Alamat Lengkap"
@@ -1030,14 +1064,12 @@ export default function EditSchoolForm({
                   value={formData.latitude || ""}
                   onChange={(v) => handleChange("latitude", v)}
                   error={errors.latitude}
-                  placeholder="-6.9"
                 />
                 <TextInput
                   label="Longitude"
                   value={formData.longitude || ""}
                   onChange={(v) => handleChange("longitude", v)}
                   error={errors.longitude}
-                  placeholder="107.5"
                 />
               </div>
               <button
@@ -1103,7 +1135,6 @@ export default function EditSchoolForm({
               </h4>
             </div>
 
-            {/* Bagian Siswa Reguler */}
             {config.isPkbm && config.pakets ? (
               <div className="space-y-4">
                 {Object.entries(config.pakets).map(([pk, p]) => (
@@ -1185,7 +1216,6 @@ export default function EditSchoolForm({
               </>
             )}
 
-            {/* ✅ SECTION BARU: Siswa Berkebutuhan Khusus (ABK) */}
             <h3 className="font-bold text-lg mt-8 mb-4 border-b pb-2">
               Data Siswa Berkebutuhan Khusus (ABK)
             </h3>
@@ -1308,27 +1338,25 @@ export default function EditSchoolForm({
                   </div>
                 </div>
               ))
-            ) : config.isPaud ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {activePaudRombelTypes.map((t) => (
-                  <NumberInput
-                    key={t.key}
-                    label={`Rombel ${t.label}`}
-                    value={getValue(formData, `rombel.${t.key}`)}
-                    onChange={(v) => handleChange(`rombel.${t.key}`, v)}
-                  />
-                ))}
-              </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {config.grades?.map((g) => (
-                  <NumberInput
-                    key={g}
-                    label={`Rombel Kls ${g}`}
-                    value={getValue(formData, `rombel.kelas${g}`)}
-                    onChange={(v) => handleChange(`rombel.kelas${g}`, v)}
-                  />
-                ))}
+                {isPaud
+                  ? activePaudRombelTypes.map((t) => (
+                      <NumberInput
+                        key={t.key}
+                        label={`Rombel ${t.label}`}
+                        value={getValue(formData, `rombel.${t.key}`)}
+                        onChange={(v) => handleChange(`rombel.${t.key}`, v)}
+                      />
+                    ))
+                  : config.grades?.map((g) => (
+                      <NumberInput
+                        key={g}
+                        label={`Rombel Kls ${g}`}
+                        value={getValue(formData, `rombel.kelas${g}`)}
+                        onChange={(v) => handleChange(`rombel.kelas${g}`, v)}
+                      />
+                    ))}
               </div>
             )}
           </div>
@@ -1482,6 +1510,7 @@ export default function EditSchoolForm({
                 />
               </div>
             </div>
+
             {isSmp && (
               <div className="p-4 border rounded-lg bg-gray-50/50">
                 <p className="font-medium mb-3">Laboratorium SMP</p>
@@ -1521,100 +1550,16 @@ export default function EditSchoolForm({
               </div>
             )}
 
-            {/* Detail Toilet SMP */}
-            {isSmp && (
-              <div className="p-4 border rounded-lg bg-gray-50/50">
-                <p className="font-medium mb-3">Detail Toilet (SMP)</p>
-                <div className="space-y-4">
-                  {[
-                    {
-                      label: "Toilet Guru (Laki-laki)",
-                      path: "teachers_toilet.male",
-                    },
-                    {
-                      label: "Toilet Guru (Perempuan)",
-                      path: "teachers_toilet.female",
-                    },
-                    {
-                      label: "Toilet Siswa (Laki-laki)",
-                      path: "students_toilet.male",
-                    },
-                    {
-                      label: "Toilet Siswa (Perempuan)",
-                      path: "students_toilet.female",
-                    },
-                  ].map((item) => (
-                    <div
-                      key={item.path}
-                      className="p-3 border rounded-lg bg-white"
-                    >
-                      <p className="font-medium mb-2">{item.label}</p>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <NumberInput
-                          label="Total"
-                          value={getValue(
-                            formData,
-                            `prasarana.${item.path}.total`
-                          )}
-                          onChange={(v) =>
-                            handleChange(`prasarana.${item.path}.total`, v)
-                          }
-                        />
-                        <NumberInput
-                          label="Baik"
-                          value={getValue(
-                            formData,
-                            `prasarana.${item.path}.good`
-                          )}
-                          onChange={(v) =>
-                            handleChange(`prasarana.${item.path}.good`, v)
-                          }
-                        />
-                        <NumberInput
-                          label="R. Sedang"
-                          value={getValue(
-                            formData,
-                            `prasarana.${item.path}.moderate_damage`
-                          )}
-                          onChange={(v) =>
-                            handleChange(
-                              `prasarana.${item.path}.moderate_damage`,
-                              v
-                            )
-                          }
-                        />
-                        <NumberInput
-                          label="R. Berat"
-                          value={getValue(
-                            formData,
-                            `prasarana.${item.path}.heavy_damage`
-                          )}
-                          onChange={(v) =>
-                            handleChange(
-                              `prasarana.${item.path}.heavy_damage`,
-                              v
-                            )
-                          }
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             <div className="p-4 border rounded-lg bg-gray-50/50">
               <p className="font-medium mb-3">Ruangan Lainnya</p>
               <div className="space-y-4">
                 {[
                   { k: "library", l: "Perpus" },
-                  // ✅ LOGIC BARU: Lab Umum hanya muncul jika BUKAN SMP dan BUKAN PAUD (Artinya: SD & PKBM)
                   ...(!isSmp && !isPaud
                     ? [{ k: "laboratory", l: "Lab Umum" }]
                     : []),
                   { k: "teacher_room", l: "R. Guru" },
                   { k: "uks_room", l: "UKS" },
-                  // Sembunyikan Toilet Umum jika SMP (karena sudah ada detail di atas)
                   ...(!isSmp ? [{ k: "toilets", l: "Toilet" }] : []),
                   { k: "official_residences", l: "Rumah Dinas" },
                 ].map((r) => (
@@ -1877,10 +1822,7 @@ export default function EditSchoolForm({
         <h2 className="text-xl font-bold text-red-700">
           Data Sekolah Tidak Valid
         </h2>
-        <p className="text-red-600 mt-2">
-          ID Sekolah tidak ditemukan dalam database. Mohon kembali ke dashboard
-          dan coba lagi.
-        </p>
+        <p className="text-red-600 mt-2">ID Sekolah tidak ditemukan.</p>
         <button
           onClick={() => router.push("/dashboard")}
           className="mt-6 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
@@ -1908,7 +1850,7 @@ export default function EditSchoolForm({
         schoolType={schoolType}
         currentFormData={formData}
         onImportSuccess={handleBulkUpdate}
-        isEditMode={true} // PENTING: Set true agar validasi NPSN jalan
+        isEditMode={true}
       />
 
       <div className="mb-8">
@@ -1919,6 +1861,7 @@ export default function EditSchoolForm({
           completedSteps={completedSteps}
         />
       </div>
+
       <div className="mb-6 flex items-center gap-4">
         <button
           type="button"
@@ -1929,6 +1872,7 @@ export default function EditSchoolForm({
           Kembali
         </button>
       </div>
+
       <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
         {renderContent()}
         <div className="flex justify-between items-center pt-6 border-t mt-6">
@@ -1964,13 +1908,14 @@ export default function EditSchoolForm({
                   <Loader2 className="animate-spin w-4 h-4 mr-2" />
                 ) : (
                   <Save className="w-4 h-4 mr-2" />
-                )}{" "}
+                )}
                 Simpan Data
               </button>
             )}
           </div>
         </div>
       </form>
+
       {showMap && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-3xl">
@@ -1992,9 +1937,6 @@ export default function EditSchoolForm({
                   : [-7.2167, 107.9]
               }
             />
-            <p className="text-xs text-gray-500">
-              Setelah pilih titik, latitude & longitude terisi otomatis.
-            </p>
           </div>
         </div>
       )}

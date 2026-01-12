@@ -34,8 +34,8 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-
-<StatCards operatorType={roleConfig.title} />
+      {/* Pakai jenjang (SD/SMP) bukan Title */}
+      <StatCards operatorType={roleConfig.jenjang || roleConfig.title} />{" "}
     </>
   );
 }

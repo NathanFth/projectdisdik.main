@@ -1,4 +1,4 @@
-// src/app/components/SchoolsTable.jsx
+// src/app/components/SchoolsTable.js
 "use client";
 
 import { useState, useEffect } from "react";
@@ -72,92 +72,46 @@ const toNum = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 };
-const sumLP = (maybeLp) => {
-  if (!maybeLp || typeof maybeLp !== "object") return 0;
-  return toNum(maybeLp.l) + toNum(maybeLp.p);
-};
 
-// ✅ FIX: Kalkulasi Siswa Lebih Tangguh (Support Nested Meta)
+// Logika sinkronisasi data siswa dari database asli
 function computeJumlahSiswa(row) {
-  // 1. Prioritas Utama: Kolom student_count (hasil hitungan Backend/RPC saat save)
+  // 1. Prioritas: Ambil student_count dari tabel schools
   const dbCount = toNum(row?.student_count);
   if (dbCount > 0) return dbCount;
 
-  // 2. Fallback: Jumlah kolom manual
-  const manualCount = toNum(row?.st_male) + toNum(row?.st_female);
-  if (manualCount > 0) return manualCount;
+  // 2. Fallback: Ambil dari nested object 'siswa' yang dibangun RPC
+  const metaCount = toNum(row?.siswa?.jumlahSiswa);
+  if (metaCount > 0) return metaCount;
 
-  // 3. Fallback: Gali JSON meta (Jika kolom student_count 0/null)
-  // Data siswa bisa ada di row.siswa atau row.meta.siswa
-  const siswaObj = row?.siswa || row?.meta?.siswa || {};
-
-  // Cek jika ada property 'jumlahSiswa' langsung
-  const metaTotal = toNum(siswaObj.jumlahSiswa);
-  if (metaTotal > 0) return metaTotal;
-
-  // Iterasi object siswa (handle struktur paket/kelas)
-  if (typeof siswaObj === "object") {
-    let total = 0;
-
-    // Helper rekursif untuk mencari object {l, p}
-    const traverse = (obj) => {
-      for (const key in obj) {
-        const val = obj[key];
-        if (val && typeof val === "object") {
-          if ("l" in val || "p" in val) {
-            total += sumLP(val);
-          } else {
-            traverse(val); // Gali lebih dalam (misal: paketA -> kelas1 -> l,p)
-          }
-        }
-      }
-    };
-
-    traverse(siswaObj);
-    if (total > 0) return total;
-  }
-
-  return 0;
+  // 3. Fallback: Hitung manual dari gender
+  return toNum(row?.st_male) + toNum(row?.st_female);
 }
 
-// ✅ FIX: Normalisasi Row (Pastikan membaca Meta)
+// Normalisasi Row agar data yang muncul di UI sesuai dengan kolom database
 function normalizeSchoolRow(row, operatorType) {
   const meta = row?.meta || {};
+  const npsn = String(row?.npsn || row?.id || "").trim();
+  
+  // Ambil nama dari 'namaSekolah' (alias di RPC) atau 'name'
+  const namaSekolah = row?.namaSekolah || row?.name || "Tanpa Nama";
 
-  const npsn = String(row?.npsn ?? row?.id ?? "").trim();
-  const namaSekolah =
-    row?.namaSekolah ?? row?.name ?? row?.school_name ?? "Tanpa Nama";
-
-  // ✅ FIX KECAMATAN: Cek Meta dulu (hasil EditForm), baru kolom flat
-  const kecamatan =
-    meta.kecamatan || row?.kecamatan || row?.location?.subdistrict || "";
+  // Kecamatan sekarang diambil dari field 'kecamatan' hasil COALESCE di RPC
+  const kecamatan = row?.kecamatan || meta.kecamatan || "-";
 
   let statusRaw = row?.status || "SWASTA";
   const status = statusRaw.toUpperCase() === "NEGERI" ? "NEGERI" : "SWASTA";
 
-  // ✅ FIX JENJANG: Cek Meta dulu
-  const jenjangRaw = meta.jenjang || row?.jenjang || null;
-  const jenjang =
-    jenjangRaw ??
-    (operatorType === "TK"
-      ? "TK"
-      : operatorType === "PAUD"
-      ? "PAUD"
-      : operatorType);
-
-  const jumlahSiswa = computeJumlahSiswa(row);
+  const jenjang = row?.jenjang || meta.jenjang || operatorType;
 
   return {
     ...row,
-    id: row?.id ?? npsn,
+    id: row?.id || npsn,
     npsn,
     namaSekolah,
-    kecamatan, // Data kecamatan yang sudah dinormalisasi
+    kecamatan,
     status,
     jenjang,
-    schoolType: operatorType,
-    // Pastikan objek siswa terbawa untuk detail view jika diperlukan
-    siswa: { ...(meta.siswa || row?.siswa || {}), jumlahSiswa },
+    jumlahSiswa: computeJumlahSiswa(row)
   };
 }
 
@@ -213,9 +167,6 @@ function EmptyState({ isFilterActive, onReset }) {
   );
 }
 
-/* =========================
-   COMPONENT: SORTABLE HEADER
-========================= */
 function SortableHeader({
   label,
   columnKey,
@@ -247,9 +198,6 @@ function SortableHeader({
   );
 }
 
-/* =========================
-   MAIN COMPONENT
-========================= */
 export default function SchoolsTable({ operatorType }) {
   const [schoolsData, setSchoolsData] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -263,7 +211,6 @@ export default function SchoolsTable({ operatorType }) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // --- SORTING STATE (Default: Kecamatan ASC) ---
   const [sortBy, setSortBy] = useState("kecamatan");
   const [sortOrder, setSortOrder] = useState("asc");
 
@@ -294,6 +241,17 @@ export default function SchoolsTable({ operatorType }) {
     setLoadError("");
 
     try {
+      // ✅ LOGGING UNTUK DEBUGGING (Bisa dihapus jika sudah lancar)
+      console.log("Fetching with params:", {
+        jenjang_filter: operatorType,
+        page_number: currentPage,
+        page_size: itemsPerPage,
+        search_query: debouncedSearch,
+        kecamatan_filter: selectedKecamatan,
+        sort_by: sortBy,
+        sort_order: sortOrder,
+      });
+
       const { data, error } = await supabase.rpc("get_schools_paginated", {
         jenjang_filter: operatorType,
         page_number: currentPage,
@@ -304,15 +262,19 @@ export default function SchoolsTable({ operatorType }) {
         sort_order: sortOrder,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Database RPC Error Details:", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+        throw error;
+      }
 
       if (data && data.length > 0) {
         setTotalCount(Number(data[0].total_count) || 0);
-        const rawRows = data.map((d) => d.row_json);
-        // Normalisasi data (mengambil data dari meta jika ada)
-        const normalized = rawRows.map((r) =>
-          normalizeSchoolRow(r, operatorType)
-        );
+        const normalized = data.map((d) => normalizeSchoolRow(d.row_json, operatorType));
         setSchoolsData(normalized);
       } else {
         setTotalCount(0);
@@ -320,7 +282,7 @@ export default function SchoolsTable({ operatorType }) {
       }
     } catch (err) {
       console.error("Fetch Error:", err);
-      setLoadError("Gagal memuat data sekolah. Silakan coba lagi.");
+      setLoadError(`Gagal memuat data: ${err.message || "Kesalahan sistem"}`);
       setSchoolsData([]);
     } finally {
       setIsLoading(false);
@@ -343,6 +305,7 @@ export default function SchoolsTable({ operatorType }) {
   }, [debouncedSearch, selectedKecamatan]);
 
   const totalPages = Math.ceil(totalCount / itemsPerPage);
+  
   const handleResetFilter = () => {
     setSearchTerm("");
     setSelectedKecamatan("all");
@@ -355,6 +318,7 @@ export default function SchoolsTable({ operatorType }) {
       operatorType: opType,
       jenjang,
     })}/${npsn}`;
+    
   const getEditHref = (opType, npsn, jenjang) =>
     `/dashboard/${toDashboardBaseFromJenjangOrOperator({
       operatorType: opType,
@@ -363,12 +327,7 @@ export default function SchoolsTable({ operatorType }) {
 
   const handleSort = (key) => {
     if (sortBy === key) {
-      if (sortOrder === "asc") {
-        setSortOrder("desc");
-      } else {
-        setSortBy("kecamatan"); // Reset to default
-        setSortOrder("asc");
-      }
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       setSortBy(key);
       setSortOrder("asc");
@@ -385,16 +344,9 @@ export default function SchoolsTable({ operatorType }) {
       if (error) throw error;
       toast.success("Data sekolah berhasil dihapus permanen");
       setDeleteId(null);
-      if (schoolsData.length === 1 && currentPage > 1) {
-        setCurrentPage((prev) => prev - 1);
-      } else {
-        fetchSchools();
-      }
+      fetchSchools();
     } catch (err) {
-      console.error("Delete Error:", err);
-      toast.error(
-        "Gagal menghapus sekolah: " + (err.message || "Kesalahan sistem")
-      );
+      toast.error("Gagal menghapus: " + err.message);
     } finally {
       setIsDeleting(false);
     }
@@ -458,6 +410,7 @@ export default function SchoolsTable({ operatorType }) {
           ) : loadError ? (
             <div className="py-20 text-center text-red-600 bg-red-50 mx-4 my-4 rounded-lg border border-red-100">
               <p className="font-semibold">{loadError}</p>
+              <Button variant="outline" size="sm" className="mt-4" onClick={fetchSchools}>Coba Lagi</Button>
             </div>
           ) : schoolsData.length === 0 ? (
             <EmptyState
@@ -470,8 +423,6 @@ export default function SchoolsTable({ operatorType }) {
                 <TableHeader className="bg-gray-50/50">
                   <TableRow>
                     <TableHead className="w-16 pl-6">No</TableHead>
-
-                    {/* --- HEADER YANG BISA DI-SORT --- */}
                     <SortableHeader
                       label="Nama Sekolah"
                       columnKey="namaSekolah"
@@ -502,7 +453,6 @@ export default function SchoolsTable({ operatorType }) {
                       onSort={handleSort}
                       className="text-center justify-center"
                     />
-
                     <TableHead className="text-center w-[160px] pr-6">
                       Aksi
                     </TableHead>
@@ -523,7 +473,7 @@ export default function SchoolsTable({ operatorType }) {
                         </div>
                         <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
                           <span className="inline-block w-1.5 h-1.5 rounded-full bg-gray-300"></span>
-                          {s.kecamatan || "Kecamatan -"}
+                          {s.kecamatan}
                         </div>
                       </TableCell>
                       <TableCell className="font-mono text-sm text-gray-600">
@@ -534,40 +484,32 @@ export default function SchoolsTable({ operatorType }) {
                           variant="secondary"
                           className={`${
                             s.status === "NEGERI"
-                              ? "bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200"
-                              : "bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200"
+                              ? "bg-blue-100 text-blue-700 border-blue-200"
+                              : "bg-amber-100 text-amber-700 border-amber-200"
                           } border font-normal`}
                         >
                           {s.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-center font-medium text-gray-700">
-                        {toNum(s?.siswa?.jumlahSiswa).toLocaleString("id-ID")}
+                        {s.jumlahSiswa.toLocaleString("id-ID")}
                       </TableCell>
                       <TableCell className="pr-6">
                         <div className="flex justify-center gap-2">
-                          <Link
-                            href={getDetailHref(
-                              operatorType,
-                              s.npsn,
-                              s.jenjang
-                            )}
-                          >
+                          <Link href={getDetailHref(operatorType, s.npsn, s.jenjang)}>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-8 px-2 text-gray-600 hover:text-blue-600 hover:border-blue-200"
+                              className="h-8 px-2 text-gray-600 hover:text-blue-600"
                             >
                               <Eye className="h-4 w-4 mr-1.5" /> Detail
                             </Button>
                           </Link>
-                          <Link
-                            href={getEditHref(operatorType, s.npsn, s.jenjang)}
-                          >
+                          <Link href={getEditHref(operatorType, s.npsn, s.jenjang)}>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0 text-gray-400 hover:text-orange-600 hover:bg-orange-50"
+                              className="h-8 w-8 p-0 text-gray-400 hover:text-orange-600"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -575,7 +517,7 @@ export default function SchoolsTable({ operatorType }) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                            className="h-8 w-8 p-0 text-gray-400 hover:text-red-600"
                             onClick={() => setDeleteId(s.id)}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -589,7 +531,7 @@ export default function SchoolsTable({ operatorType }) {
             </div>
           )}
         </CardContent>
-        {/* Pagination Footer */}
+
         {!isLoading && totalPages > 1 && (
           <div className="border-t bg-gray-50/50 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <span className="text-sm text-gray-500">
@@ -639,20 +581,14 @@ export default function SchoolsTable({ operatorType }) {
         )}
       </Card>
 
-      {/* Alert Dialog (Delete) */}
-      <AlertDialog
-        open={!!deleteId}
-        onOpenChange={(open) => !open && setDeleteId(null)}
-      >
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="text-red-600 flex items-center gap-2">
               <Trash2 className="h-5 w-5" /> Hapus Data Sekolah?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini <strong>tidak dapat dibatalkan</strong>. Data sekolah
-              beserta data siswa, guru, dan sarpras terkait akan dihapus
-              permanen.
+              Tindakan ini tidak dapat dibatalkan. Data sekolah beserta data siswa, guru, dan sarpras terkait akan dihapus permanen.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -665,13 +601,7 @@ export default function SchoolsTable({ operatorType }) {
               className="bg-red-600 hover:bg-red-700 text-white"
               disabled={isDeleting}
             >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menghapus...
-                </>
-              ) : (
-                "Ya, Hapus Permanen"
-              )}
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Ya, Hapus Permanen"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
