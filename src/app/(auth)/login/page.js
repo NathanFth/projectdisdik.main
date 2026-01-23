@@ -1,53 +1,74 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { UserIcon, LockClosedIcon } from '@heroicons/react/24/outline';
-import { EyeIcon, EyeSlashIcon, ExclamationCircleIcon } from '@heroicons/react/20/solid';
-import { authService } from '@/services/authService';
+import { useMemo, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
+import { UserIcon, LockClosedIcon } from "@heroicons/react/24/outline";
+import {
+  EyeIcon,
+  EyeSlashIcon,
+  ExclamationCircleIcon,
+} from "@heroicons/react/20/solid";
+import { authService } from "@/services/authService";
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Hindari open-redirect: hanya izinkan path relatif internal.
+  const redirectTo = useMemo(() => {
+    const raw = searchParams?.get("next");
+    if (!raw) return "/dashboard";
+
+    // next/navigation sudah meng-decode, tapi kita tetap defensif.
+    const next = String(raw).trim();
+    if (!next.startsWith("/")) return "/dashboard";
+    if (next.startsWith("//")) return "/dashboard";
+    return next;
+  }, [searchParams]);
 
   useEffect(() => {
     const checkSession = async () => {
       const session = await authService.getSession();
       if (session) {
-        router.push('/dashboard');
+        router.replace(redirectTo);
       }
     };
     checkSession();
-  }, [router]);
+  }, [router, redirectTo]);
 
   const handleChange = (e) => {
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
-    if (error) setError('');
+    if (error) setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
-    const result = await authService.login(formData.email, formData.password);
+    try {
+      const result = await authService.login(formData.email, formData.password);
 
-    if (result.success) {
-      router.refresh();
-      router.push('/dashboard');
-    } else {
-      setError(result.message);
+      if (result.success) {
+        router.refresh();
+        router.replace(redirectTo);
+        return;
+      }
+
+      setError(result.message || "Login gagal");
+    } finally {
       setLoading(false);
     }
   };
@@ -57,10 +78,10 @@ export default function LoginPage() {
       <div className="md:w-1/2 w-full bg-gradient-to-b from-blue-600 to-blue-800 text-white flex flex-col justify-center items-center p-10 relative overflow-hidden">
         <div className="absolute opacity-10 w-[300px] h-[300px]">
           <Image
-            src="/garut-logo.png"
+            src="/images/garut-logo.png"
             alt="Logo Garut Background"
             fill
-            style={{ objectFit: 'contain' }}
+            style={{ objectFit: "contain" }}
             priority
           />
         </div>
@@ -70,28 +91,40 @@ export default function LoginPage() {
           <p className="text-lg leading-snug">
             Electronic Planning Dinas Pendidikan <br /> Kabupaten Garut
           </p>
-          <button className="mt-6 bg-blue-500 hover:bg-blue-400 px-6 py-2 rounded-full font-medium transition">
+          <a
+            href="https://disdik.garutkab.go.id/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-6 bg-blue-500 hover:bg-blue-400 px-6 py-2 rounded-full font-medium transition inline-block text-white"
+          >
             Selengkapnya
-          </button>
+          </a>
         </div>
       </div>
 
       <div className="md:w-1/2 w-full bg-white flex flex-col justify-center items-center px-6 py-12">
         <div className="mb-6 relative w-40 h-40">
           <Image
-            src="/disdik-logo.png"
+            src="/images/disdik-logo.png"
             alt="Logo DISDIK"
             fill
-            style={{ objectFit: 'contain' }}
+            style={{ objectFit: "contain" }}
             priority
           />
         </div>
 
-        <h2 className="text-2xl font-bold text-gray-800 mb-1">Selamat Datang di</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-1">
+          Selamat Datang di
+        </h2>
         <h1 className="text-3xl font-bold text-blue-800 mb-4">e-PlanDISDIK</h1>
-        <p className="text-gray-500 mb-6">Silahkan Login untuk mengelola data</p>
+        <p className="text-gray-500 mb-6">
+          Silahkan Login untuk mengelola data
+        </p>
 
-        <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4 bg-white">
+        <form
+          onSubmit={handleSubmit}
+          className="w-full max-w-md space-y-4 bg-white"
+        >
           {error && (
             <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm animate-pulse">
               <ExclamationCircleIcon className="h-5 w-5 flex-shrink-0" />
@@ -118,7 +151,7 @@ export default function LoginPage() {
             <input
               id="password"
               name="password"
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
               required
               className="w-full outline-none bg-transparent pr-10"
@@ -142,10 +175,10 @@ export default function LoginPage() {
             type="submit"
             disabled={loading}
             className={`w-full bg-blue-600 text-white font-semibold py-2 rounded-full hover:bg-blue-500 transition shadow-lg ${
-              loading ? 'opacity-70 cursor-not-allowed' : ''
+              loading ? "opacity-70 cursor-not-allowed" : ""
             }`}
           >
-            {loading ? 'Memproses...' : 'Masuk'}
+            {loading ? "Memproses..." : "Masuk"}
           </button>
         </form>
       </div>

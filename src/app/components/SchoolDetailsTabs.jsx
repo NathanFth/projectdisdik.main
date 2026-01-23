@@ -13,7 +13,6 @@ import {
   Calendar,
   UserCheck,
   ClipboardList,
-  UserPlus,
   TrendingUp,
   Armchair,
   Laptop,
@@ -28,13 +27,15 @@ import {
   Bath,
   FileX2,
   Home,
-  MessageCircle,
   Construction,
   Monitor,
   Accessibility,
+  Puzzle,
+  Utensils,
+  Map,
 } from "lucide-react";
 
-// Load Map secara lazy
+// Load Map secara lazy untuk performa
 const LocationPickerMap = dynamic(() => import("./LocationPickerMap"), {
   ssr: false,
   loading: () => (
@@ -44,28 +45,36 @@ const LocationPickerMap = dynamic(() => import("./LocationPickerMap"), {
   ),
 });
 
-const toNum = (v) => Number(v) || 0;
+// Helper sederhana untuk konversi angka
+const toNum = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
 
 export default function SchoolDetailsTabs({ school }) {
   const [activeTab, setActiveTab] = useState("basic");
 
-  if (!school)
-    return (
-      <div className="p-6 text-muted-foreground">Data tidak tersedia.</div>
-    );
+  // Jika data belum ada/loading
+  if (!school) {
+    return <div className="p-6 text-muted-foreground">Data tidak tersedia.</div>;
+  }
 
+  // ✅ PERBAIKAN FINAL: DESTRUCTURING LANGSUNG
+  // Kita percaya penuh pada data yang sudah diolah oleh 'transformSchoolData'.
+  // Tidak ada lagi logika 'useMemo' atau 'meta.prasarana' yang bikin bingung.
   const {
     schoolType,
-    prasarana = {},
+    prasarana = {},     // Ambil langsung dari root (hasil transformer)
     kegiatanFisik = {},
     kelembagaan = {},
     guru = {},
     siswa = {},
     rombel = {},
-    siswaAbk = {}, // ✅ Data ABK
+    siswaAbk = {},
     lulusan = {},
   } = school;
 
+  // Deteksi Jenjang untuk Kondisional UI
   const isSmp = schoolType === "SMP";
   const isPkbm = schoolType === "PKBM" || schoolType === "PKBM TERPADU";
   const isPaud = schoolType === "PAUD" || schoolType === "TK";
@@ -76,35 +85,29 @@ export default function SchoolDetailsTabs({ school }) {
       ? "bg-green-100 text-green-700 hover:bg-green-200"
       : "bg-yellow-100 text-yellow-700 hover:bg-yellow-200";
 
-  // --- HELPER CRITICAL: AKSES DATA PRASARANA ---
+  // --- HELPER: AKSES DATA ROOMS/LABS ---
+  // Fungsi ini mencari data di dalam struktur object prasarana yang sudah bersih
   const getRoomData = (key) => {
-    if (prasarana.rooms && prasarana.rooms[key]) return prasarana.rooms[key];
-    if (prasarana[key]) return prasarana[key];
-
-    const legacyMap = {
-      kepsek_room: "ruangKepsek",
-      teacher_room: "ruangGuru",
-      administration_room: "ruangTu",
-      uks_room: "ruangUks",
-      bk_room: "ruangBk",
-      worship_place: "tempatIbadah",
-      official_residences: "rumahDinas",
-      toilets: "toiletGuruSiswa",
-    };
-
-    if (legacyMap[key] && prasarana[legacyMap[key]]) {
-      return prasarana[legacyMap[key]];
+    if (!prasarana) return null;
+    // Cek di nested rooms dulu (format baru transformer)
+    if (prasarana.rooms && prasarana.rooms[key]) {
+      return prasarana.rooms[key];
+    }
+    // Cek di root prasarana (fallback/legacy)
+    if (prasarana[key] && typeof prasarana[key] === 'object') {
+      return prasarana[key];
     }
     return null;
   };
 
   const getLabData = (key) => {
-    if (prasarana.labs && prasarana.labs[key]) return prasarana.labs[key];
-    if (prasarana[key]) return prasarana[key];
+    if (!prasarana) return null;
+    if (prasarana.rooms && prasarana.rooms[key]) return prasarana.rooms[key]; 
+    if (prasarana[key] && typeof prasarana[key] === 'object') return prasarana[key];
     return null;
   };
 
-  // --- 1. INFO DASAR ---
+  // --- 1. RENDER INFO DASAR ---
   const renderBasicInfo = () => (
     <div className="space-y-6">
       <div className="bg-white border rounded-xl p-6 shadow-sm">
@@ -117,9 +120,14 @@ export default function SchoolDetailsTabs({ school }) {
               <Badge variant="outline" className="font-mono bg-gray-50">
                 {school.npsn}
               </Badge>
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1" title="Kecamatan">
                 <MapPin className="h-3.5 w-3.5" /> {school.kecamatan}
               </span>
+              {school.desa && (
+                <span className="flex items-center gap-1" title="Desa/Kelurahan">
+                  <Map className="h-3.5 w-3.5" /> {school.desa}
+                </span>
+              )}
               <span className="flex items-center gap-1">
                 <Building className="h-3.5 w-3.5" /> {school.status}
               </span>
@@ -127,10 +135,11 @@ export default function SchoolDetailsTabs({ school }) {
           </div>
           <div className="flex flex-col items-end gap-2">
             <Badge className={getStatusColor(school.dataStatus)}>
-              {school.dataStatus}
+              {school.dataStatus || "Aktif"}
             </Badge>
             <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <Calendar className="h-3 w-3" /> Update: {school.lastUpdated}
+              <Calendar className="h-3 w-3" /> Update:{" "}
+              {school.lastUpdated || "Baru saja"}
             </span>
           </div>
         </div>
@@ -155,14 +164,13 @@ export default function SchoolDetailsTabs({ school }) {
               <div className="bg-green-50 p-3 rounded-lg text-center border border-green-100">
                 <UserCheck className="h-5 w-5 text-green-600 mx-auto mb-1" />
                 <div className="text-lg font-bold text-green-700">
-                  {guru.jumlahGuru}
+                  {guru.jumlahGuru || 0}
                 </div>
                 <div className="text-xs text-green-600">Total Guru</div>
               </div>
               <div className="bg-orange-50 p-3 rounded-lg text-center border border-orange-100">
                 <Accessibility className="h-5 w-5 text-orange-600 mx-auto mb-1" />
                 <div className="text-lg font-bold text-orange-600">
-                  {/* Hitung total ABK */}
                   {(() => {
                     let total = 0;
                     const count = (obj) => {
@@ -197,9 +205,8 @@ export default function SchoolDetailsTabs({ school }) {
     </div>
   );
 
-  // --- 2. SISWA & ABK ---
+  // --- 2. RENDER SISWA & ROMBEL ---
   const renderStudentsInfo = () => {
-    // ✅ Updated: Logic HIDE kolom Rombel jika isAbk=true
     const renderRow = (label, dataSiswa, dataRombel, isAbk = false) => {
       const l = toNum(dataSiswa?.l);
       const p = toNum(dataSiswa?.p);
@@ -214,7 +221,6 @@ export default function SchoolDetailsTabs({ school }) {
           <td className="px-4 py-3 text-sm text-center font-bold text-gray-800">
             {l + p}
           </td>
-          {/* Sembunyikan kolom rombel untuk ABK */}
           {!isAbk && (
             <td className="px-4 py-3 text-sm text-center text-gray-600">
               {rombelVal}
@@ -268,8 +274,8 @@ export default function SchoolDetailsTabs({ school }) {
                       `Kelas ${g}`,
                       dataSource[`paket${paket}`]?.[`kelas${g}`],
                       rombelSource[`paket${paket}`]?.[`kelas${g}`],
-                      isAbk
-                    )
+                      isAbk,
+                    ),
                   )}
                 </tbody>
               </table>
@@ -289,7 +295,7 @@ export default function SchoolDetailsTabs({ school }) {
               <TableHeader isAbk={isAbk} />
               <tbody>
                 {types.map((t) =>
-                  renderRow(t.l, dataSource[t.k], rombelSource[t.k], isAbk)
+                  renderRow(t.l, dataSource[t.k], rombelSource[t.k], isAbk),
                 )}
               </tbody>
             </table>
@@ -307,8 +313,8 @@ export default function SchoolDetailsTabs({ school }) {
                     `Kelas ${g}`,
                     dataSource[`kelas${g}`],
                     rombelSource[`kelas${g}`],
-                    isAbk
-                  )
+                    isAbk,
+                  ),
                 )}
               </tbody>
             </table>
@@ -319,7 +325,6 @@ export default function SchoolDetailsTabs({ school }) {
 
     return (
       <div className="space-y-8">
-        {/* TABEL SISWA REGULER */}
         <div>
           <div className="flex items-center gap-2 mb-4">
             <Users className="h-5 w-5 text-blue-600" />
@@ -329,8 +334,6 @@ export default function SchoolDetailsTabs({ school }) {
           </div>
           {generateTableContent(siswa, rombel, false)}
         </div>
-
-        {/* TABEL SISWA ABK */}
         <div>
           <div className="flex items-center gap-2 mb-4 pt-4 border-t">
             <Accessibility className="h-5 w-5 text-orange-600" />
@@ -344,7 +347,7 @@ export default function SchoolDetailsTabs({ school }) {
     );
   };
 
-  // --- 3. GURU ---
+  // --- 3. RENDER GURU ---
   const renderTeachersInfo = () => {
     const items = [
       { l: "Total Guru", v: guru.jumlahGuru },
@@ -378,7 +381,7 @@ export default function SchoolDetailsTabs({ school }) {
               <div
                 className={`text-2xl font-bold ${i.color || "text-gray-800"}`}
               >
-                {i.v}
+                {toNum(i.v)}
               </div>
               <div className="text-xs text-gray-500 mt-1 uppercase tracking-wide">
                 {i.l}
@@ -390,7 +393,7 @@ export default function SchoolDetailsTabs({ school }) {
     );
   };
 
-  // --- 4. LULUSAN ---
+  // --- 4. RENDER LULUSAN ---
   const renderGraduationInfo = () => {
     const CardStat = ({ label, val }) => (
       <div className="bg-gray-50 border p-4 rounded-lg flex justify-between items-center">
@@ -467,33 +470,25 @@ export default function SchoolDetailsTabs({ school }) {
     );
   };
 
-  // --- 5. PRASARANA ---
+  // --- 5. RENDER PRASARANA (Fokus Perbaikan) ---
   const renderFacilitiesInfo = () => {
+    // Komponen Item Ruangan Detail
     const DetailedRoomItem = ({
       label,
       data,
       icon: Icon,
       color = "text-gray-500",
     }) => {
+      // Jika data null/undefined, return null
       if (!data && data !== 0) return null;
 
-      const total =
-        typeof data === "object"
-          ? data.total || data.jumlah || data.total_all || data.total_room || 0
-          : data;
-
-      const isObj = typeof data === "object";
-      const baik = isObj ? toNum(data.good) || toNum(data.baik) : 0;
-      const sedang = isObj
-        ? toNum(data.moderate_damage) ||
-          toNum(data.rusakSedang) ||
-          toNum(data.rusak_sedang)
-        : 0;
-      const berat = isObj
-        ? toNum(data.heavy_damage) ||
-          toNum(data.rusakBerat) ||
-          toNum(data.rusak_berat)
-        : 0;
+      // Normalisasi data input yang bisa berupa angka langsung atau object
+      const total = typeof data === "object" ? (data.total || data.total_all || data.jumlah || 0) : data;
+      const baik = typeof data === "object" ? (data.good || data.baik || 0) : 0;
+      const rusakRingan = typeof data === "object" ? (data.rusakRingan || data.light_damage || 0) : 0;
+      const rusakSedang = typeof data === "object" ? (data.moderate_damage || data.rusakSedang || data.rusak_sedang || 0) : 0;
+      const rusakBerat = typeof data === "object" ? (data.heavy_damage || data.rusakBerat || data.rusak_berat || 0) : 0;
+      const rusakTotal = typeof data === "object" ? (data.rusakTotal || data.damage_total || 0) : 0;
 
       return (
         <div className="bg-white border rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
@@ -503,30 +498,39 @@ export default function SchoolDetailsTabs({ school }) {
             </div>
             <div className="text-sm font-bold text-gray-900">{label}</div>
           </div>
-          <div className="grid grid-cols-4 gap-1 text-center">
+          {/* GRID 6 Kolom Status Kondisi */}
+          <div className="grid grid-cols-6 gap-1 text-center">
             <div>
-              <div className="text-xs text-gray-500">Total</div>
-              <div className="font-bold text-gray-800">{total}</div>
+              <div className="text-[10px] text-gray-500">Total</div>
+              <div className="font-bold text-gray-800 text-sm">{total}</div>
             </div>
             <div>
-              <div className="text-xs text-green-600">Baik</div>
-              <div className="font-bold text-green-700">{baik}</div>
+              <div className="text-[10px] text-green-600">Baik</div>
+              <div className="font-bold text-green-700 text-sm">{baik}</div>
             </div>
             <div>
-              <div className="text-xs text-orange-600">R.Sedang</div>
-              <div className="font-bold text-orange-700">{sedang}</div>
+              <div className="text-[10px] text-yellow-600">Ringan</div>
+              <div className="font-bold text-yellow-700 text-sm">{rusakRingan}</div>
             </div>
             <div>
-              <div className="text-xs text-red-600">R.Berat</div>
-              <div className="font-bold text-red-700">{berat}</div>
+              <div className="text-[10px] text-orange-600">Sedang</div>
+              <div className="font-bold text-orange-700 text-sm">{rusakSedang}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-red-500">Berat</div>
+              <div className="font-bold text-red-600 text-sm">{rusakBerat}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-red-800">R.Total</div>
+              <div className="font-bold text-red-900 text-sm">{rusakTotal}</div>
             </div>
           </div>
         </div>
       );
     };
 
-    const kondisiKelas = prasarana.kondisiKelas || {};
-    const mebeulair = prasarana.mebeulair || {};
+    const kondisiKelas = prasarana.classrooms || {};
+    const furniture = prasarana.furniture || prasarana.mebeulair || {};
 
     return (
       <div className="space-y-8">
@@ -589,22 +593,22 @@ export default function SchoolDetailsTabs({ school }) {
               <tbody className="bg-white">
                 <tr>
                   <td className="px-4 py-3 text-center font-bold text-gray-800">
-                    {kondisiKelas.total}
+                    {toNum(kondisiKelas.total_room)}
                   </td>
                   <td className="px-4 py-3 text-center text-green-600 font-medium">
-                    {kondisiKelas.baik}
+                    {toNum(kondisiKelas.classrooms_good)}
                   </td>
                   <td className="px-4 py-3 text-center text-yellow-600">
-                    {kondisiKelas.rusakRingan}
+                    {toNum(kondisiKelas.rusakRingan)}
                   </td>
                   <td className="px-4 py-3 text-center text-orange-600">
-                    {kondisiKelas.rusakSedang}
+                    {toNum(kondisiKelas.classrooms_moderate_damage)}
                   </td>
                   <td className="px-4 py-3 text-center text-red-600 font-medium">
-                    {kondisiKelas.rusakBerat}
+                    {toNum(kondisiKelas.heavy_damage)}
                   </td>
                   <td className="px-4 py-3 text-center text-red-800 font-bold">
-                    {kondisiKelas.rusakTotal}
+                    {toNum(kondisiKelas.rusakTotal)}
                   </td>
                 </tr>
               </tbody>
@@ -620,19 +624,19 @@ export default function SchoolDetailsTabs({ school }) {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
               <div className="text-xl font-bold text-red-700">
-                {kondisiKelas.kurangRkb}
+                {toNum(kondisiKelas.kurangRkb)}
               </div>
               <div className="text-xs text-red-600">Kurang RKB</div>
             </div>
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
               <div className="text-xl font-bold text-yellow-700">
-                {kondisiKelas.kelebihan}
+                {toNum(kondisiKelas.kelebihan)}
               </div>
               <div className="text-xs text-yellow-600">Kelebihan</div>
             </div>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
               <div className="text-xl font-bold text-blue-700">
-                {kondisiKelas.rkbTambahan}
+                {toNum(kondisiKelas.rkbTambahan)}
               </div>
               <div className="text-xs text-blue-600">RKB Tambahan</div>
             </div>
@@ -644,11 +648,10 @@ export default function SchoolDetailsTabs({ school }) {
             </div>
           </div>
 
-          {/* ✅ UPDATED: Rencana Kegiatan Fisik (Include Rehab R.Kelas) */}
-          {(kegiatanFisik.rehabRuangKelas > 0 ||
-            kegiatanFisik.pembangunanRKB > 0 ||
-            kegiatanFisik.rehabToilet > 0 ||
-            kegiatanFisik.pembangunanToilet > 0) && (
+          {(toNum(kegiatanFisik.rehabRuangKelas) > 0 ||
+            toNum(kegiatanFisik.pembangunanRKB) > 0 ||
+            toNum(kegiatanFisik.rehabToilet) > 0 ||
+            toNum(kegiatanFisik.pembangunanToilet) > 0) && (
             <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-4">
               <h5 className="text-sm font-semibold text-blue-800 mb-3">
                 Rencana Kegiatan Fisik (DAK)
@@ -691,46 +694,55 @@ export default function SchoolDetailsTabs({ school }) {
             <Briefcase className="h-4 w-4" /> Ruang Penunjang & Sanitasi
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* PERPUSTAKAAN */}
             <DetailedRoomItem
               label="Perpustakaan"
               data={getRoomData("library")}
               icon={Library}
               color="text-orange-600"
             />
+            {/* KEPALA SEKOLAH */}
             <DetailedRoomItem
               label="R. Kepala Sekolah"
-              data={getRoomData("kepsek_room")}
+              data={getRoomData("headmaster_room")}
               icon={PersonStanding}
             />
+            {/* GURU */}
             <DetailedRoomItem
               label="R. Guru"
               data={getRoomData("teacher_room")}
               icon={UserCheck}
               color="text-cyan-600"
             />
+            {/* TATA USAHA (NEW) */}
             <DetailedRoomItem
               label="R. Tata Usaha"
               data={getRoomData("administration_room")}
               icon={Briefcase}
             />
+            {/* UKS */}
             <DetailedRoomItem
               label="R. UKS"
               data={getRoomData("uks_room")}
               icon={HeartPulse}
               color="text-red-500"
             />
+
             <DetailedRoomItem
-              label="R. BK / Konseling"
-              data={getRoomData("bk_room")}
-              icon={MessageCircle}
-            />
-            <DetailedRoomItem
-              label="Tempat Ibadah"
-              data={getRoomData("worship_place")}
-              icon={Building}
+              label="Rumah Dinas"
+              data={getRoomData("official_residences")}
+              icon={Home}
             />
 
-            {/* ✅ LOGIC BARU: Lab Umum hanya muncul jika BUKAN SMP dan BUKAN PAUD (Artinya: SD & PKBM) */}
+            {isPaud && (
+              <DetailedRoomItem
+                label="Alat Permainan Edukasi"
+                data={getRoomData("ape")}
+                icon={Puzzle}
+                color="text-pink-500"
+              />
+            )}
+
             {!isSmp && !isPaud && (
               <DetailedRoomItem
                 label="Lab. Komputer / Umum"
@@ -775,7 +787,6 @@ export default function SchoolDetailsTabs({ school }) {
               </>
             )}
 
-            {/* ✅ DETAIL TOILET SMP */}
             {isSmp ? (
               <>
                 <DetailedRoomItem
@@ -810,69 +821,107 @@ export default function SchoolDetailsTabs({ school }) {
                 icon={Bath}
               />
             )}
-
-            <DetailedRoomItem
-              label="Rumah Dinas"
-              data={getRoomData("official_residences")}
-              icon={Home}
-            />
           </div>
         </div>
 
-        {/* E. Mebeulair */}
+        {/* E. Mebeulair & Peralatan */}
         <div>
           <h4 className="font-semibold mb-3 text-gray-800 flex items-center gap-2">
-            <Armchair className="h-4 w-4" /> Mebeulair & TIK
+            <Armchair className="h-4 w-4" /> Mebeulair, TIK, & Peralatan
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-gray-50 border rounded-lg p-4">
               <div className="flex justify-between items-center mb-2">
                 <h5 className="font-bold text-gray-700">Meja Siswa</h5>
-                <Badge variant="outline">{mebeulair.meja?.total || 0}</Badge>
+                <Badge variant="outline">
+                  {toNum(furniture.tables?.total || furniture.meja?.total)}
+                </Badge>
               </div>
               <div className="flex gap-2 text-xs">
                 <span className="flex-1 bg-green-100 text-green-700 py-1 px-2 rounded text-center font-medium">
-                  Baik: {toNum(mebeulair.meja?.baik)}
+                  Baik: {toNum(furniture.tables?.good || furniture.meja?.baik)}
                 </span>
                 <span className="flex-1 bg-red-100 text-red-700 py-1 px-2 rounded text-center font-medium">
-                  Rusak: {toNum(mebeulair.meja?.rusak)}
+                  Rusak:{" "}
+                  {toNum(
+                    furniture.tables?.heavy_damage || furniture.meja?.rusak,
+                  )}
                 </span>
               </div>
             </div>
+
             <div className="bg-gray-50 border rounded-lg p-4">
               <div className="flex justify-between items-center mb-2">
                 <h5 className="font-bold text-gray-700">Kursi Siswa</h5>
-                <Badge variant="outline">{mebeulair.kursi?.total || 0}</Badge>
+                <Badge variant="outline">
+                  {toNum(furniture.chairs?.total || furniture.kursi?.total)}
+                </Badge>
               </div>
               <div className="flex gap-2 text-xs">
                 <span className="flex-1 bg-green-100 text-green-700 py-1 px-2 rounded text-center font-medium">
-                  Baik: {toNum(mebeulair.kursi?.baik)}
+                  Baik: {toNum(furniture.chairs?.good || furniture.kursi?.baik)}
                 </span>
                 <span className="flex-1 bg-red-100 text-red-700 py-1 px-2 rounded text-center font-medium">
-                  Rusak: {toNum(mebeulair.kursi?.rusak)}
+                  Rusak:{" "}
+                  {toNum(
+                    furniture.chairs?.heavy_damage || furniture.kursi?.rusak,
+                  )}
                 </span>
               </div>
             </div>
+
+            <div className="bg-gray-50 border rounded-lg p-4">
+              <div className="flex justify-between items-center mb-2">
+                <h5 className="font-bold text-gray-700">Papan Tulis</h5>
+                <Badge variant="outline">
+                  {toNum(furniture.whiteboard?.total)}
+                </Badge>
+              </div>
+              <div className="flex gap-2 text-xs">
+                <span className="flex-1 bg-green-100 text-green-700 py-1 px-2 rounded text-center font-medium">
+                  Baik: {toNum(furniture.whiteboard?.good)}
+                </span>
+                <span className="flex-1 bg-red-100 text-red-700 py-1 px-2 rounded text-center font-medium">
+                  Rusak: {toNum(furniture.whiteboard?.heavy_damage)}
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-4 flex items-center gap-4">
+              <div className="p-3 bg-white rounded-full text-yellow-600 shadow-sm">
+                <Utensils className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-yellow-700">
+                  Alat Rumah Tangga
+                </div>
+                <div className="text-lg font-bold text-gray-800">
+                  {prasarana.peralatanRumahTangga || "-"}
+                </div>
+              </div>
+            </div>
+
             <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex items-center gap-4">
               <div className="p-3 bg-white rounded-full text-blue-600 shadow-sm">
                 <Monitor className="h-6 w-6" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-blue-700">
-                  {toNum(mebeulair.komputer)}
+                  {toNum(furniture.computer || furniture.komputer)}
                 </div>
                 <div className="text-xs text-blue-600 font-medium uppercase tracking-wide">
-                  PC / Laptop (Sekolah)
+                  PC / Laptop
                 </div>
               </div>
             </div>
+
             <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4 flex items-center gap-4">
               <div className="p-3 bg-white rounded-full text-indigo-600 shadow-sm">
                 <Laptop className="h-6 w-6" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-indigo-700">
-                  {toNum(mebeulair.chromebook)}
+                  {toNum(prasarana.chromebook)}
                 </div>
                 <div className="text-xs text-indigo-600 font-medium uppercase tracking-wide">
                   Chromebook (Bantuan)
@@ -885,6 +934,7 @@ export default function SchoolDetailsTabs({ school }) {
     );
   };
 
+  // --- 6. RENDER KELEMBAGAAN ---
   const renderInstitutionalInfo = () => {
     const InfoRow = ({ label, value }) => (
       <div className="flex justify-between py-2 border-b last:border-0 hover:bg-gray-50 px-2 rounded">
@@ -900,10 +950,6 @@ export default function SchoolDetailsTabs({ school }) {
           <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
             <ClipboardList className="h-4 w-4" /> Umum
           </h4>
-          <InfoRow
-            label="Alat Rumah Tangga"
-            value={kelembagaan.peralatanRumahTangga}
-          />
           <InfoRow label="Status Pembinaan" value={kelembagaan.pembinaan} />
           <InfoRow label="Status Asesmen" value={kelembagaan.asesmen} />
           <InfoRow
@@ -914,7 +960,10 @@ export default function SchoolDetailsTabs({ school }) {
             label="Melaksanakan Rekomendasi"
             value={kelembagaan.melaksanakanRekomendasi}
           />
-          <InfoRow label="Siap Dievaluasi" value={kelembagaan.siapDievaluasi} />
+          <InfoRow
+            label="Siap Dievaluasi"
+            value={kelembagaan.siapDievaluasi}
+          />
         </div>
         <div className="border rounded-xl p-5 shadow-sm">
           <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -927,8 +976,8 @@ export default function SchoolDetailsTabs({ school }) {
               </h5>
               <InfoRow label="Pengelola" value={kelembagaan.bop?.pengelola} />
               <InfoRow
-                label="Tenaga Ditingkatkan"
-                value={kelembagaan.bop?.tenagaPeningkatan}
+                label="Tenaga Pendidik Ditingkatkan (Kompetensi)"
+                value={kelembagaan.bop?.tenagaPeningkatan || "0"}
               />
             </div>
             <div>

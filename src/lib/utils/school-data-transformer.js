@@ -1,9 +1,12 @@
-// src/lib/school-data-transformer.js
+// src/lib/utils/school-data-transformer.js
+
 /* =========================================
-   SCHOOL DATA TRANSFORMER V11 (Updated for Kegiatan Fisik)
+   SCHOOL DATA TRANSFORMER V_FINAL_FIX_FACILITIES
+   - FIX: prasarana dibaca dari facilities + class_condition
+   - FIX: meta.prasarana tetap prioritas tertinggi
+   - FIX: kegiatanFisik: map rehab_unit/pembangunan_unit -> rehabRuangKelas/pembangunanRKB
    ========================================= */
 
-// --- 1. CORE HELPERS ---
 function toNum(v) {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
@@ -11,7 +14,7 @@ function toNum(v) {
 
 function safeParseJson(v) {
   if (v == null) return {};
-  if (typeof v === "object") return v;
+  if (typeof v === "object") return v; // jsonb dari supabase biasanya sudah object
   try {
     return JSON.parse(v);
   } catch {
@@ -19,233 +22,257 @@ function safeParseJson(v) {
   }
 }
 
-function isPlainObject(x) {
-  return x && typeof x === "object" && !Array.isArray(x);
+function isPlainObject(v) {
+  return v != null && typeof v === "object" && !Array.isArray(v);
 }
 
-// Helper: Cari nilai maksimal dari variasi key
-function findMax(obj, ...keys) {
-  if (!obj || typeof obj !== "object") return 0;
-  let max = 0;
-  keys.forEach((k) => {
-    const val = toNum(obj[k]);
-    if (val > max) max = val;
+function deepMerge(a, b) {
+  const A = isPlainObject(a) ? a : {};
+  const B = isPlainObject(b) ? b : {};
+  const out = { ...A };
+  for (const [k, v] of Object.entries(B)) {
+    if (isPlainObject(v) && isPlainObject(out[k])) {
+      out[k] = deepMerge(out[k], v);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+// LOGIKA UTAMA EKSTRAKSI PRASARANA
+function extractPrasarana(rawSchool, meta) {
+  // 1) Prioritas tertinggi: meta.prasarana (jika ada)
+  const pMeta = isPlainObject(meta?.prasarana) ? meta.prasarana : {};
+
+  // 2) Fallback kuat: facilities + class_condition (ini yang selama ini TIDAK dibaca)
+  const facilitiesObj = safeParseJson(rawSchool?.facilities);
+  const classCondObj = safeParseJson(rawSchool?.class_condition);
+
+  // Samakan seperti SQL Anda:
+  // meta.prasarana = deep_merge(facilities, { classrooms: class_condition })
+  const pFromFacilities = deepMerge(facilitiesObj, {
+    classrooms: isPlainObject(classCondObj) ? classCondObj : {},
   });
-  return max;
-}
 
-// Helper: Resolve value dengan prioritas (Raw > Meta)
-function resolveValue(raw, meta, key) {
-  if (raw[key] !== undefined && raw[key] !== null) return raw[key];
-  if (meta[key] !== undefined && meta[key] !== null) return meta[key];
-  return null;
-}
+  // 3) Legacy fallback (jika suatu saat ada)
+  const pRaw = isPlainObject(rawSchool?.prasarana) ? rawSchool.prasarana : {};
+  const pJson = safeParseJson(rawSchool?.prasarana_json);
 
-// --- 2. CALCULATOR SISWA (3 Layer Check) ---
-function calculateSiswa(rawSchool, meta, classesRows) {
-  // Layer 1: Hitung dari tabel relasi school_classes (Paling Akurat)
-  let classL = 0,
-    classP = 0,
-    classTotal = 0;
-  let hasClassData = false;
+  // 4) Merge final (meta menang terakhir)
+  // urutan: facilities/base -> legacy -> meta
+  const combined = deepMerge(
+    deepMerge(deepMerge(pFromFacilities, pJson), pRaw),
+    pMeta,
+  );
 
-  if (Array.isArray(classesRows) && classesRows.length > 0) {
-    classesRows.forEach((row) => {
-      const grade = (row.grade || "").toLowerCase(); // ex: "tka_L"
-      const count = toNum(row.count);
-      classTotal += count;
-
-      // Deteksi _L / _P (Sesuai DataInputForm: `${type.key}_L`)
-      if (grade.endsWith("_l") || grade.endsWith(" l")) classL += count;
-      else if (grade.endsWith("_p") || grade.endsWith(" p")) classP += count;
-    });
-    if (classTotal > 0) hasClassData = true;
+  // DEBUG: log sumber data
+  if (pMeta?.classrooms || pMeta?.rooms) {
+    console.log("✅ Transformer: Prasarana dari META.prasarana", pMeta);
+  } else if (
+    pFromFacilities?.rooms ||
+    pFromFacilities?.ukuran ||
+    pFromFacilities?.classrooms
+  ) {
+    console.log(
+      "✅ Transformer: Prasarana dari FACILITIES + CLASS_CONDITION",
+      pFromFacilities,
+    );
+  } else if (pRaw?.classrooms || pRaw?.rooms) {
+    console.log("⚠️ Transformer: Prasarana dari ROOT/LEGACY", pRaw);
+  } else {
+    console.warn(
+      "❌ Transformer: Prasarana kosong (meta/facilities/legacy kosong).",
+    );
   }
 
-  // Layer 2: Hitung dari JSON Meta (Sesuai DataInputForm: meta.siswa.tka.l)
+  // Helper Stats untuk rooms
+  const rs = (obj) => ({
+    total: toNum(obj?.total || obj?.total_all || obj?.jumlah),
+    good: toNum(obj?.good || obj?.baik || obj?.good_condition),
+    rusakRingan: toNum(obj?.rusakRingan || obj?.light_damage),
+    moderate_damage: toNum(
+      obj?.moderate_damage || obj?.rusakSedang || obj?.rusak_sedang,
+    ),
+    heavy_damage: toNum(
+      obj?.heavy_damage || obj?.rusakBerat || obj?.rusak_berat,
+    ),
+    rusakTotal: toNum(obj?.rusakTotal || obj?.damage_total || obj?.rusak_total),
+  });
+
+  // Helper Stats untuk furniture
+  const fs = (obj) => ({
+    total: toNum(obj?.total || obj?.jumlah),
+    good: toNum(obj?.good || obj?.baik),
+    moderate_damage: toNum(obj?.moderate_damage),
+    heavy_damage: toNum(obj?.heavy_damage || obj?.rusak),
+  });
+
+  // A. KONDISI KELAS
+  const cls = isPlainObject(combined?.classrooms) ? combined.classrooms : {};
+  const kondisiKelas = {
+    total_room:
+      toNum(cls.total_room) || toNum(cls.total) || toNum(cls.jumlah) || 0,
+    classrooms_good:
+      toNum(cls.classrooms_good) || toNum(cls.good) || toNum(cls.baik) || 0,
+    rusakRingan: toNum(cls.rusakRingan) || toNum(cls.light_damage) || 0,
+    classrooms_moderate_damage:
+      toNum(cls.classrooms_moderate_damage) ||
+      toNum(cls.moderate_damage) ||
+      toNum(cls.rusakSedang) ||
+      0,
+    heavy_damage: toNum(cls.heavy_damage) || toNum(cls.rusakBerat) || 0,
+    rusakTotal: toNum(cls.rusakTotal) || toNum(cls.damage_total) || 0,
+
+    kurangRkb: toNum(cls.kurangRkb),
+    kelebihan: toNum(cls.kelebihan),
+    rkbTambahan: toNum(cls.rkbTambahan),
+    lahan: cls.lahan || combined?.lahan || "-",
+  };
+
+  // B. RUANGAN (rooms ada di facilities.rooms)
+  const rooms = isPlainObject(combined?.rooms) ? combined.rooms : {};
+
+  // C. MEBEULAIR
+  const furn = isPlainObject(combined?.furniture)
+    ? combined.furniture
+    : isPlainObject(combined?.mebeulair)
+      ? combined.mebeulair
+      : {};
+
+  // Return prasarana bersih untuk UI
+  return {
+    ...combined,
+
+    // classrooms sudah dinormalisasi
+    classrooms: kondisiKelas,
+
+    // rooms dinormalisasi per item (library, toilets, dsb)
+    rooms: {
+      ...rooms,
+      library: rs(rooms.library || combined?.ruangPerpustakaan),
+      laboratory: rs(rooms.laboratory || combined?.ruangLaboratorium),
+      teacher_room: rs(rooms.teacher_room || combined?.ruangGuru),
+      headmaster_room: rs(rooms.headmaster_room || combined?.ruangKepsek),
+      administration_room: rs(rooms.administration_room || combined?.ruangTu),
+      uks_room: rs(rooms.uks_room || combined?.ruangUks),
+      toilets: rs(rooms.toilets || combined?.toilet),
+      official_residences: rs(
+        rooms.official_residences || combined?.rumahDinas,
+      ),
+      ape: rs(rooms.ape),
+    },
+
+    furniture: {
+      ...furn,
+      tables: fs(furn.tables || furn.meja),
+      chairs: fs(furn.chairs || furn.kursi),
+      whiteboard: fs(furn.whiteboard),
+      computer: toNum(furn.computer || furn.komputer),
+    },
+
+    chromebook: toNum(combined?.chromebook),
+    peralatanRumahTangga: combined?.peralatanRumahTangga || "Baik",
+
+    // ukuran (fallback terakhir jika ada kolom luas_* di rawSchool)
+    ukuran: {
+      tanah: toNum(combined?.ukuran?.tanah) || toNum(rawSchool?.luas_tanah),
+      bangunan:
+        toNum(combined?.ukuran?.bangunan) || toNum(rawSchool?.luas_bangunan),
+      halaman:
+        toNum(combined?.ukuran?.halaman) || toNum(rawSchool?.luas_halaman),
+    },
+  };
+}
+
+function calculateSiswa(rawSchool, meta) {
   let metaL = 0,
     metaP = 0;
-  const siswaMeta = meta.siswa || {};
+  const siswaMeta = meta?.siswa || {};
   Object.values(siswaMeta).forEach((rombel) => {
-    if (isPlainObject(rombel)) {
+    if (rombel && typeof rombel === "object") {
       metaL += toNum(rombel.l);
       metaP += toNum(rombel.p);
     }
   });
-  const metaTotal = metaL + metaP;
 
-  // Layer 3: Kolom Database Flat
-  const dbL = toNum(rawSchool.st_male);
-  const dbP = toNum(rawSchool.st_female);
-  const dbTotal = toNum(rawSchool.student_count);
+  const dbL = toNum(rawSchool?.st_male);
+  const dbP = toNum(rawSchool?.st_female);
+  const dbTotal = toNum(rawSchool?.student_count);
 
-  // KEPUTUSAN FINAL (Prioritas: Class > Meta > DB)
-  if (hasClassData) return { l: classL, p: classP, total: classTotal };
-  if (metaTotal > 0) return { l: metaL, p: metaP, total: metaTotal };
-
-  // Fallback terakhir
-  return { l: dbL, p: dbP, total: dbTotal > 0 ? dbTotal : dbL + dbP };
+  if (metaL + metaP > 0) return { l: metaL, p: metaP, total: metaL + metaP };
+  return { l: dbL, p: dbP, total: dbTotal || dbL + dbP };
 }
 
-// --- 3. PRASARANA LOGIC (Based on DataInputForm Structure) ---
-function extractPrasarana(rawSchool, meta) {
-  // Ambil object prasarana dari meta (karena DataInputForm menyimpannya di meta)
-  const pMeta = meta.prasarana || {};
-  const pRaw =
-    typeof rawSchool.prasarana === "object" ? rawSchool.prasarana : {};
-  const pJson = safeParseJson(rawSchool.prasarana_json);
-
-  // Gabungkan semua source, prioritas ke Meta karena itu hasil input form terbaru
-  const combined = { ...pJson, ...pRaw, ...pMeta };
-
-  // A. KONDISI KELAS (Mapping dari 'classrooms')
-  const cls = combined.classrooms || {};
-  const kondisiKelas = {
-    total: findMax(cls, "total_room", "total", "jumlah"),
-    baik: findMax(cls, "classrooms_good", "good", "baik"),
-    // Mapping kunci sesuai DataInputForm:
-    rusakRingan: findMax(cls, "rusakRingan", "light_damage"),
-    rusakSedang: findMax(
-      cls,
-      "classrooms_moderate_damage",
-      "moderate_damage",
-      "rusakSedang"
-    ),
-    rusakBerat: findMax(cls, "heavy_damage", "rusakBerat"),
-    rusakTotal: findMax(cls, "rusakTotal", "damage_total"),
-
-    // Analisis & Lahan
-    kurangRkb: findMax(cls, "kurangRkb"),
-    kelebihan: findMax(cls, "kelebihan"),
-    rkbTambahan: findMax(cls, "rkbTambahan"),
-    lahan: cls.lahan || combined.lahan || "-", // ✅ Fix Ketersediaan Lahan
-  };
-
-  // B. MEBEULAIR (Mapping dari 'furniture' atau 'mebeulair')
-  const furn = combined.furniture || combined.mebeulair || {};
-  const mebeulair = {
-    meja: {
-      total: findMax(furn.tables, "total"),
-      baik: findMax(furn.tables, "good"),
-      rusak:
-        findMax(furn.tables, "moderate_damage") +
-        findMax(furn.tables, "heavy_damage"),
-    },
-    kursi: {
-      total: findMax(furn.chairs, "total"),
-      baik: findMax(furn.chairs, "good"),
-      rusak:
-        findMax(furn.chairs, "moderate_damage") +
-        findMax(furn.chairs, "heavy_damage"),
-    },
-    // ✅ Fix Chromebook: Diambil dari root prasarana (sesuai input form)
-    chromebook: findMax(combined, "chromebook"),
-    komputer: findMax(furn, "computer"),
-  };
-
-  // C. RUANGAN LAIN & LABS
-  // Kita kembalikan object combined agar UI bisa akses 'library', 'labs', dll langsung
-  return {
-    ...combined,
-    kondisiKelas,
-    mebeulair,
-    // Pastikan ukuran ada
-    ukuran: {
-      tanah:
-        findMax(combined.ukuran, "tanah") ||
-        toNum(rawSchool.luas_tanah) ||
-        toNum(rawSchool.luasTanah),
-      bangunan:
-        findMax(combined.ukuran, "bangunan") ||
-        toNum(rawSchool.luas_bangunan) ||
-        toNum(rawSchool.luasBangunan),
-      halaman:
-        findMax(combined.ukuran, "halaman") ||
-        toNum(rawSchool.luas_halaman) ||
-        toNum(rawSchool.luasHalaman),
-    },
-  };
-}
-
-// --- 4. GURU NORMALIZER ---
-function normalizeGuru(school, meta) {
-  const g = meta.guru || school.guru || {};
-  // Mapping langsung sesuai DataInputForm: normalizeGuru
-  return {
-    jumlahGuru: toNum(g.jumlahGuru) || toNum(g.total),
-    pns: toNum(g.pns),
-    pppk: toNum(g.pppk),
-    pppkParuhWaktu: toNum(g.pppkParuhWaktu),
-    nonAsnDapodik: toNum(g.nonAsnDapodik),
-    nonAsnTidakDapodik: toNum(g.nonAsnTidakDapodik),
-    kekuranganGuru: toNum(g.kekuranganGuru),
-  };
-}
-
-// --- 5. MAIN TRANSFORMER ---
-export function transformSchoolData(rawSchool, rawClasses = []) {
+export function transformSchoolData(rawSchool) {
   if (!rawSchool) return null;
 
   const meta = safeParseJson(rawSchool.meta) || {};
-  const schoolTypeRaw = rawSchool.schoolType || meta.jenjang || "PAUD";
-  const schoolType =
-    typeof schoolTypeRaw === "string" ? schoolTypeRaw.toUpperCase() : "PAUD";
 
-  // 1. Hitung Siswa (Menggunakan Logic Layered)
-  const siswaFinal = calculateSiswa(rawSchool, meta, rawClasses);
+  const schoolType = (
+    rawSchool.schoolType ||
+    meta.jenjang ||
+    "PAUD"
+  ).toUpperCase();
 
-  // 2. Olah Prasarana
-  const prasaranaFinal = extractPrasarana(rawSchool, meta);
-
-  // 3. Olah Lulusan & Kegiatan (Sesuai DataInputForm)
-  const lulusanFinal = {
-    paketA: meta.lulusanPaketA || {},
-    paketB: meta.lulusanPaketB || {},
-    paketC: meta.lulusanPaketC || {},
-    dalamKab: meta.siswaLanjutDalamKab || {},
-    luarKab: meta.siswaLanjutLuarKab || {},
-    tidakLanjut: toNum(meta.siswaTidakLanjut),
-    bekerja: toNum(meta.siswaBekerja),
+  // FIX kegiatanFisik: dukung rehab_unit/pembangunan_unit tetapi UI Anda cek rehabRuangKelas/pembangunanRKB
+  const kegiatanFisikRaw =
+    meta?.kegiatanFisik || rawSchool?.kegiatanFisik || {};
+  const kegiatanFisik = {
+    ...kegiatanFisikRaw,
+    // map agar UI tidak 0
+    rehabRuangKelas:
+      toNum(kegiatanFisikRaw?.rehabRuangKelas) ||
+      toNum(kegiatanFisikRaw?.rehab_unit),
+    pembangunanRKB:
+      toNum(kegiatanFisikRaw?.pembangunanRKB) ||
+      toNum(kegiatanFisikRaw?.pembangunan_unit),
+    // biarkan rehabToilet/pembangunanToilet jika suatu saat ada
+    rehabToilet: toNum(kegiatanFisikRaw?.rehabToilet),
+    pembangunanToilet: toNum(kegiatanFisikRaw?.pembangunanToilet),
   };
 
-  // ✅ Extract Kegiatan Fisik (Prioritas ke Meta)
-  const kegiatanFinal = meta.kegiatanFisik || rawSchool.kegiatanFisik || {};
+  const siswaAgg = calculateSiswa(rawSchool, meta);
 
   return {
     id: rawSchool.id,
     npsn: rawSchool.npsn,
     namaSekolah: rawSchool.name || rawSchool.namaSekolah || "Tanpa Nama",
     status: rawSchool.status || "SWASTA",
-    dataStatus: siswaFinal.total > 0 ? "Aktif" : "Data Belum Lengkap",
+    dataStatus: "Aktif",
     lastUpdated: rawSchool.updated_at
       ? new Date(rawSchool.updated_at).toLocaleDateString("id-ID")
       : "-",
 
-    schoolType: schoolType,
+    schoolType,
     jenjang: schoolType,
     kecamatan: rawSchool.kecamatan || meta.kecamatan || "-",
+    desa: rawSchool.desa || meta.desa || rawSchool.village_name || "-",
     alamat: rawSchool.address || meta.alamat || "",
     latitude: rawSchool.lat,
     longitude: rawSchool.lng,
 
-    // ✅ HASIL HITUNGAN SISWA
-    student_count: siswaFinal.total,
-    st_male: siswaFinal.l,
-    st_female: siswaFinal.p,
+    student_count: toNum(rawSchool.student_count) || siswaAgg.total,
 
-    guru: normalizeGuru(rawSchool, meta),
+    // FIX UTAMA: prasarana kini baca facilities + class_condition
+    prasarana: extractPrasarana(rawSchool, meta),
 
-    prasarana: prasaranaFinal,
-    kegiatanFisik: kegiatanFinal,
-    kelembagaan: {
-      ...(meta.kelembagaan || {}),
-      ...(rawSchool.kelembagaan || {}),
-    },
-    lulusan: lulusanFinal,
-
-    // Raw Data untuk Tab Detail
+    guru: meta.guru || rawSchool.guru || {},
     siswa: meta.siswa || rawSchool.siswa || {},
-    rombel: meta.rombel || rawSchool.rombel || {},
     siswaAbk: meta.siswaAbk || rawSchool.siswaAbk || {},
+    rombel: meta.rombel || rawSchool.rombel || {},
+
+    kelembagaan: meta.kelembagaan || rawSchool.kelembagaan || {},
+    kegiatanFisik,
+
+    lulusan: {
+      paketA: meta.lulusanPaketA || {},
+      paketB: meta.lulusanPaketB || {},
+      paketC: meta.lulusanPaketC || {},
+      dalamKab: meta.siswaLanjutDalamKab || meta.lanjutDalamKab || {},
+      luarKab: meta.siswaLanjutLuarKab || meta.lanjutLuarKab || {},
+      tidakLanjut: toNum(meta.siswaTidakLanjut),
+      bekerja: toNum(meta.siswaBekerja),
+    },
   };
 }

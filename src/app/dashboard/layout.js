@@ -2,6 +2,8 @@
 "use client";
 
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
 import { Loader2 } from "lucide-react";
@@ -9,6 +11,15 @@ import { Toaster } from "sonner"; // ✅ 1. IMPORT INI WAJIB
 
 function DashboardContent({ children }) {
   const { loading, user } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Middleware akan menangani sebagian besar kasus.
+    // Ini fallback untuk case token expired / logout di tab lain.
+    if (!loading && !user) {
+      router.replace("/login");
+    }
+  }, [loading, user, router]);
 
   if (loading) {
     return (
@@ -21,7 +32,18 @@ function DashboardContent({ children }) {
     );
   }
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-muted-foreground">
+            Mengalihkan ke halaman login...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

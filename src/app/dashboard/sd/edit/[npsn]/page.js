@@ -1,4 +1,5 @@
 // src/app/dashboard/sd/edit/[npsn]/page.js
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -7,43 +8,63 @@ import { supabase } from "@/lib/supabase/lib/client";
 import EditSchoolForm from "@/app/components/EditSchoolForm";
 import { Loader2 } from "lucide-react";
 
-/**
- * Mapper: hasil RPC -> initialData EditSchoolForm
- * Fokus: Memastikan field root (alamat, desa, kec, lat, lng) masuk ke form state.
- */
+function formatSupabaseError(err) {
+  if (!err) return "Terjadi kesalahan (error kosong).";
+  if (typeof err === "string") return err;
+
+  const msg =
+    err.message ||
+    err.error_description ||
+    err.msg ||
+    err.error ||
+    "Terjadi kesalahan (tanpa message).";
+
+  const parts = [msg];
+  if (err.code) parts.push(`code=${err.code}`);
+  if (err.details) parts.push(`details=${err.details}`);
+  if (err.hint) parts.push(`hint=${err.hint}`);
+
+  if (parts.length === 1) {
+    try {
+      parts.push(`raw=${JSON.stringify(err)}`);
+    } catch {}
+  }
+
+  return parts.join(" | ");
+}
+
 function mapSchoolDetailToFormData(row) {
   if (!row) return null;
   const meta = row.meta || {};
 
   return {
-    // ID Sekolah UUID dari database (WAJIB untuk Update)
     id: row.id,
 
-    // ===== INFO DASAR =====
     namaSekolah: row.namaSekolah || row.name || "",
     npsn: row.npsn || "",
     status: row.status || meta.status || "SWASTA",
 
-    // ===== WILAYAH & ALAMAT (FIX: Sinkron dengan hasil RPC baru) =====
-    // RPC mengirim 'alamat', Form mencari 'alamat'
     alamat: row.alamat || row.address || meta.alamat || "",
-    // RPC mengirim 'desa', Form mencari 'desa'
-    desa: row.desa || row.village_name || meta.desa || "",
+    desa: row.desa || row.village || row.village_name || meta.desa || "",
     kecamatan: row.kecamatan || meta.kecamatan || "",
 
-    // Code wilayah agar Dropdown otomatis ter-select (PENTING)
     kecamatan_code: row.kecamatan_code || meta.kecamatan_code || "",
     desa_code: row.desa_code || meta.desa_code || "",
 
-    // ===== KOORDINAT (FIX: Mapping dari lat/lng ke latitude/longitude) =====
     latitude: row.lat != null ? String(row.lat) : meta.latitude || "",
     longitude: row.lng != null ? String(row.lng) : meta.longitude || "",
 
-    // ===== KONTAK =====
-    namaOperator: row.contact?.operator_name || meta.namaOperator || "",
-    hp: row.contact?.operator_phone || meta.hp || "",
+    namaOperator:
+      row.contact?.operator_name ||
+      meta.contact?.operator_name ||
+      meta.namaOperator ||
+      "",
+    hp:
+      row.contact?.operator_phone ||
+      meta.contact?.operator_phone ||
+      meta.hp ||
+      "",
 
-    // ===== DATA GURU (Sinkron dari staff_summary via RPC) =====
     guru: row.guru ||
       meta.guru || {
         pns: 0,
@@ -54,62 +75,99 @@ function mapSchoolDetailToFormData(row) {
         kekuranganGuru: 0,
       },
 
-    // ===== DATA SISWA (Sinkron dari school_classes via RPC) =====
     siswa: row.siswa || meta.siswa || {},
     rombel: row.rombel || meta.rombel || {},
     lanjut: row.lanjut || meta.lanjut || {},
 
-    // ===== DATA PRASARANA (Mapping ulang ke path Form) =====
     prasarana: {
       ukuran: row.prasarana?.ukuran || meta.prasarana?.ukuran || {},
-      classrooms: row.prasarana?.ruangKelas || meta.prasarana?.classrooms || {},
+
+      classrooms:
+        row.prasarana?.classrooms ||
+        row.prasarana?.ruangKelas ||
+        meta.prasarana?.classrooms ||
+        {},
+
       rooms: {
         library:
+          row.prasarana?.rooms?.library ||
           row.prasarana?.ruangPerpustakaan ||
           meta.prasarana?.rooms?.library ||
           {},
         laboratory:
+          row.prasarana?.rooms?.laboratory ||
           row.prasarana?.ruangLaboratorium ||
           meta.prasarana?.rooms?.laboratory ||
           {},
         teacher_room:
-          row.prasarana?.ruangGuru || meta.prasarana?.rooms?.teacher_room || {},
+          row.prasarana?.rooms?.teacher_room ||
+          row.prasarana?.ruangGuru ||
+          meta.prasarana?.rooms?.teacher_room ||
+          {},
+        headmaster_room:
+          row.prasarana?.rooms?.headmaster_room ||
+          row.prasarana?.ruangKepsek ||
+          meta.prasarana?.rooms?.headmaster_room ||
+          {},
+        administration_room:
+          row.prasarana?.rooms?.administration_room ||
+          row.prasarana?.administration_room ||
+          meta.prasarana?.rooms?.administration_room ||
+          {},
         uks_room:
-          row.prasarana?.ruangUks || meta.prasarana?.rooms?.uks_room || {},
+          row.prasarana?.rooms?.uks_room ||
+          row.prasarana?.ruangUks ||
+          meta.prasarana?.rooms?.uks_room ||
+          {},
         toilets:
+          row.prasarana?.rooms?.toilets ||
           row.prasarana?.toiletGuruSiswa ||
           meta.prasarana?.rooms?.toilets ||
           {},
         official_residences:
+          row.prasarana?.rooms?.official_residences ||
           row.prasarana?.rumahDinas ||
           meta.prasarana?.rooms?.official_residences ||
           {},
       },
+
       furniture: {
         tables:
           row.prasarana?.mebeulair?.tables ||
+          row.prasarana?.furniture?.tables ||
           meta.prasarana?.furniture?.tables ||
           {},
         chairs:
           row.prasarana?.mebeulair?.chairs ||
+          row.prasarana?.furniture?.chairs ||
           meta.prasarana?.furniture?.chairs ||
+          {},
+        whiteboard:
+          row.prasarana?.mebeulair?.whiteboard ||
+          row.prasarana?.furniture?.whiteboard ||
+          meta.prasarana?.furniture?.whiteboard ||
           {},
         computer:
           row.prasarana?.mebeulair?.computer ||
+          row.prasarana?.furniture?.computer ||
           meta.prasarana?.furniture?.computer ||
           0,
       },
+
       chromebook: row.prasarana?.chromebook || meta.prasarana?.chromebook || 0,
+      peralatanRumahTangga:
+        row.prasarana?.peralatanRumahTangga ||
+        meta.prasarana?.peralatanRumahTangga ||
+        "Baik",
     },
 
-    // ===== DATA LAINNYA =====
     kegiatanFisik: row.kegiatanFisik || meta.kegiatanFisik || {},
     kelembagaan: row.kelembagaan || meta.kelembagaan || {},
     siswaAbk: row.siswaAbk || meta.siswaAbk || {},
 
     jenjang: row.jenjang || meta.jenjang || "SD",
     __metaRaw: meta,
-    meta: meta, // Fallback
+    meta: meta,
   };
 }
 
@@ -135,25 +193,28 @@ export default function SdEditPage() {
         setLoading(true);
         setError("");
 
-        // Panggil RPC detail sekolah
         const { data, error: rpcError } = await supabase.rpc(
-          "get_school_detail_by_npsn",
-          { input_npsn: npsn }
+          "get_school_by_npsn",
+          { input_npsn: String(npsn) },
         );
 
-        if (rpcError) throw rpcError;
+        if (rpcError) {
+          console.error("RPC Error get_school_by_npsn (SD):", rpcError);
+          throw new Error(formatSupabaseError(rpcError));
+        }
 
         const row = Array.isArray(data) ? data[0] : data;
-        if (!row) throw new Error("Sekolah tidak ditemukan.");
+
+        if (!row || Object.keys(row).length === 0) {
+          throw new Error("Sekolah tidak ditemukan.");
+        }
 
         if (ignore) return;
 
-        // Transformasi data database ke format state form
-        const mappedData = mapSchoolDetailToFormData(row);
-        setInitialData(mappedData);
-      } catch (err) {
-        console.error("Load Error SD Edit:", err);
-        if (!ignore) setError(err?.message || "Gagal memuat data sekolah.");
+        setInitialData(mapSchoolDetailToFormData(row));
+      } catch (e) {
+        console.error("Load Error SD Edit:", e);
+        if (!ignore) setError(formatSupabaseError(e));
       } finally {
         if (!ignore) setLoading(false);
       }
@@ -169,7 +230,7 @@ export default function SdEditPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-3 text-muted-foreground">
         <Loader2 className="animate-spin w-8 h-8 text-blue-500" />
-        <p className="text-sm font-medium">Menyiapkan data sekolah...</p>
+        <p className="text-sm font-medium">Menyiapkan data SD...</p>
       </div>
     );
   }
@@ -184,6 +245,10 @@ export default function SdEditPage() {
   }
 
   return (
-    <EditSchoolForm key={npsn} schoolType="SD" initialData={initialData} />
+    <EditSchoolForm
+      key={String(npsn)}
+      schoolType="SD"
+      initialData={initialData}
+    />
   );
 }

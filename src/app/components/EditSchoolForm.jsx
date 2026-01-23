@@ -20,177 +20,30 @@ import {
 import { toast } from "sonner";
 
 import { schoolConfigs } from "@/lib/config/schoolConfig";
-import { Label } from "./ui/label";
+import { createInitialFormData } from "@/lib/config/createInitialFormData";
 
 import { useDataInput } from "@/hooks/useDataInput";
-import { NumberInput, TextInput, SelectInput } from "./ui/FormInputs";
+import { NumberInput } from "./ui/FormInputs";
 import Stepper from "./Stepper";
-import ExcelImportButton from "./ExcelImportButton";
 import { supabase } from "@/lib/supabase/lib/client";
+
+import SchoolInfoSection from "./form-sections/SchoolInfoSection";
+import TeacherSection from "./form-sections/TeacherSection";
+import StudentSection from "./form-sections/StudentSection";
+import InfrastructureSection from "./form-sections/InfrastructureSection";
+import KelembagaanSection from "./form-sections/KelembagaanSection";
+
+import {
+  LANJUT_OPTIONS,
+  getValue,
+  sumSiswaByGender,
+  normalizeGuruMeta,
+  buildUpdateSchoolWithRelationsPayload,
+} from "@/lib/forms/payloadBuilder";
 
 const LocationPickerMap = dynamic(() => import("./LocationPickerMap.jsx"), {
   ssr: false,
 });
-
-/* --- STATIC HELPERS --- */
-
-const getValue = (obj, path) =>
-  path.split(".").reduce((o, k) => (o ? o[k] : undefined), obj);
-
-const toNum = (v) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-};
-
-const normalizeStatus = (v) => {
-  const s = String(v || "")
-    .trim()
-    .toLowerCase();
-  if (!s) return "UNKNOWN";
-  if (s === "negeri") return "NEGERI";
-  if (s === "swasta") return "SWASTA";
-  return s.toUpperCase();
-};
-
-const normalizeYesNo = (v) => {
-  const s = String(v ?? "")
-    .trim()
-    .toLowerCase();
-  if (!s) return "";
-  if (s === "ya") return "YA";
-  if (s === "tidak") return "TIDAK";
-  return s.toUpperCase();
-};
-
-const normalizeSudahBelum = (v) => {
-  const s = String(v ?? "")
-    .trim()
-    .toLowerCase();
-  if (!s) return "";
-  if (s === "sudah") return "SUDAH";
-  if (s === "belum") return "BELUM";
-  if (s === "ya") return "SUDAH";
-  if (s === "tidak") return "BELUM";
-  return s.toUpperCase();
-};
-
-const normalizePeralatanRumahTangga = (v) => {
-  const raw = String(v ?? "").trim();
-  if (!raw) return "";
-  const s = raw.toLowerCase();
-  if (s === "baik") return "BAIK";
-  if (s === "tidak memiliki" || s === "tidak_memiliki") return "TIDAK_MEMILIKI";
-  if (s === "harus diganti" || s === "harus_diganti") return "HARUS_DIGANTI";
-  if (s === "perlu rehabilitasi" || s === "perlu_rehabilitasi")
-    return "PERLU_REHABILITASI";
-  return raw.toUpperCase();
-};
-
-const STATUS_OPTIONS = [
-  { value: "NEGERI", label: "Negeri" },
-  { value: "SWASTA", label: "Swasta" },
-];
-
-const YESNO_OPTIONS = [
-  { value: "YA", label: "Ya" },
-  { value: "TIDAK", label: "Tidak" },
-];
-
-const SUDAH_BELUM_OPTIONS = [
-  { value: "SUDAH", label: "Sudah" },
-  { value: "BELUM", label: "Belum" },
-];
-
-const PERALATAN_RUMAH_TANGGA_OPTIONS = [
-  { value: "TIDAK_MEMILIKI", label: "Tidak Memiliki" },
-  { value: "HARUS_DIGANTI", label: "Harus Diganti" },
-  { value: "BAIK", label: "Baik" },
-  { value: "PERLU_REHABILITASI", label: "Perlu Rehabilitasi" },
-];
-
-const LAHAN_OPTIONS = [
-  { value: "ADA", label: "Ada" },
-  { value: "TIDAK_ADA", label: "Tidak Ada" },
-  { value: "TIDAK_TAHU", label: "Tidak Tahu" },
-];
-
-const LANJUT_OPTIONS = {
-  SD: {
-    dalamKab: [
-      { key: "smp", label: "SMP" },
-      { key: "mts", label: "MTs" },
-      { key: "pontren", label: "Pontren" },
-      { key: "pkbm", label: "PKBM" },
-    ],
-    luarKab: [
-      { key: "smp", label: "SMP" },
-      { key: "mts", label: "MTs" },
-      { key: "pontren", label: "Pontren" },
-      { key: "pkbm", label: "PKBM" },
-    ],
-  },
-  SMP: {
-    dalamKab: [
-      { key: "sma", label: "SMA" },
-      { key: "smk", label: "SMK" },
-      { key: "ma", label: "MA" },
-      { key: "pontren", label: "Pontren" },
-      { key: "pkbm", label: "PKBM" },
-    ],
-    luarKab: [
-      { key: "sma", label: "SMA" },
-      { key: "smk", label: "SMK" },
-      { key: "ma", label: "MA" },
-      { key: "pontren", label: "Pontren" },
-      { key: "pkbm", label: "PKBM" },
-    ],
-  },
-  PAUD: {
-    dalamKab: [
-      { key: "sd", label: "SD" },
-      { key: "mi", label: "MI" },
-    ],
-    luarKab: [
-      { key: "sd", label: "SD" },
-      { key: "mi", label: "MI" },
-    ],
-  },
-  PKBM: {
-    paketA: [
-      { key: "smp", label: "SMP" },
-      { key: "mts", label: "MTs" },
-      { key: "pontren", label: "Pontren" },
-      { key: "paketB", label: "Lanjut Paket B" },
-    ],
-    paketB: [
-      { key: "sma", label: "SMA" },
-      { key: "smk", label: "SMK" },
-      { key: "ma", label: "MA" },
-      { key: "pontren", label: "Pontren" },
-      { key: "paketC", label: "Lanjut Paket C" },
-    ],
-    paketC: [
-      { key: "pt", label: "Perguruan Tinggi" },
-      { key: "bekerja", label: "Bekerja" },
-    ],
-  },
-};
-LANJUT_OPTIONS.TK = LANJUT_OPTIONS.PAUD;
-
-function ReadOnlyField({ label, value, mono = false }) {
-  return (
-    <div className="flex flex-col gap-3">
-      <Label className="leading-none">{label}</Label>
-      <div
-        className={`h-10 px-3 flex items-center rounded-md border bg-muted text-muted-foreground ${
-          mono ? "font-mono" : ""
-        }`}
-      >
-        {value || "-"}
-      </div>
-    </div>
-  );
-}
 
 export default function EditSchoolForm({
   schoolType,
@@ -199,7 +52,9 @@ export default function EditSchoolForm({
   schoolId: schoolIdProp = null,
 }) {
   const router = useRouter();
+  const effectiveSchoolType = schoolType === "TK" ? "PAUD" : schoolType;
 
+  // 1. Pastikan School ID tersedia
   const schoolIdFinal = useMemo(() => {
     if (schoolIdProp) return schoolIdProp;
     if (!initialData) return null;
@@ -217,54 +72,107 @@ export default function EditSchoolForm({
 
   useEffect(() => {
     if (!schoolIdFinal && initialData) {
-      console.error("❌ CRITICAL: School ID missing.", {
-        prop: schoolIdProp,
-        dataKeys: Object.keys(initialData),
-      });
+      console.error("❌ CRITICAL: School ID missing.");
       toast.error("Terjadi kesalahan sistem: ID Sekolah tidak ditemukan.");
     }
-  }, [schoolIdFinal, initialData, schoolIdProp]);
+  }, [schoolIdFinal, initialData]);
 
   const config = useMemo(
-    () => schoolConfigs[schoolType] || schoolConfigs.default,
-    [schoolType]
+    () => schoolConfigs[effectiveSchoolType] || schoolConfigs.default,
+    [effectiveSchoolType],
   );
 
+  // 2. NORMALISASI DATA (MANUAL & EKSPLISIT) 🛠️
   const normalizedInitialData = useMemo(() => {
     if (!initialData) return null;
-    const meta = initialData.meta || initialData.__metaRaw || {};
 
+    // A. Ambil Template Kosong (Struktur Baku)
+    const tpl = createInitialFormData(config);
+
+    // B. Ambil Data DB
+    const meta = initialData.meta || initialData.__metaRaw || {};
+    const dbPr = meta.prasarana || initialData.prasarana || {};
+    const dbFisik = meta.kegiatanFisik || initialData.kegiatanFisik || {};
+
+    // C. MERGE PRASARANA SECARA MANUAL (Agar Struktur Terjamin)
+    const mergedPrasarana = {
+      ...tpl.prasarana,
+      ...dbPr,
+
+      ukuran: { ...tpl.prasarana.ukuran, ...(dbPr.ukuran || {}) },
+      gedung: { ...tpl.prasarana.gedung, ...(dbPr.gedung || {}) },
+      classrooms: { ...tpl.prasarana.classrooms, ...(dbPr.classrooms || {}) },
+      labs: { ...tpl.prasarana.labs, ...(dbPr.labs || {}) },
+      teachers_toilet: {
+        ...tpl.prasarana.teachers_toilet,
+        ...(dbPr.teachers_toilet || {}),
+      },
+      students_toilet: {
+        ...tpl.prasarana.students_toilet,
+        ...(dbPr.students_toilet || {}),
+      },
+      rooms: { ...tpl.prasarana.rooms, ...(dbPr.rooms || {}) },
+      furniture: { ...tpl.prasarana.furniture, ...(dbPr.furniture || {}) },
+    };
+
+    // D. Mapping Kegiatan Fisik (Legacy Support)
+    const mergedFisik = {
+      ...tpl.kegiatanFisik,
+      rehabRuangKelas: dbFisik.rehabRuangKelas || dbFisik.rehab_unit || "",
+      pembangunanRKB: dbFisik.pembangunanRKB || dbFisik.pembangunan_unit || "",
+      rehabToilet: dbFisik.rehabToilet || "",
+      pembangunanToilet: dbFisik.pembangunanToilet || "",
+    };
+
+    // E. Return Full Object
     return {
       ...initialData,
-      namaSekolah: initialData.name || initialData.namaSekolah || "",
-      kecamatan_code: initialData.kecamatan_code || meta.kecamatan_code || "",
-      desa_code: initialData.desa_code || meta.desa_code || "",
+      namaSekolah:
+        initialData.name || initialData.namaSekolah || meta.namaSekolah,
+      kecamatan_code: initialData.kecamatan_code || meta.kecamatan_code,
+      desa_code: initialData.desa_code || meta.desa_code,
       kecamatan:
-        initialData.kecamatan ||
-        initialData.kecamatan_name ||
-        meta.kecamatan ||
-        "",
-      desa: initialData.village_name || initialData.village || meta.desa || "",
-      alamat: initialData.alamat || initialData.address || meta.alamat || "",
-      latitude: initialData.latitude || initialData.lat || "",
-      longitude: initialData.longitude || initialData.lng || "",
-      siswa: initialData.siswa || {},
-      siswaAbk: initialData.siswaAbk || {},
-      guru: initialData.guru || {},
-      prasarana: initialData.prasarana || {},
-      kegiatanFisik: initialData.kegiatanFisik || {},
-    };
-  }, [initialData]);
+        initialData.kecamatan || initialData.kecamatan_name || meta.kecamatan,
+      desa: initialData.village_name || initialData.village || meta.desa,
+      alamat: initialData.alamat || initialData.address || meta.alamat,
+      latitude: initialData.latitude || initialData.lat || meta.latitude,
+      longitude: initialData.longitude || initialData.lng || meta.longitude,
 
+      prasarana: mergedPrasarana,
+      kegiatanFisik: mergedFisik,
+
+      siswa: meta.siswa || initialData.siswa || tpl.siswa,
+      siswaAbk: meta.siswaAbk || initialData.siswaAbk || tpl.siswaAbk,
+      guru: meta.guru || initialData.guru || tpl.guru,
+      rombel: meta.rombel || initialData.rombel || tpl.rombel,
+      lanjut: meta.lanjut || initialData.lanjut || tpl.lanjut,
+      kelembagaan:
+        meta.kelembagaan || initialData.kelembagaan || tpl.kelembagaan,
+
+      lanjutDalamKab: meta.lanjutDalamKab || initialData.lanjutDalamKab,
+      lanjutLuarKab: meta.lanjutLuarKab || initialData.lanjutLuarKab,
+      lulusanPaketA: meta.lulusanPaketA || initialData.lulusanPaketA,
+      lulusanPaketB: meta.lulusanPaketB || initialData.lulusanPaketB,
+      lulusanPaketC: meta.lulusanPaketC || initialData.lulusanPaketC,
+    };
+  }, [initialData, config]);
+
+  // ✅ FIX KRUSIAL: aktifkan mode EDIT agar draft key per sekolah (draft_edit_{type}_{id})
   const { formData, handleChange, handleBulkUpdate, errors, validate } =
-    useDataInput(config, normalizedInitialData);
+    useDataInput({
+      config,
+      initialData: normalizedInitialData,
+      schoolType: effectiveSchoolType,
+      schoolId: schoolIdFinal,
+      isEditMode: true,
+    });
 
   const [wilayah, setWilayah] = useState(null);
   const [loadingWilayah, setLoadingWilayah] = useState(false);
   const [kecamatanOptions, setKecamatanOptions] = useState([]);
   const [desaOptions, setDesaOptions] = useState([]);
 
-  // 1. Load Data Wilayah JSON
+  // Fetch Wilayah
   useEffect(() => {
     const loadWilayah = async () => {
       try {
@@ -272,7 +180,6 @@ export default function EditSchoolForm({
         const res = await fetch("/data/desa-garut.json");
         if (!res.ok) throw new Error("Gagal memuat data wilayah");
         const data = await res.json();
-
         const kecArr = Array.isArray(data?.kecamatan) ? data.kecamatan : [];
         const kecOpts = kecArr
           .map((k) => ({
@@ -292,96 +199,37 @@ export default function EditSchoolForm({
     loadWilayah();
   }, []);
 
-  // 2. Logika Sinkronisasi Dropdown Desa berdasarkan Kecamatan yang terpilih
+  // Filter Desa
   useEffect(() => {
-    if (!wilayah || !wilayah.kecamatan || !formData.kecamatan_code) {
+    if (!wilayah || !wilayah.kecamatan || !formData?.kecamatan_code) {
       setDesaOptions([]);
       return;
     }
-
     const foundKec = wilayah.kecamatan.find(
-      (k) => String(k.kode_kecamatan) === String(formData.kecamatan_code)
+      (k) => String(k.kode_kecamatan) === String(formData.kecamatan_code),
     );
-
     if (foundKec && foundKec.desa) {
       const opts = foundKec.desa
-        .map((d) => ({
-          value: String(d.kode_desa),
-          label: d.nama_desa,
-        }))
+        .map((d) => ({ value: String(d.kode_desa), label: d.nama_desa }))
         .sort((a, b) => a.label.localeCompare(b.label, "id"));
       setDesaOptions(opts);
     } else {
       setDesaOptions([]);
     }
-  }, [formData.kecamatan_code, wilayah]);
-
-  // 3. LOGIKA PENYELAMAT: Konversi Nama ke Kode secara otomatis untuk EDIT mode
-  useEffect(() => {
-    if (!wilayah || !wilayah.kecamatan) return;
-
-    // A. Cari Kode Kecamatan jika data Supabase hanya memberi Nama (kecamatan_name)
-    if (!formData.kecamatan_code || isNaN(formData.kecamatan_code)) {
-      const namaKecDb = formData.kecamatan || "";
-      if (namaKecDb) {
-        const foundKec = wilayah.kecamatan.find(
-          (k) =>
-            k.nama_kecamatan.toLowerCase().trim() ===
-            namaKecDb.toLowerCase().trim()
-        );
-        if (foundKec) {
-          handleChange("kecamatan_code", String(foundKec.kode_kecamatan));
-        }
-      }
-    }
-
-    // B. Cari Kode Desa jika data Supabase hanya memberi Nama (village_name)
-    // Logika ini dipisah agar bisa jalan meskipun kecamatan_code sudah ada
-    if (!formData.desa_code || isNaN(formData.desa_code)) {
-      const namaDesaDb = formData.desa || "";
-      if (namaDesaDb && formData.kecamatan_code) {
-        // Cari di dalam kecamatan yang sedang aktif
-        const curKec = wilayah.kecamatan.find(
-          (k) => String(k.kode_kecamatan) === String(formData.kecamatan_code)
-        );
-
-        if (curKec && curKec.desa) {
-          const foundDesa = curKec.desa.find(
-            (d) =>
-              d.nama_desa.toLowerCase().trim() ===
-              namaDesaDb.toLowerCase().trim()
-          );
-          if (foundDesa) {
-            handleChange("desa_code", String(foundDesa.kode_desa));
-          }
-        }
-      }
-    }
-  }, [wilayah, formData.kecamatan, formData.desa, formData.kecamatan_code]);
+  }, [formData?.kecamatan_code, wilayah]);
 
   const activePaudRombelTypes = useMemo(() => {
     if (!config.isPaud || !config.rombelTypes) return [];
-    if (schoolType === "TK") {
-      return config.rombelTypes.filter(
-        (t) => t.key === "tka" || t.key === "tkb"
-      );
-    }
-    if (schoolType === "PAUD") {
-      return config.rombelTypes.filter(
-        (t) => t.key === "kb" || t.key === "sps_tpa"
-      );
-    }
     return config.rombelTypes;
-  }, [config, schoolType]);
+  }, [config]);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState({});
   const [showMap, setShowMap] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const isSmp = schoolType === "SMP";
-  const isPaud = schoolType === "PAUD" || schoolType === "TK";
-  const isPkbm = schoolType === "PKBM";
+  const isPaud = config.isPaud;
+  const isPkbm = effectiveSchoolType === "PKBM";
 
   const sections = useMemo(
     () => [
@@ -428,445 +276,30 @@ export default function EditSchoolForm({
         fields: [],
       },
     ],
-    []
+    [],
   );
 
-  const sumSiswa = (genderKey) => {
-    if (config.isPkbm && config.pakets) {
-      return Object.entries(config.pakets).reduce(
-        (total, [paketKey, paket]) => {
-          const grades = Array.isArray(paket?.grades) ? paket.grades : [];
-          return (
-            total +
-            grades.reduce((t, grade) => {
-              const val = getValue(
-                formData,
-                `siswa.paket${paketKey}.kelas${grade}.${genderKey}`
-              );
-              return t + (Number(val) || 0);
-            }, 0)
-          );
-        },
-        0
-      );
-    }
-    if (config.isPaud && activePaudRombelTypes.length > 0) {
-      return activePaudRombelTypes.reduce((total, type) => {
-        const val = getValue(formData, `siswa.${type.key}.${genderKey}`);
-        return total + (Number(val) || 0);
-      }, 0);
-    }
-    if (config.grades?.length > 0) {
-      return config.grades.reduce((total, grade) => {
-        const val = getValue(formData, `siswa.kelas${grade}.${genderKey}`);
-        return total + (Number(val) || 0);
-      }, 0);
-    }
-    return 0;
-  };
-
-  const totalSiswaComputed = useMemo(
-    () => sumSiswa("l") + sumSiswa("p"),
-    [formData, config, activePaudRombelTypes]
-  );
-
-  const guruTotalComputed = useMemo(() => {
-    const g = formData?.guru || {};
-    return (
-      toNum(g.pns) +
-      toNum(g.pppk) +
-      toNum(g.pppkParuhWaktu) +
-      toNum(g.nonAsnDapodik) +
-      toNum(g.nonAsnTidakDapodik)
-    );
-  }, [formData]);
-
-  const buildRombelMeta = () => {
-    const meta = { rombel: {} };
-    if (config.isPkbm && config.pakets) {
-      Object.entries(config.pakets).forEach(([paketKey, paket]) => {
-        const grades = Array.isArray(paket?.grades) ? paket.grades : [];
-        meta.rombel[`paket${paketKey}`] = {};
-        grades.forEach((grade) => {
-          const val = getValue(
-            formData,
-            `rombel.paket${paketKey}.kelas${grade}`
-          );
-          meta.rombel[`paket${paketKey}`][`kelas${grade}`] = Number(val) || 0;
-        });
-      });
-      return meta;
-    }
-    if (config.isPaud && activePaudRombelTypes.length > 0) {
-      activePaudRombelTypes.forEach((type) => {
-        const val = getValue(formData, `rombel.${type.key}`);
-        meta.rombel[type.key] = Number(val) || 0;
-      });
-      return meta;
-    }
-    if (config.grades?.length > 0) {
-      config.grades.forEach((grade) => {
-        const val = getValue(formData, `rombel.kelas${grade}`);
-        meta.rombel[`kelas${grade}`] = Number(val) || 0;
-      });
-    }
-    return meta;
-  };
-
-  const buildSiswaMeta = () => {
-    const metaSiswa = {};
-    if (config.isPkbm && config.pakets) {
-      Object.entries(config.pakets).forEach(([paketKey, paket]) => {
-        const grades = Array.isArray(paket?.grades) ? paket.grades : [];
-        metaSiswa[`paket${paketKey}`] = {};
-        grades.forEach((grade) => {
-          const l = getValue(
-            formData,
-            `siswa.paket${paketKey}.kelas${grade}.l`
-          );
-          const p = getValue(
-            formData,
-            `siswa.paket${paketKey}.kelas${grade}.p`
-          );
-          metaSiswa[`paket${paketKey}`][`kelas${grade}`] = {
-            l: toNum(l),
-            p: toNum(p),
-          };
-        });
-      });
-      return { siswa: metaSiswa };
-    }
-    if (config.isPaud && activePaudRombelTypes.length > 0) {
-      activePaudRombelTypes.forEach((type) => {
-        const l = getValue(formData, `siswa.${type.key}.l`);
-        const p = getValue(formData, `siswa.${type.key}.p`);
-        metaSiswa[type.key] = { l: toNum(l), p: toNum(p) };
-      });
-      return { siswa: metaSiswa };
-    }
-    if (config.grades?.length > 0) {
-      config.grades.forEach((grade) => {
-        const l = getValue(formData, `siswa.kelas${grade}.l`);
-        const p = getValue(formData, `siswa.kelas${grade}.p`);
-        metaSiswa[`kelas${grade}`] = { l: toNum(l), p: toNum(p) };
-      });
-    }
-    return { siswa: metaSiswa };
-  };
-
-  const buildSiswaAbkMeta = () => {
-    const metaSiswaAbk = {};
-    if (config.isPkbm && config.pakets) {
-      Object.entries(config.pakets).forEach(([paketKey, paket]) => {
-        const grades = Array.isArray(paket?.grades) ? paket.grades : [];
-        metaSiswaAbk[`paket${paketKey}`] = {};
-        grades.forEach((grade) => {
-          const l = getValue(
-            formData,
-            `siswaAbk.paket${paketKey}.kelas${grade}.l`
-          );
-          const p = getValue(
-            formData,
-            `siswaAbk.paket${paketKey}.kelas${grade}.p`
-          );
-          metaSiswaAbk[`paket${paketKey}`][`kelas${grade}`] = {
-            l: toNum(l),
-            p: toNum(p),
-          };
-        });
-      });
-      return { siswaAbk: metaSiswaAbk };
-    }
-    if (config.isPaud && activePaudRombelTypes.length > 0) {
-      activePaudRombelTypes.forEach((type) => {
-        const l = getValue(formData, `siswaAbk.${type.key}.l`);
-        const p = getValue(formData, `siswaAbk.${type.key}.p`);
-        metaSiswaAbk[type.key] = { l: toNum(l), p: toNum(p) };
-      });
-      return { siswaAbk: metaSiswaAbk };
-    }
-    if (config.grades?.length > 0) {
-      config.grades.forEach((grade) => {
-        const l = getValue(formData, `siswaAbk.kelas${grade}.l`);
-        const p = getValue(formData, `siswaAbk.kelas${grade}.p`);
-        metaSiswaAbk[`kelas${grade}`] = { l: toNum(l), p: toNum(p) };
-      });
-    }
-    return { siswaAbk: metaSiswaAbk };
-  };
-
-  const buildClassesArray = () => {
-    const classes = [];
-    if ((config.isPaud || isPaud) && activePaudRombelTypes.length > 0) {
-      activePaudRombelTypes.forEach((type) => {
-        const male = Number(getValue(formData, `siswa.${type.key}.l`) || 0);
-        const female = Number(getValue(formData, `siswa.${type.key}.p`) || 0);
-        if (male > 0)
-          classes.push({ grade: `${type.key}_L`, count: male, extra: null });
-        if (female > 0)
-          classes.push({ grade: `${type.key}_P`, count: female, extra: null });
-      });
-      return classes;
-    }
-    if (config.isPkbm && config.pakets) {
-      Object.entries(config.pakets).forEach(([paketKey, paket]) => {
-        const grades = Array.isArray(paket?.grades) ? paket.grades : [];
-        grades.forEach((grade) => {
-          const base = `siswa.paket${paketKey}.kelas${grade}`;
-          const male = Number(getValue(formData, `${base}.l`) || 0);
-          const female = Number(getValue(formData, `${base}.p`) || 0);
-          if (male > 0)
-            classes.push({
-              grade: `paket${paketKey}_kelas${grade}_L`,
-              count: male,
-              extra: null,
-            });
-          if (female > 0)
-            classes.push({
-              grade: `paket${paketKey}_kelas${grade}_P`,
-              count: female,
-              extra: null,
-            });
-        });
-      });
-      return classes;
-    }
-    if (config.grades) {
-      config.grades.forEach((grade) => {
-        const male = Number(getValue(formData, `siswa.kelas${grade}.l`) || 0);
-        const female = Number(getValue(formData, `siswa.kelas${grade}.p`) || 0);
-        if (male > 0)
-          classes.push({ grade: `kelas${grade}_L`, count: male, extra: null });
-        if (female > 0)
-          classes.push({
-            grade: `kelas${grade}_P`,
-            count: female,
-            extra: null,
-          });
-      });
-    }
-    return classes;
-  };
-
-  const normalizeGuru = () => {
-    const g = formData?.guru || {};
-    const pns = toNum(g.pns);
-    const pppk = toNum(g.pppk);
-    const pppkParuhWaktu = toNum(g.pppkParuhWaktu);
-    const nonAsnDapodik = toNum(g.nonAsnDapodik);
-    const nonAsnTidakDapodik = toNum(g.nonAsnTidakDapodik);
-    return {
-      jumlahGuru:
-        pns + pppk + pppkParuhWaktu + nonAsnDapodik + nonAsnTidakDapodik,
-      pns,
-      pppk,
-      pppkParuhWaktu,
-      nonAsnDapodik,
-      nonAsnTidakDapodik,
-      kekuranganGuru: toNum(g.kekuranganGuru),
-    };
-  };
-
-  const buildStaffSummaryPayload = (guruMeta) => {
-    return [
-      { role: "guru_pns", count: guruMeta.pns, details: null },
-      { role: "guru_pppk", count: guruMeta.pppk, details: null },
-      {
-        role: "guru_pppk_paruh_waktu",
-        count: guruMeta.pppkParuhWaktu,
-        details: null,
-      },
-      {
-        role: "guru_non_asn_dapodik",
-        count: guruMeta.nonAsnDapodik,
-        details: null,
-      },
-      {
-        role: "guru_non_asn_tidak_dapodik",
-        count: guruMeta.nonAsnTidakDapodik,
-        details: null,
-      },
-      {
-        role: "guru_kekurangan",
-        count: guruMeta.kekuranganGuru,
-        details: null,
-      },
-      { role: "guru_total", count: guruMeta.jumlahGuru, details: null },
-    ];
-  };
-
-  const buildLanjutPayload = () => {
-    if (isPkbm) {
-      const get = (p) => getValue(formData, p) || {};
-      return {
-        lulusanPaketA: {
-          smp: toNum(get("lanjut.paketA").smp),
-          mts: toNum(get("lanjut.paketA").mts),
-          pontren: toNum(get("lanjut.paketA").pontren),
-          paketB: toNum(get("lanjut.paketA").paketB),
-        },
-        lulusanPaketB: {
-          sma: toNum(get("lanjut.paketB").sma),
-          smk: toNum(get("lanjut.paketB").smk),
-          ma: toNum(get("lanjut.paketB").ma),
-          pontren: toNum(get("lanjut.paketB").pontren),
-          paketC: toNum(get("lanjut.paketB").paketC),
-        },
-        lulusanPaketC: {
-          pt: toNum(get("lanjut.paketC").pt),
-          bekerja: toNum(get("lanjut.paketC").bekerja),
-        },
-      };
-    }
-    return {
-      siswaLanjutDalamKab: Object.fromEntries(
-        (LANJUT_OPTIONS[schoolType]?.dalamKab || []).map((o) => [
-          o.key,
-          toNum(getValue(formData, `lanjut.dalamKab.${o.key}`)),
-        ])
-      ),
-      siswaLanjutLuarKab: Object.fromEntries(
-        (LANJUT_OPTIONS[schoolType]?.luarKab || []).map((o) => [
-          o.key,
-          toNum(getValue(formData, `lanjut.luarKab.${o.key}`)),
-        ])
-      ),
-      siswaTidakLanjut: toNum(getValue(formData, "lanjut.tidakLanjut")),
-      siswaBekerja: toNum(getValue(formData, "lanjut.bekerja")),
-    };
-  };
-
-  const buildPrasaranaPayload = () => {
-    const pr = getValue(formData, "prasarana") || {};
-    const kg = getValue(formData, "kegiatanFisik") || {};
-    const normT = (x) => ({
-      total: toNum(x?.total),
-      good: toNum(x?.good),
-      moderate_damage: toNum(x?.moderate_damage),
-      heavy_damage: toNum(x?.heavy_damage),
+  const siswaCounts = useMemo(() => {
+    if (!formData) return { male: 0, female: 0, total: 0 };
+    const male = sumSiswaByGender({
+      formData,
+      config,
+      activePaudRombelTypes,
+      genderKey: "l",
     });
+    const female = sumSiswaByGender({
+      formData,
+      config,
+      activePaudRombelTypes,
+      genderKey: "p",
+    });
+    return { male, female, total: male + female };
+  }, [formData, config, activePaudRombelTypes]);
 
-    const labs = pr.labs || {};
-    const labPayload = isSmp
-      ? {
-          laboratory_comp: {
-            total_all: toNum(labs?.laboratory_comp?.total_all),
-            good: toNum(labs?.laboratory_comp?.good),
-            moderate_damage: toNum(labs?.laboratory_comp?.moderate_damage),
-            heavy_damage: toNum(labs?.laboratory_comp?.heavy_damage),
-          },
-          laboratory_langua: {
-            total_all: toNum(labs?.laboratory_langua?.total_all),
-            good: toNum(labs?.laboratory_langua?.good),
-            moderate_damage: toNum(labs?.laboratory_langua?.moderate_damage),
-            heavy_damage: toNum(labs?.laboratory_langua?.heavy_damage),
-          },
-          laboratory_ipa: {
-            total_all: toNum(labs?.laboratory_ipa?.total_all),
-            good: toNum(labs?.laboratory_ipa?.good),
-            moderate_damage: toNum(labs?.laboratory_ipa?.moderate_damage),
-            heavy_damage: toNum(labs?.laboratory_ipa?.heavy_damage),
-          },
-          laboratory_fisika: {
-            total_all: toNum(labs?.laboratory_fisika?.total_all),
-            good: toNum(labs?.laboratory_fisika?.good),
-            moderate_damage: toNum(labs?.laboratory_fisika?.moderate_damage),
-            heavy_damage: toNum(labs?.laboratory_fisika?.heavy_damage),
-          },
-          laboratory_biologi: {
-            total_all: toNum(labs?.laboratory_biologi?.total_all),
-            good: toNum(labs?.laboratory_biologi?.good),
-            moderate_damage: toNum(labs?.laboratory_biologi?.moderate_damage),
-            heavy_damage: toNum(labs?.laboratory_biologi?.heavy_damage),
-          },
-        }
-      : {};
-
-    const lahanVal =
-      getValue(formData, "prasarana.classrooms.lahan") ||
-      getValue(formData, "prasarana.ruangKelas.lahan") ||
-      "";
-
-    return {
-      prasarana: {
-        ukuran: {
-          tanah: toNum(pr?.ukuran?.tanah),
-          bangunan: toNum(pr?.ukuran?.bangunan),
-          halaman: toNum(pr?.ukuran?.halaman),
-        },
-        gedung: { jumlah: toNum(pr?.gedung?.jumlah) },
-        classrooms: {
-          total_room: toNum(pr.classrooms?.total_room),
-          classrooms_good: toNum(pr.classrooms?.classrooms_good),
-          rusakRingan: toNum(pr.classrooms?.rusakRingan),
-          classrooms_moderate_damage: toNum(
-            pr.classrooms?.classrooms_moderate_damage
-          ),
-          heavy_damage: toNum(pr.classrooms?.heavy_damage),
-          rusakTotal: toNum(pr.classrooms?.rusakTotal),
-          kurangRkb: toNum(pr.classrooms?.kurangRkb),
-          kelebihan: toNum(pr.classrooms?.kelebihan),
-          rkbTambahan: toNum(pr.classrooms?.rkbTambahan),
-          lahan: lahanVal,
-        },
-        ...labPayload,
-        teachers_toilet: {
-          male: normT(pr.teachers_toilet?.male),
-          female: normT(pr.teachers_toilet?.female),
-        },
-        students_toilet: {
-          male: normT(pr.students_toilet?.male),
-          female: normT(pr.students_toilet?.female),
-        },
-        library: normT(pr.rooms?.library),
-        laboratory: normT(pr.rooms?.laboratory),
-        teacher_room: normT(pr.rooms?.teacher_room),
-        uks_room: normT(pr.rooms?.uks_room),
-        toilets: normT(pr.rooms?.toilets),
-        official_residences: normT(pr.rooms?.official_residences),
-        mebeulair: {
-          tables: normT(pr.furniture?.tables),
-          chairs: normT(pr.furniture?.chairs),
-          computer: toNum(pr.furniture?.computer),
-        },
-        chromebook: toNum(pr.chromebook),
-      },
-      kegiatanFisik: {
-        rehabRuangKelas: toNum(kg.rehabRuangKelas),
-        pembangunanRKB: toNum(kg.pembangunanRKB),
-        rehabToilet: toNum(kg.rehabToilet),
-        pembangunanToilet: toNum(kg.pembangunanToilet),
-      },
-    };
-  };
-
-  const buildKelembagaanPayload = () => {
-    const k = getValue(formData, "kelembagaan") || {};
-    return {
-      kelembagaan: {
-        peralatanRumahTangga: normalizePeralatanRumahTangga(
-          k.peralatanRumahTangga
-        ),
-        pembinaan: normalizeSudahBelum(k.pembinaan),
-        asesmen: normalizeSudahBelum(k.asesmen),
-        menyelenggarakanBelajar: normalizeYesNo(k.menyelenggarakanBelajar),
-        melaksanakanRekomendasi: normalizeYesNo(k.melaksanakanRekomendasi),
-        siapDievaluasi: normalizeYesNo(k.siapDievaluasi),
-        bop: {
-          pengelola: normalizeYesNo(k.bop?.pengelola),
-          tenagaPeningkatan: normalizeYesNo(k.bop?.tenagaPeningkatan),
-        },
-        perizinan: {
-          pengendalian: normalizeYesNo(k.perizinan?.pengendalian),
-          kelayakan: normalizeYesNo(k.perizinan?.kelayakan),
-        },
-        kurikulum: {
-          silabus: normalizeYesNo(k.kurikulum?.silabus),
-          kompetensiDasar: normalizeYesNo(k.kurikulum?.kompetensiDasar),
-        },
-      },
-    };
-  };
+  const totalSiswaComputed = siswaCounts.total;
+  const guruTotalComputed = useMemo(() => {
+    return formData ? normalizeGuruMeta(formData).jumlahGuru : 0;
+  }, [formData]);
 
   const handleNext = () => {
     if (validate(sections[currentStep - 1].fields)) {
@@ -884,7 +317,6 @@ export default function EditSchoolForm({
       toast.warning("Mohon lengkapi data di halaman ini terlebih dahulu.");
       return;
     }
-
     if (!schoolIdFinal) {
       toast.error("Gagal menyimpan: ID Sekolah tidak terdeteksi.");
       return;
@@ -893,71 +325,34 @@ export default function EditSchoolForm({
     setSaving(true);
     try {
       const kecOpt = kecamatanOptions.find(
-        (o) => String(o.value) === String(formData.kecamatan_code)
+        (o) => String(o.value) === String(formData.kecamatan_code),
       );
       const desaOpt = desaOptions.find(
-        (o) => String(o.value) === String(formData.desa_code)
+        (o) => String(o.value) === String(formData.desa_code),
       );
-
-      const location = {
-        province: "Jawa Barat",
-        district: "Garut",
-        subdistrict: formData.kecamatan || kecOpt?.label || "",
-        village: formData.desa || desaOpt?.label || "",
-        extra: {
-          address_detail: formData.alamat || "",
-          latitude: formData.latitude ? Number(formData.latitude) : null,
-          longitude: formData.longitude ? Number(formData.longitude) : null,
-          kecamatan_code: formData.kecamatan_code || null,
-          desa_code: formData.desa_code || null,
-        },
-      };
-
-      const guruMeta = normalizeGuru();
       const metaLama = initialData?.__metaRaw || {};
 
-      const school = {
-        npsn: formData.npsn,
-        name: formData.namaSekolah,
-        address: formData.alamat || "",
-        village_name: formData.desa || desaOpt?.label || "",
-        kecamatan: formData.kecamatan || kecOpt?.label || "",
-        school_type_id: config.schoolTypeId ?? null,
-        status: normalizeStatus(formData.status),
-        student_count: totalSiswaComputed,
-        st_male: sumSiswa("l"),
-        st_female: sumSiswa("p"),
-        lat: formData.latitude ? Number(formData.latitude) : null,
-        lng: formData.longitude ? Number(formData.longitude) : null,
-        meta: {
-          ...metaLama,
-          ...buildSiswaMeta(),
-          ...buildSiswaAbkMeta(),
-          ...buildRombelMeta(),
-          ...buildLanjutPayload(),
-          ...buildPrasaranaPayload(),
-          ...buildKelembagaanPayload(),
-          kecamatan: formData.kecamatan || kecOpt?.label || "",
-          desa: formData.desa || desaOpt?.label || "",
-          kecamatan_code: formData.kecamatan_code || null,
-          desa_code: formData.desa_code || null,
-          alamat: formData.alamat || "",
-          is_paud: config.isPaud || false,
-          guru: guruMeta,
-          jenjang: schoolType,
-        },
-        contact: {
-          operator_name: formData.namaOperator || "",
-          operator_phone: formData.hp || "",
-        },
+      // ✅ SAFETY: kunci NPSN dari server (menghindari draft lama mengirim NPSN sekolah lain)
+      const fixedFormData = {
+        ...formData,
+        npsn: initialData?.npsn || formData?.npsn || "",
       };
 
-      const payload = {
-        location,
-        school,
-        classes: buildClassesArray(),
-        staff_summary: buildStaffSummaryPayload(guruMeta),
-      };
+      console.log("📝 [DEBUG] FormData Prasarana:", fixedFormData.prasarana);
+
+      const payload = buildUpdateSchoolWithRelationsPayload({
+        formData: fixedFormData,
+        config,
+        schoolType: effectiveSchoolType,
+        kecamatanLabel: kecOpt?.label,
+        desaLabel: desaOpt?.label,
+        previousMeta: metaLama,
+      });
+
+      console.log(
+        "🚀 [DEBUG] Payload Final:",
+        JSON.stringify(payload, null, 2),
+      );
 
       const { error } = await supabase.rpc("update_school_with_relations", {
         p_school_id: schoolIdFinal,
@@ -967,7 +362,16 @@ export default function EditSchoolForm({
       if (error) throw new Error(error.message);
 
       toast.success("Data berhasil diperbarui!");
-      router.push("/dashboard");
+
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(
+          `draft_edit_${effectiveSchoolType}_${schoolIdFinal}`,
+        );
+      }
+
+      const routeBase = effectiveSchoolType.toLowerCase();
+      router.push(`/dashboard/${routeBase}/${fixedFormData.npsn}`);
+      router.refresh();
     } catch (err) {
       console.error(err);
       toast.error(err.message || "Terjadi kesalahan saat menyimpan data");
@@ -984,335 +388,43 @@ export default function EditSchoolForm({
 
   const renderContent = () => {
     const section = sections[currentStep - 1];
-    if (!formData) return <div>Loading form data...</div>;
+    if (!formData)
+      return (
+        <div className="p-8 text-center animate-pulse">Memuat data...</div>
+      );
 
     switch (section.id) {
       case "info":
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <TextInput
-              label="Nama Sekolah"
-              value={formData.namaSekolah || ""}
-              onChange={(v) => handleChange("namaSekolah", v)}
-              error={errors.namaSekolah}
-              required
-            />
-            <ReadOnlyField label="NPSN" value={formData.npsn} mono />
-            <SelectInput
-              label="Status Sekolah"
-              value={normalizeStatus(formData.status)}
-              onChange={(v) => handleChange("status", v)}
-              error={errors.status}
-              options={STATUS_OPTIONS}
-              placeholder="Pilih Status..."
-            />
-            <SelectInput
-              label="Kecamatan"
-              value={String(formData.kecamatan_code || "")}
-              onChange={(k) => {
-                const opt = kecamatanOptions.find(
-                  (o) => String(o.value) === String(k)
-                );
-                handleChange("kecamatan_code", String(k));
-                handleChange("kecamatan", opt?.label || "");
-                handleChange("desa_code", "");
-                handleChange("desa", "");
-              }}
-              error={errors.kecamatan_code}
-              options={kecamatanOptions}
-              placeholder={loadingWilayah ? "Memuat..." : "Pilih Kecamatan..."}
-              disabled={loadingWilayah || !kecamatanOptions.length}
-            />
-            <div className="space-y-1">
-              <SelectInput
-                label="Desa/Kelurahan"
-                value={String(formData.desa_code || "")}
-                onChange={(k) => {
-                  const opt = desaOptions.find(
-                    (o) => String(o.value) === String(k)
-                  );
-                  handleChange("desa_code", String(k));
-                  handleChange("desa", opt?.label || "");
-                }}
-                error={errors.desa_code}
-                options={desaOptions}
-                placeholder={
-                  formData.kecamatan_code
-                    ? "Pilih Desa..."
-                    : "Pilih Kecamatan dulu..."
-                }
-                disabled={
-                  !formData.kecamatan_code ||
-                  loadingWilayah ||
-                  !desaOptions.length
-                }
-              />
-            </div>
-            <TextInput
-              label="Alamat Lengkap"
-              value={formData.alamat || ""}
-              onChange={(v) => handleChange("alamat", v)}
-              error={errors.alamat}
-            />
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Koordinat
-              </label>
-              <div className="grid grid-cols-2 gap-4">
-                <TextInput
-                  label="Latitude"
-                  value={formData.latitude || ""}
-                  onChange={(v) => handleChange("latitude", v)}
-                  error={errors.latitude}
-                />
-                <TextInput
-                  label="Longitude"
-                  value={formData.longitude || ""}
-                  onChange={(v) => handleChange("longitude", v)}
-                  error={errors.longitude}
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowMap(true)}
-                className="mt-2 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-              >
-                Pilih Koordinat di Map
-              </button>
-            </div>
-          </div>
+          <SchoolInfoSection
+            formData={formData}
+            errors={errors}
+            onChange={handleChange}
+            kecamatanOptions={kecamatanOptions}
+            desaOptions={desaOptions}
+            loadingWilayah={loadingWilayah}
+            onOpenMap={() => setShowMap(true)}
+            readOnlyNpsn={true}
+          />
         );
       case "guru":
         return (
-          <div className="space-y-4">
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-              <h4 className="font-semibold text-blue-900">
-                Total Guru:{" "}
-                {Number(guruTotalComputed || 0).toLocaleString("id-ID")}
-              </h4>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <NumberInput
-                label="PNS"
-                value={getValue(formData, "guru.pns")}
-                onChange={(v) => handleChange("guru.pns", v)}
-              />
-              <NumberInput
-                label="PPPK"
-                value={getValue(formData, "guru.pppk")}
-                onChange={(v) => handleChange("guru.pppk", v)}
-              />
-              <NumberInput
-                label="PPPK Paruh Waktu"
-                value={getValue(formData, "guru.pppkParuhWaktu")}
-                onChange={(v) => handleChange("guru.pppkParuhWaktu", v)}
-              />
-              <NumberInput
-                label="Non ASN (Dapodik)"
-                value={getValue(formData, "guru.nonAsnDapodik")}
-                onChange={(v) => handleChange("guru.nonAsnDapodik", v)}
-              />
-              <NumberInput
-                label="Non ASN (Tidak Dapodik)"
-                value={getValue(formData, "guru.nonAsnTidakDapodik")}
-                onChange={(v) => handleChange("guru.nonAsnTidakDapodik", v)}
-              />
-              <NumberInput
-                label="Kekurangan Guru"
-                value={getValue(formData, "guru.kekuranganGuru")}
-                onChange={(v) => handleChange("guru.kekuranganGuru", v)}
-              />
-            </div>
-          </div>
+          <TeacherSection
+            formData={formData}
+            onChange={handleChange}
+            guruTotalComputed={guruTotalComputed}
+          />
         );
       case "siswa":
         return (
-          <div className="space-y-6">
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-              <h4 className="font-semibold text-blue-900">
-                Total Siswa:{" "}
-                {Number(totalSiswaComputed || 0).toLocaleString("id-ID")}
-              </h4>
-            </div>
-
-            {config.isPkbm && config.pakets ? (
-              <div className="space-y-4">
-                {Object.entries(config.pakets).map(([pk, p]) => (
-                  <div
-                    key={pk}
-                    className="p-4 border rounded-lg bg-gray-50/50 space-y-4"
-                  >
-                    <p className="font-medium">{p?.name || `paket${pk}`}</p>
-                    {(p.grades || []).map((g) => (
-                      <div
-                        key={`${pk}-${g}`}
-                        className="grid grid-cols-2 gap-4"
-                      >
-                        <NumberInput
-                          label={`Kelas ${g} - L`}
-                          value={getValue(
-                            formData,
-                            `siswa.paket${pk}.kelas${g}.l`
-                          )}
-                          onChange={(v) =>
-                            handleChange(`siswa.paket${pk}.kelas${g}.l`, v)
-                          }
-                        />
-                        <NumberInput
-                          label={`Kelas ${g} - P`}
-                          value={getValue(
-                            formData,
-                            `siswa.paket${pk}.kelas${g}.p`
-                          )}
-                          onChange={(v) =>
-                            handleChange(`siswa.paket${pk}.kelas${g}.p`, v)
-                          }
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <>
-                {config.grades?.map((g) => (
-                  <div key={g} className="p-4 border rounded-lg bg-gray-50/50">
-                    <p className="font-medium mb-3">Kelas {g}</p>
-                    <div className="grid grid-cols-2 gap-4">
-                      <NumberInput
-                        label="Laki-laki"
-                        value={getValue(formData, `siswa.kelas${g}.l`)}
-                        onChange={(v) => handleChange(`siswa.kelas${g}.l`, v)}
-                      />
-                      <NumberInput
-                        label="Perempuan"
-                        value={getValue(formData, `siswa.kelas${g}.p`)}
-                        onChange={(v) => handleChange(`siswa.kelas${g}.p`, v)}
-                      />
-                    </div>
-                  </div>
-                ))}
-                {config.isPaud &&
-                  activePaudRombelTypes.map((t) => (
-                    <div
-                      key={t.key}
-                      className="p-4 border rounded-lg bg-gray-50/50"
-                    >
-                      <p className="font-medium mb-3">{t.label}</p>
-                      <div className="grid grid-cols-2 gap-4">
-                        <NumberInput
-                          label="Laki-laki"
-                          value={getValue(formData, `siswa.${t.key}.l`)}
-                          onChange={(v) => handleChange(`siswa.${t.key}.l`, v)}
-                        />
-                        <NumberInput
-                          label="Perempuan"
-                          value={getValue(formData, `siswa.${t.key}.p`)}
-                          onChange={(v) => handleChange(`siswa.${t.key}.p`, v)}
-                        />
-                      </div>
-                    </div>
-                  ))}
-              </>
-            )}
-
-            <h3 className="font-bold text-lg mt-8 mb-4 border-b pb-2">
-              Data Siswa Berkebutuhan Khusus (ABK)
-            </h3>
-            {config.isPkbm && config.pakets ? (
-              <div className="space-y-4">
-                {Object.entries(config.pakets).map(([pk, p]) => (
-                  <div
-                    key={`abk-${pk}`}
-                    className="p-4 border rounded-lg bg-orange-50/50 space-y-4"
-                  >
-                    <p className="font-medium">
-                      ABK - {p?.name || `paket${pk}`}
-                    </p>
-                    {(p.grades || []).map((g) => (
-                      <div
-                        key={`abk-${pk}-${g}`}
-                        className="grid grid-cols-2 gap-4"
-                      >
-                        <NumberInput
-                          label={`Kelas ${g} - L (ABK)`}
-                          value={getValue(
-                            formData,
-                            `siswaAbk.paket${pk}.kelas${g}.l`
-                          )}
-                          onChange={(v) =>
-                            handleChange(`siswaAbk.paket${pk}.kelas${g}.l`, v)
-                          }
-                        />
-                        <NumberInput
-                          label={`Kelas ${g} - P (ABK)`}
-                          value={getValue(
-                            formData,
-                            `siswaAbk.paket${pk}.kelas${g}.p`
-                          )}
-                          onChange={(v) =>
-                            handleChange(`siswaAbk.paket${pk}.kelas${g}.p`, v)
-                          }
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <>
-                {config.grades?.map((g) => (
-                  <div
-                    key={`abk-kelas${g}`}
-                    className="p-4 border rounded-lg bg-orange-50/50"
-                  >
-                    <p className="font-medium mb-3">ABK - Kelas {g}</p>
-                    <div className="grid grid-cols-2 gap-4">
-                      <NumberInput
-                        label="Laki-laki (ABK)"
-                        value={getValue(formData, `siswaAbk.kelas${g}.l`)}
-                        onChange={(v) =>
-                          handleChange(`siswaAbk.kelas${g}.l`, v)
-                        }
-                      />
-                      <NumberInput
-                        label="Perempuan (ABK)"
-                        value={getValue(formData, `siswaAbk.kelas${g}.p`)}
-                        onChange={(v) =>
-                          handleChange(`siswaAbk.kelas${g}.p`, v)
-                        }
-                      />
-                    </div>
-                  </div>
-                ))}
-                {config.isPaud &&
-                  activePaudRombelTypes.map((t) => (
-                    <div
-                      key={`abk-${t.key}`}
-                      className="p-4 border rounded-lg bg-orange-50/50"
-                    >
-                      <p className="font-medium mb-3">ABK - {t.label}</p>
-                      <div className="grid grid-cols-2 gap-4">
-                        <NumberInput
-                          label="Laki-laki (ABK)"
-                          value={getValue(formData, `siswaAbk.${t.key}.l`)}
-                          onChange={(v) =>
-                            handleChange(`siswaAbk.${t.key}.l`, v)
-                          }
-                        />
-                        <NumberInput
-                          label="Perempuan (ABK)"
-                          value={getValue(formData, `siswaAbk.${t.key}.p`)}
-                          onChange={(v) =>
-                            handleChange(`siswaAbk.${t.key}.p`, v)
-                          }
-                        />
-                      </div>
-                    </div>
-                  ))}
-              </>
-            )}
-          </div>
+          <StudentSection
+            formData={formData}
+            onChange={handleChange}
+            config={config}
+            schoolType={effectiveSchoolType}
+            activePaudRombelTypes={activePaudRombelTypes}
+            totalSiswaComputed={totalSiswaComputed}
+          />
         );
       case "rombel":
         return (
@@ -1328,7 +440,7 @@ export default function EditSchoolForm({
                         label={`Rombel Kls ${g}`}
                         value={getValue(
                           formData,
-                          `rombel.paket${pk}.kelas${g}`
+                          `rombel.paket${pk}.kelas${g}`,
                         )}
                         onChange={(v) =>
                           handleChange(`rombel.paket${pk}.kelas${g}`, v)
@@ -1362,8 +474,8 @@ export default function EditSchoolForm({
           </div>
         );
       case "lanjut":
-        if (!LANJUT_OPTIONS[schoolType]) return <p>Tidak berlaku.</p>;
-        const opt = LANJUT_OPTIONS[schoolType];
+        if (!LANJUT_OPTIONS[effectiveSchoolType]) return <p>Tidak berlaku.</p>;
+        const opt = LANJUT_OPTIONS[effectiveSchoolType];
         if (isPkbm) {
           const grps = [
             { k: "paketA", l: "Lulusan Paket A" },
@@ -1441,417 +553,59 @@ export default function EditSchoolForm({
         );
       case "prasarana":
         return (
-          <div className="space-y-6">
-            <div className="p-4 border rounded-lg bg-gray-50/50">
-              <p className="font-medium mb-3">Ukuran & Gedung</p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <NumberInput
-                  label="Tanah (m²)"
-                  value={getValue(formData, "prasarana.ukuran.tanah")}
-                  onChange={(v) => handleChange("prasarana.ukuran.tanah", v)}
-                />
-                <NumberInput
-                  label="Bangunan (m²)"
-                  value={getValue(formData, "prasarana.ukuran.bangunan")}
-                  onChange={(v) => handleChange("prasarana.ukuran.bangunan", v)}
-                />
-                <NumberInput
-                  label="Halaman (m²)"
-                  value={getValue(formData, "prasarana.ukuran.halaman")}
-                  onChange={(v) => handleChange("prasarana.ukuran.halaman", v)}
-                />
-                <NumberInput
-                  label="Jml Gedung"
-                  value={getValue(formData, "prasarana.gedung.jumlah")}
-                  onChange={(v) => handleChange("prasarana.gedung.jumlah", v)}
-                />
-              </div>
-            </div>
-            <div className="p-4 border rounded-lg bg-gray-50/50">
-              <p className="font-medium mb-3">Kondisi Ruang Kelas</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {[
-                  "total_room",
-                  "classrooms_good",
-                  "rusakRingan",
-                  "classrooms_moderate_damage",
-                  "heavy_damage",
-                  "rusakTotal",
-                ].map((k) => (
-                  <NumberInput
-                    key={k}
-                    label={k.replace(/_/g, " ").replace("classrooms ", "")}
-                    value={getValue(formData, `prasarana.classrooms.${k}`)}
-                    onChange={(v) =>
-                      handleChange(`prasarana.classrooms.${k}`, v)
-                    }
-                  />
-                ))}
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                {["kurangRkb", "kelebihan", "rkbTambahan"].map((k) => (
-                  <NumberInput
-                    key={k}
-                    label={k}
-                    value={getValue(formData, `prasarana.classrooms.${k}`)}
-                    onChange={(v) =>
-                      handleChange(`prasarana.classrooms.${k}`, v)
-                    }
-                  />
-                ))}
-                <SelectInput
-                  label="Lahan"
-                  value={getValue(formData, "prasarana.classrooms.lahan") || ""}
-                  onChange={(v) =>
-                    handleChange("prasarana.classrooms.lahan", v)
-                  }
-                  options={LAHAN_OPTIONS}
-                  placeholder="Pilih..."
-                />
-              </div>
-            </div>
-
-            {isSmp && (
-              <div className="p-4 border rounded-lg bg-gray-50/50">
-                <p className="font-medium mb-3">Laboratorium SMP</p>
-                <div className="space-y-4">
-                  {[
-                    { k: "laboratory_comp", l: "Komputer" },
-                    { k: "laboratory_langua", l: "Bahasa" },
-                    { k: "laboratory_ipa", l: "IPA" },
-                    { k: "laboratory_fisika", l: "Fisika" },
-                    { k: "laboratory_biologi", l: "Biologi" },
-                  ].map((lb) => (
-                    <div key={lb.k} className="p-3 border rounded-lg bg-white">
-                      <p className="font-medium mb-2">{lb.l}</p>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {[
-                          "total_all",
-                          "good",
-                          "moderate_damage",
-                          "heavy_damage",
-                        ].map((stat) => (
-                          <NumberInput
-                            key={stat}
-                            label={stat.replace("_", " ")}
-                            value={getValue(
-                              formData,
-                              `prasarana.labs.${lb.k}.${stat}`
-                            )}
-                            onChange={(v) =>
-                              handleChange(`prasarana.labs.${lb.k}.${stat}`, v)
-                            }
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="p-4 border rounded-lg bg-gray-50/50">
-              <p className="font-medium mb-3">Ruangan Lainnya</p>
-              <div className="space-y-4">
-                {[
-                  { k: "library", l: "Perpus" },
-                  ...(!isSmp && !isPaud
-                    ? [{ k: "laboratory", l: "Lab Umum" }]
-                    : []),
-                  { k: "teacher_room", l: "R. Guru" },
-                  { k: "uks_room", l: "UKS" },
-                  ...(!isSmp ? [{ k: "toilets", l: "Toilet" }] : []),
-                  { k: "official_residences", l: "Rumah Dinas" },
-                ].map((r) => (
-                  <div
-                    key={r.k}
-                    className="grid grid-cols-2 md:grid-cols-4 gap-4"
-                  >
-                    <NumberInput
-                      label={`${r.l} Total`}
-                      value={getValue(formData, `prasarana.rooms.${r.k}.total`)}
-                      onChange={(v) =>
-                        handleChange(`prasarana.rooms.${r.k}.total`, v)
-                      }
-                    />
-                    <NumberInput
-                      label="Baik"
-                      value={getValue(formData, `prasarana.rooms.${r.k}.good`)}
-                      onChange={(v) =>
-                        handleChange(`prasarana.rooms.${r.k}.good`, v)
-                      }
-                    />
-                    <NumberInput
-                      label="R. Sedang"
-                      value={getValue(
-                        formData,
-                        `prasarana.rooms.${r.k}.moderate_damage`
-                      )}
-                      onChange={(v) =>
-                        handleChange(
-                          `prasarana.rooms.${r.k}.moderate_damage`,
-                          v
-                        )
-                      }
-                    />
-                    <NumberInput
-                      label="R. Berat"
-                      value={getValue(
-                        formData,
-                        `prasarana.rooms.${r.k}.heavy_damage`
-                      )}
-                      onChange={(v) =>
-                        handleChange(`prasarana.rooms.${r.k}.heavy_damage`, v)
-                      }
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="p-4 border rounded-lg bg-gray-50/50">
-              <p className="font-medium mb-3">Mebeulair</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {["tables", "chairs"].map((i) =>
-                  ["total", "good", "moderate_damage", "heavy_damage"].map(
-                    (s) => (
-                      <NumberInput
-                        key={`${i}-${s}`}
-                        label={`${i} ${s}`}
-                        value={getValue(
-                          formData,
-                          `prasarana.furniture.${i}.${s}`
-                        )}
-                        onChange={(v) =>
-                          handleChange(`prasarana.furniture.${i}.${s}`, v)
-                        }
-                      />
-                    )
-                  )
-                )}
-                <NumberInput
-                  label="Komputer"
-                  value={getValue(formData, "prasarana.furniture.computer")}
-                  onChange={(v) =>
-                    handleChange("prasarana.furniture.computer", v)
-                  }
-                />
-                <NumberInput
-                  label="Chromebook"
-                  value={getValue(formData, "prasarana.chromebook")}
-                  onChange={(v) => handleChange("prasarana.chromebook", v)}
-                />
-              </div>
-            </div>
-            <div className="p-4 border rounded-lg bg-gray-50/50">
-              <p className="font-medium mb-3">Rencana Kegiatan Fisik</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <NumberInput
-                  label="Rehab Ruang Kelas"
-                  value={getValue(formData, "kegiatanFisik.rehabRuangKelas")}
-                  onChange={(v) =>
-                    handleChange("kegiatanFisik.rehabRuangKelas", v)
-                  }
-                />
-                <NumberInput
-                  label="Pembangunan RKB"
-                  value={getValue(formData, "kegiatanFisik.pembangunanRKB")}
-                  onChange={(v) =>
-                    handleChange("kegiatanFisik.pembangunanRKB", v)
-                  }
-                />
-                <NumberInput
-                  label="Rehab Toilet"
-                  value={getValue(formData, "kegiatanFisik.rehabToilet")}
-                  onChange={(v) => handleChange("kegiatanFisik.rehabToilet", v)}
-                />
-                <NumberInput
-                  label="Pembangunan Toilet"
-                  value={getValue(formData, "kegiatanFisik.pembangunanToilet")}
-                  onChange={(v) =>
-                    handleChange("kegiatanFisik.pembangunanToilet", v)
-                  }
-                />
-              </div>
-            </div>
-          </div>
+          <InfrastructureSection
+            formData={formData}
+            onChange={handleChange}
+            schoolType={effectiveSchoolType}
+            showSmpToiletDetails={true}
+          />
         );
       case "kelembagaan":
         return (
-          <div className="space-y-6">
-            <div className="p-4 border rounded-lg bg-gray-50/50">
-              <p className="font-medium mb-3">Status</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <SelectInput
-                  label="Alat Rumah Tangga"
-                  value={normalizePeralatanRumahTangga(
-                    getValue(formData, "kelembagaan.peralatanRumahTangga")
-                  )}
-                  onChange={(v) =>
-                    handleChange("kelembagaan.peralatanRumahTangga", v)
-                  }
-                  options={PERALATAN_RUMAH_TANGGA_OPTIONS}
-                  placeholder="Pilih..."
-                />
-                <SelectInput
-                  label="Pembinaan"
-                  value={normalizeSudahBelum(
-                    getValue(formData, "kelembagaan.pembinaan")
-                  )}
-                  onChange={(v) => handleChange("kelembagaan.pembinaan", v)}
-                  options={SUDAH_BELUM_OPTIONS}
-                  placeholder="Pilih..."
-                />
-                <SelectInput
-                  label="Asesmen"
-                  value={normalizeSudahBelum(
-                    getValue(formData, "kelembagaan.asesmen")
-                  )}
-                  onChange={(v) => handleChange("kelembagaan.asesmen", v)}
-                  options={SUDAH_BELUM_OPTIONS}
-                  placeholder="Pilih..."
-                />
-                {[
-                  "menyelenggarakanBelajar",
-                  "melaksanakanRekomendasi",
-                  "siapDievaluasi",
-                ].map((k) => (
-                  <SelectInput
-                    key={k}
-                    label={k.replace(/([A-Z])/g, " $1").trim()}
-                    value={getValue(formData, `kelembagaan.${k}`) || ""}
-                    onChange={(v) => handleChange(`kelembagaan.${k}`, v)}
-                    options={YESNO_OPTIONS}
-                    placeholder="Pilih..."
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-4 border rounded-lg bg-gray-50/50">
-                <p className="font-medium mb-3">BOP</p>
-                <div className="space-y-4">
-                  {["pengelola", "tenagaPeningkatan"].map((k) => (
-                    <SelectInput
-                      key={k}
-                      label={k}
-                      value={getValue(formData, `kelembagaan.bop.${k}`) || ""}
-                      onChange={(v) => handleChange(`kelembagaan.bop.${k}`, v)}
-                      options={YESNO_OPTIONS}
-                      placeholder="Pilih..."
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="p-4 border rounded-lg bg-gray-50/50">
-                <p className="font-medium mb-3">Perizinan & Kurikulum</p>
-                <div className="space-y-4">
-                  <SelectInput
-                    label="Izin Pengendalian"
-                    value={
-                      getValue(
-                        formData,
-                        "kelembagaan.perizinan.pengendalian"
-                      ) || ""
-                    }
-                    onChange={(v) =>
-                      handleChange("kelembagaan.perizinan.pengendalian", v)
-                    }
-                    options={YESNO_OPTIONS}
-                    placeholder="Pilih..."
-                  />
-                  <SelectInput
-                    label="Izin Kelayakan"
-                    value={
-                      getValue(formData, "kelembagaan.perizinan.kelayakan") ||
-                      ""
-                    }
-                    onChange={(v) =>
-                      handleChange("kelembagaan.perizinan.kelayakan", v)
-                    }
-                    options={YESNO_OPTIONS}
-                    placeholder="Pilih..."
-                  />
-                  <SelectInput
-                    label="Silabus"
-                    value={
-                      getValue(formData, "kelembagaan.kurikulum.silabus") || ""
-                    }
-                    onChange={(v) =>
-                      handleChange("kelembagaan.kurikulum.silabus", v)
-                    }
-                    options={YESNO_OPTIONS}
-                    placeholder="Pilih..."
-                  />
-                  <SelectInput
-                    label="Kompetensi Dasar"
-                    value={
-                      getValue(
-                        formData,
-                        "kelembagaan.kurikulum.kompetensiDasar"
-                      ) || ""
-                    }
-                    onChange={(v) =>
-                      handleChange("kelembagaan.kurikulum.kompetensiDasar", v)
-                    }
-                    options={YESNO_OPTIONS}
-                    placeholder="Pilih..."
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          <KelembagaanSection formData={formData} onChange={handleChange} />
         );
       default:
-        return <div>Konten belum tersedia</div>;
+        return <p>Section not found.</p>;
     }
   };
 
-  if (!initialData && schoolIdProp) {
+  if (!initialData)
     return (
-      <div className="p-8 text-center flex flex-col items-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-4" />
-        <p>Memuat data sekolah...</p>
+      <div className="flex items-center justify-center min-h-[300px]">
+        <Loader2 className="animate-spin w-6 h-6 mr-2" />
+        <span>Memuat data...</span>
       </div>
     );
-  }
-
-  if (!schoolIdFinal && initialData) {
-    return (
-      <div className="max-w-4xl mx-auto p-6 border border-red-200 bg-red-50 rounded-lg text-center">
-        <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
-        <h2 className="text-xl font-bold text-red-700">
-          Data Sekolah Tidak Valid
-        </h2>
-        <p className="text-red-600 mt-2">ID Sekolah tidak ditemukan.</p>
-        <button
-          onClick={() => router.push("/dashboard")}
-          className="mt-6 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-        >
-          Kembali ke Dashboard
-        </button>
-      </div>
-    );
-  }
 
   return (
-    <div
-      className={
-        embedded
-          ? "w-full"
-          : "max-w-4xl mx-auto p-6 border rounded-lg bg-white shadow-sm"
-      }
-    >
+    <div className={`p-6 ${embedded ? "" : "max-w-6xl mx-auto"}`}>
       {!embedded && (
-        <h1 className="text-2xl font-bold mb-6">Edit Data {schoolType}</h1>
+        <div className="flex items-center justify-between mb-6">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Kembali
+          </button>
+          <h1 className="text-2xl font-bold">
+            Edit Data {effectiveSchoolType}
+          </h1>
+        </div>
       )}
 
-      <ExcelImportButton
-        config={config}
-        schoolType={schoolType}
-        currentFormData={formData}
-        onImportSuccess={handleBulkUpdate}
-        isEditMode={true}
-      />
+      {!schoolIdFinal && (
+        <div className="mb-6 p-4 rounded-lg border border-red-200 bg-red-50 text-red-800 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 mt-0.5" />
+          <div>
+            <p className="font-semibold">ID Sekolah tidak ditemukan</p>
+            <p className="text-sm">
+              Penyimpanan dinonaktifkan karena data ID sekolah tidak tersedia.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="mb-8">
         <Stepper
@@ -1860,17 +614,6 @@ export default function EditSchoolForm({
           setStep={setCurrentStep}
           completedSteps={completedSteps}
         />
-      </div>
-
-      <div className="mb-6 flex items-center gap-4">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
-        >
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          Kembali
-        </button>
       </div>
 
       <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
@@ -1908,8 +651,8 @@ export default function EditSchoolForm({
                   <Loader2 className="animate-spin w-4 h-4 mr-2" />
                 ) : (
                   <Save className="w-4 h-4 mr-2" />
-                )}
-                Simpan Data
+                )}{" "}
+                Simpan Perubahan
               </button>
             )}
           </div>
@@ -1937,6 +680,9 @@ export default function EditSchoolForm({
                   : [-7.2167, 107.9]
               }
             />
+            <p className="text-xs text-gray-500">
+              Setelah pilih titik, latitude & longitude terisi otomatis.
+            </p>
           </div>
         </div>
       )}

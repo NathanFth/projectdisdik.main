@@ -1,4 +1,5 @@
 // src/app/dashboard/smp/edit/[npsn]/page.js
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -7,44 +8,70 @@ import { supabase } from "@/lib/supabase/lib/client";
 import EditSchoolForm from "@/app/components/EditSchoolForm";
 import { Loader2 } from "lucide-react";
 
+function formatSupabaseError(err) {
+  if (!err) return "Terjadi kesalahan (error kosong).";
+  if (typeof err === "string") return err;
+
+  const msg =
+    err.message ||
+    err.error_description ||
+    err.msg ||
+    err.error ||
+    "Terjadi kesalahan (tanpa message).";
+
+  const parts = [msg];
+  if (err.code) parts.push(`code=${err.code}`);
+  if (err.details) parts.push(`details=${err.details}`);
+  if (err.hint) parts.push(`hint=${err.hint}`);
+
+  if (parts.length === 1) {
+    try {
+      parts.push(`raw=${JSON.stringify(err)}`);
+    } catch {}
+  }
+
+  return parts.join(" | ");
+}
+
 /**
  * Mapper: hasil RPC -> initialData EditSchoolForm
- * Kak Gem pastikan data SMP yang kompleks (Alamat, Wilayah, Lat/Long & Prasarana) terpetakan dengan benar.
+ * Fokus: Memastikan data SMP yang kompleks tetap terpetakan.
  */
 function mapSchoolDetailToFormData(row) {
   if (!row) return null;
   const meta = row.meta || {};
 
   return {
-    // ID Sekolah UUID dari database (WAJIB untuk Update)
     id: row.id || row.school_id,
 
     jenjang: row.jenjang || meta.jenjang || "SMP",
     __metaRaw: meta,
 
-    // ===== INFO DASAR =====
     namaSekolah: row.namaSekolah || row.name || "",
     npsn: row.npsn || "",
     status: row.status || meta.status || "SWASTA",
 
-    // ===== WILAYAH & ALAMAT (FIX: Sinkron dengan hasil root SQL baru) =====
     alamat: row.alamat || row.address || meta.alamat || "",
     desa: row.desa || row.village || row.village_name || meta.desa || "",
     kecamatan: row.kecamatan || meta.kecamatan || "",
 
-    // Code wilayah sangat penting agar Dropdown otomatis terpilih
     kecamatan_code: row.kecamatan_code || meta.kecamatan_code || "",
     desa_code: row.desa_code || meta.desa_code || "",
 
-    // ===== KOORDINAT (Mapping lat/lng ke latitude/longitude) =====
     latitude: row.lat != null ? String(row.lat) : meta.latitude || "",
     longitude: row.lng != null ? String(row.lng) : meta.longitude || "",
 
-    // ===== OPERATOR / KONTAK =====
-    namaOperator: row.contact?.operator_name || meta.namaOperator || "",
-    hp: row.contact?.operator_phone || meta.hp || "",
+    namaOperator:
+      row.contact?.operator_name ||
+      meta.contact?.operator_name ||
+      meta.namaOperator ||
+      "",
+    hp:
+      row.contact?.operator_phone ||
+      meta.contact?.operator_phone ||
+      meta.hp ||
+      "",
 
-    // ===== DATA GURU (Sinkron dari staff_summary via RPC) =====
     guru: row.guru ||
       meta.guru || {
         pns: 0,
@@ -55,82 +82,136 @@ function mapSchoolDetailToFormData(row) {
         kekuranganGuru: 0,
       },
 
-    // ===== DATA SISWA (Sinkron dari school_classes via RPC) =====
     siswa: row.siswa || meta.siswa || {},
     rombel: row.rombel || meta.rombel || {},
     lanjut: row.lanjut || meta.lanjut || {},
 
-    // ===== DATA PRASARANA (Mapping Khusus SMP) =====
     prasarana: {
       ukuran: row.prasarana?.ukuran || meta.prasarana?.ukuran || {},
-      classrooms: row.prasarana?.ruangKelas || meta.prasarana?.classrooms || {},
 
-      // Mapping Ruangan Dasar
+      classrooms:
+        row.prasarana?.classrooms ||
+        row.prasarana?.ruangKelas ||
+        meta.prasarana?.classrooms ||
+        {},
+
       rooms: {
         library:
+          row.prasarana?.rooms?.library ||
           row.prasarana?.ruangPerpustakaan ||
           meta.prasarana?.rooms?.library ||
           {},
         laboratory:
+          row.prasarana?.rooms?.laboratory ||
           row.prasarana?.ruangLaboratorium ||
           meta.prasarana?.rooms?.laboratory ||
           {},
         teacher_room:
-          row.prasarana?.ruangGuru || meta.prasarana?.rooms?.teacher_room || {},
+          row.prasarana?.rooms?.teacher_room ||
+          row.prasarana?.ruangGuru ||
+          meta.prasarana?.rooms?.teacher_room ||
+          {},
+        headmaster_room:
+          row.prasarana?.rooms?.headmaster_room ||
+          row.prasarana?.ruangKepsek ||
+          meta.prasarana?.rooms?.headmaster_room ||
+          {},
+        administration_room:
+          row.prasarana?.rooms?.administration_room ||
+          row.prasarana?.administration_room ||
+          meta.prasarana?.rooms?.administration_room ||
+          {},
         uks_room:
-          row.prasarana?.ruangUks || meta.prasarana?.rooms?.uks_room || {},
+          row.prasarana?.rooms?.uks_room ||
+          row.prasarana?.ruangUks ||
+          meta.prasarana?.rooms?.uks_room ||
+          {},
         toilets:
+          row.prasarana?.rooms?.toilets ||
           row.prasarana?.toiletGuruSiswa ||
           meta.prasarana?.rooms?.toilets ||
           {},
         official_residences:
+          row.prasarana?.rooms?.official_residences ||
           row.prasarana?.rumahDinas ||
           meta.prasarana?.rooms?.official_residences ||
           {},
       },
 
-      // KHUSUS SMP: Mapping Laboratorium Detail (jika ada di meta)
       labs: {
-        laboratory_comp: meta.prasarana?.labs?.laboratory_comp || {},
-        laboratory_langua: meta.prasarana?.labs?.laboratory_langua || {},
-        laboratory_ipa: meta.prasarana?.labs?.laboratory_ipa || {},
-        laboratory_fisika: meta.prasarana?.labs?.laboratory_fisika || {},
-        laboratory_biologi: meta.prasarana?.labs?.laboratory_biologi || {},
+        laboratory_comp:
+          row.prasarana?.labs?.laboratory_comp ||
+          meta.prasarana?.labs?.laboratory_comp ||
+          {},
+        laboratory_langua:
+          row.prasarana?.labs?.laboratory_langua ||
+          meta.prasarana?.labs?.laboratory_langua ||
+          {},
+        laboratory_ipa:
+          row.prasarana?.labs?.laboratory_ipa ||
+          meta.prasarana?.labs?.laboratory_ipa ||
+          {},
+        laboratory_fisika:
+          row.prasarana?.labs?.laboratory_fisika ||
+          meta.prasarana?.labs?.laboratory_fisika ||
+          {},
+        laboratory_biologi:
+          row.prasarana?.labs?.laboratory_biologi ||
+          meta.prasarana?.labs?.laboratory_biologi ||
+          {},
       },
 
-      // KHUSUS SMP: Mapping Toilet Detail (Guru & Siswa x Gender)
       teachers_toilet: {
-        male: meta.prasarana?.teachers_toilet?.male || {},
-        female: meta.prasarana?.teachers_toilet?.female || {},
+        male:
+          row.prasarana?.teachers_toilet?.male ||
+          meta.prasarana?.teachers_toilet?.male ||
+          {},
+        female:
+          row.prasarana?.teachers_toilet?.female ||
+          meta.prasarana?.teachers_toilet?.female ||
+          {},
       },
       students_toilet: {
-        male: meta.prasarana?.students_toilet?.male || {},
-        female: meta.prasarana?.students_toilet?.female || {},
+        male:
+          row.prasarana?.students_toilet?.male ||
+          meta.prasarana?.students_toilet?.male ||
+          {},
+        female:
+          row.prasarana?.students_toilet?.female ||
+          meta.prasarana?.students_toilet?.female ||
+          {},
       },
 
       furniture: {
         tables:
           row.prasarana?.mebeulair?.tables ||
+          row.prasarana?.furniture?.tables ||
           meta.prasarana?.furniture?.tables ||
           {},
         chairs:
           row.prasarana?.mebeulair?.chairs ||
+          row.prasarana?.furniture?.chairs ||
           meta.prasarana?.furniture?.chairs ||
           {},
         computer:
           row.prasarana?.mebeulair?.computer ||
+          row.prasarana?.furniture?.computer ||
           meta.prasarana?.furniture?.computer ||
           0,
       },
+
       chromebook: row.prasarana?.chromebook || meta.prasarana?.chromebook || 0,
+      peralatanRumahTangga:
+        row.prasarana?.peralatanRumahTangga ||
+        meta.prasarana?.peralatanRumahTangga ||
+        "Baik",
     },
 
-    // ===== DATA LAINNYA =====
     kegiatanFisik: row.kegiatanFisik || meta.kegiatanFisik || {},
     kelembagaan: row.kelembagaan || meta.kelembagaan || {},
     siswaAbk: row.siswaAbk || meta.siswaAbk || {},
 
-    meta: meta, // Fallback
+    meta: meta,
   };
 }
 
@@ -156,25 +237,29 @@ export default function SmpEditPage() {
         setLoading(true);
         setError("");
 
-        // Panggil RPC detail sekolah yang sudah kita optimasi field-nya
         const { data, error: rpcError } = await supabase.rpc(
-          "get_school_detail_by_npsn",
-          { input_npsn: String(npsn) }
+          "get_school_by_npsn",
+          { input_npsn: String(npsn) },
         );
 
-        if (rpcError) throw rpcError;
+        if (rpcError) {
+          console.error("RPC Error get_school_by_npsn (SMP):", rpcError);
+          throw new Error(formatSupabaseError(rpcError));
+        }
 
         const row = Array.isArray(data) ? data[0] : data;
-        if (!row) throw new Error("Data sekolah SMP tidak ditemukan.");
+
+        if (!row || Object.keys(row).length === 0) {
+          throw new Error("Data sekolah SMP tidak ditemukan.");
+        }
 
         if (ignore) return;
 
-        // Transformasi data database ke format form Next.js
         const mappedData = mapSchoolDetailToFormData(row);
         setInitialData(mappedData);
-      } catch (err) {
-        console.error("Load Error SMP Edit:", err);
-        if (!ignore) setError(err?.message || "Gagal memuat data sekolah.");
+      } catch (e) {
+        console.error("Load Error SMP Edit:", e);
+        if (!ignore) setError(formatSupabaseError(e));
       } finally {
         if (!ignore) setLoading(false);
       }
@@ -206,7 +291,7 @@ export default function SmpEditPage() {
 
   return (
     <EditSchoolForm
-      key={npsn}
+      key={String(npsn)}
       schoolType="SMP"
       initialData={initialData}
       schoolId={initialData?.id}

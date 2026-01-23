@@ -4,28 +4,47 @@
 import { useState, useRef } from "react";
 import { FileSpreadsheet, Upload, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { generateTemplate, processExcelImport } from "@/lib/utils/excelHelper";
+import { generateTemplate, parseExcelFile } from "@/lib/utils/excelHelper";
 
 export default function ExcelImportButton({
-  config,
   schoolType,
-  currentFormData,
-  onImportSuccess, // Ini nanti diisi handleBulkUpdate dari parent
-  isEditMode = false,
+  currentFormData, // Data form saat ini (Nested JSON)
+  onImportSuccess, // Fungsi update state parent
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const handleDownload = () => {
+  // 1. Download Template (Single School context)
+  const handleDownload = async () => {
     try {
-      generateTemplate(config, schoolType);
+      setIsLoading(true);
+      // Kita bungkus data form saat ini agar struktur cocok dengan helper generateTemplate
+      // Helper mengharapkan array objek sekolah dengan properti 'meta'.
+      const singleDataForExport = [
+        {
+          npsn: currentFormData.npsn,
+          nama_sekolah: currentFormData.namaSekolah,
+          kecamatan: currentFormData.kecamatan,
+          desa: currentFormData.desa,
+          alamat: currentFormData.alamat,
+          status: currentFormData.status,
+          lat: currentFormData.latitude,
+          lng: currentFormData.longitude,
+          meta: currentFormData, // Form data kita sudah dalam bentuk Nested JSON (meta)
+        },
+      ];
+
+      await generateTemplate(schoolType, singleDataForExport);
       toast.success("Template berhasil didownload!");
     } catch (error) {
       console.error(error);
       toast.error("Gagal membuat template.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // 2. Upload & Parse
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -34,17 +53,35 @@ export default function ExcelImportButton({
     const toastId = toast.loading("Membaca file Excel...");
 
     try {
-      // Panggil otak parser kita
-      const newFormData = await processExcelImport(
-        file,
-        config,
-        schoolType,
-        currentFormData,
-        isEditMode
-      );
+      // Parse file menggunakan helper baru (return Array of Nested Objects)
+      const parsedDataArray = await parseExcelFile(file);
+
+      if (!parsedDataArray || parsedDataArray.length === 0) {
+        throw new Error("File Excel kosong atau tidak terbaca.");
+      }
+
+      // Karena ini tombol import untuk "Single Form", kita ambil baris pertama saja
+      // Atau kita cari baris yang NPSN-nya cocok jika ada (opsional)
+      const newData = parsedDataArray[0];
+
+      // Validasi sederhana (opsional)
+      if (
+        currentFormData.npsn &&
+        newData.npsn &&
+        String(currentFormData.npsn) !== String(newData.npsn)
+      ) {
+        const confirm = window.confirm(
+          `NPSN di Excel (${newData.npsn}) berbeda dengan di Form (${currentFormData.npsn}). Tetap timpa?`
+        );
+        if (!confirm) {
+          toast.dismiss(toastId);
+          setIsLoading(false);
+          return;
+        }
+      }
 
       // Kirim data matang ke Parent (Form Utama)
-      onImportSuccess(newFormData);
+      onImportSuccess(newData);
 
       toast.success("Data Excel berhasil dimuat ke form!", { id: toastId });
     } catch (error) {
@@ -52,7 +89,7 @@ export default function ExcelImportButton({
       toast.error(error.message || "Gagal mengimpor file.", { id: toastId });
     } finally {
       setIsLoading(false);
-      // Reset input biar bisa pilih file yang sama lagi kalau mau
+      // Reset input biar bisa pilih file yang sama lagi
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -82,7 +119,11 @@ export default function ExcelImportButton({
           disabled={isLoading}
           className="flex items-center px-3 py-2 text-sm font-medium text-green-700 bg-white border border-green-300 rounded-md hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
         >
-          <Download className="w-4 h-4 mr-2" />
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4 mr-2" />
+          )}
           Template
         </button>
 

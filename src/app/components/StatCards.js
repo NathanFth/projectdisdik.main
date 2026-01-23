@@ -1,18 +1,16 @@
-// src/app/components/StatCards.jsx
+// src/app/components/StatCards.js
 "use client";
+
 import {
   Users,
   AlertTriangle,
   School,
-  Loader2,
+  GraduationCap,
+  TrendingUp,
   UserCheck,
   Baby,
   Blocks,
   BookOpen,
-  GraduationCap,
-  TrendingUp,
-  Percent,
-  Briefcase,
   AlertOctagon,
   Monitor,
   Bath,
@@ -23,7 +21,6 @@ import { Card, CardContent } from "./ui/card";
 import { useMemo } from "react";
 import { useSchoolData } from "@/hooks/useSchoolData";
 
-// --- HELPERS ---
 const getOperatorIcon = (type) => {
   switch (type) {
     case "PAUD":
@@ -58,247 +55,70 @@ const getOperatorLabel = (type) => {
   }
 };
 
-const safeParse = (data) => {
-  if (!data) return {};
-  if (typeof data === "object") return data;
-  try {
-    return JSON.parse(data);
-  } catch {
-    return {};
-  }
-};
-
-// --- DATA CALCULATION HELPERS ---
-
-const calculateTotalGuru = (guruObj) => {
-  if (!guruObj) return 0;
-  const breakdownSum =
-    (Number(guruObj.pns) || 0) +
-    (Number(guruObj.pppk) || 0) +
-    (Number(guruObj.pppkParuhWaktu) || 0) +
-    (Number(guruObj.nonAsnDapodik) || 0) +
-    (Number(guruObj.nonAsnTidakDapodik) || 0);
-  const directTotal = Number(guruObj.jumlahGuru) || Number(guruObj.total) || 0;
-  return Math.max(breakdownSum, directTotal);
-};
-
-const calculateAsnGuru = (guruObj) => {
-  if (!guruObj) return 0;
-  return (Number(guruObj.pns) || 0) + (Number(guruObj.pppk) || 0);
-};
-
-const getTeacherStats = (school) => {
-  if (!school) return { total: 0, asn: 0 };
-
-  const g1 = safeParse(school.guru);
-  const t1 = calculateTotalGuru(g1);
-  const asn1 = calculateAsnGuru(g1);
-
-  const meta = safeParse(school.meta);
-  const g2 = safeParse(meta?.guru);
-  const t2 = calculateTotalGuru(g2);
-  const asn2 = calculateAsnGuru(g2);
-
-  if (t2 > t1) return { total: t2, asn: asn2 };
-  return { total: t1, asn: asn1 };
-};
-
-const getInfrastructureStats = (school) => {
-  if (!school) return { heavy: 0, destroyed: 0, totalRooms: 0 };
-
-  const meta = safeParse(school.meta);
-  const sources = [
-    safeParse(meta?.prasarana?.classrooms),
-    safeParse(school.prasarana?.classrooms),
-    safeParse(school.prasarana?.ruangKelas),
-    safeParse(school.class_condition),
-  ];
-
-  const findMax = (keys) => {
-    let maxVal = 0;
-    sources.forEach((src) => {
-      if (!src) return;
-      keys.forEach((k) => {
-        const val = Number(src[k]);
-        if (!isNaN(val) && val > maxVal) maxVal = val;
-      });
-    });
-    return maxVal;
+function sumStats(a, b) {
+  const A = a || {};
+  const B = b || {};
+  return {
+    total_sekolah:
+      (Number(A.total_sekolah) || 0) + (Number(B.total_sekolah) || 0),
+    total_siswa: (Number(A.total_siswa) || 0) + (Number(B.total_siswa) || 0),
+    total_guru: (Number(A.total_guru) || 0) + (Number(B.total_guru) || 0),
+    total_asn: (Number(A.total_asn) || 0) + (Number(B.total_asn) || 0),
+    total_ruang_kelas:
+      (Number(A.total_ruang_kelas) || 0) + (Number(B.total_ruang_kelas) || 0),
+    total_rusak_berat:
+      (Number(A.total_rusak_berat) || 0) + (Number(B.total_rusak_berat) || 0),
+    total_rusak_total:
+      (Number(A.total_rusak_total) || 0) + (Number(B.total_rusak_total) || 0),
+    total_komputer:
+      (Number(A.total_komputer) || 0) + (Number(B.total_komputer) || 0),
+    total_toilet_baik:
+      (Number(A.total_toilet_baik) || 0) + (Number(B.total_toilet_baik) || 0),
+    total_kursi_baik:
+      (Number(A.total_kursi_baik) || 0) + (Number(B.total_kursi_baik) || 0),
   };
-
-  const heavy = findMax([
-    "heavy_damage",
-    "rusakBerat",
-    "rusak_berat",
-    "classrooms_heavy_damage",
-  ]);
-  const destroyed = findMax([
-    "rusakTotal",
-    "total_damage",
-    "rusak_total",
-    "hancur",
-  ]);
-  const totalRooms = findMax([
-    "total_room",
-    "jumlah",
-    "total",
-    "total_classrooms",
-  ]);
-
-  return { heavy, destroyed, totalRooms };
-};
-
-// ✅ FIXED & OPTIMIZED MINING FUNCTION
-const getFacilityStats = (school) => {
-  if (!school) return { computers: 0, toilets: 0, goodChairs: 0 };
-
-  const meta = safeParse(school.meta);
-  const prasarana = meta?.prasarana || school.prasarana || {};
-
-  // ==========================
-  // 1. MINING TIK (Komputer)
-  // ==========================
-  const chromebook = Number(prasarana.chromebook) || 0;
-  const pc1 = Number(prasarana.furniture?.computer) || 0;
-  const pc2 = Number(prasarana.mebeulair?.computer) || 0;
-  const pc3 = Number(prasarana.mebeulair?.komputer) || 0;
-  const pc4 = Number(prasarana.laboratorium_komputer) || 0;
-
-  const computers = chromebook + Math.max(pc1, pc2, pc3, pc4);
-
-  // ==========================
-  // 2. MINING TOILET (BAIK) - AGGREGATION FIX
-  // ==========================
-  // Kita jumlahkan semua sumber yang mungkin ada isinya.
-  // Karena form biasanya memisahkan field, penjumlahan aman dilakukan.
-
-  let toiletSum = 0;
-
-  // Sumber A: General Rooms (SD/PAUD/Umum)
-  if (prasarana.rooms?.toilets) {
-    toiletSum +=
-      Number(prasarana.rooms.toilets.good) ||
-      Number(prasarana.rooms.toilets.baik) ||
-      0;
-  }
-
-  // Sumber B: Rincian Toilet (SMP/Detail)
-  if (prasarana.students_toilet || prasarana.teachers_toilet) {
-    const sMale = Number(prasarana.students_toilet?.male?.good) || 0;
-    const sFemale = Number(prasarana.students_toilet?.female?.good) || 0;
-    const tMale = Number(prasarana.teachers_toilet?.male?.good) || 0;
-    const tFemale = Number(prasarana.teachers_toilet?.female?.good) || 0;
-    toiletSum += sMale + sFemale + tMale + tFemale;
-  }
-
-  // Sumber C: Legacy / Format Lama
-  if (prasarana.toiletGuruSiswa) {
-    const legacyVal =
-      Number(prasarana.toiletGuruSiswa.baik) ||
-      Number(prasarana.toiletGuruSiswa.jumlah) ||
-      0;
-    // Hanya tambahkan jika sumber A & B kosong untuk menghindari double count jika migrasi data
-    if (toiletSum === 0) toiletSum += legacyVal;
-  } else if (prasarana.toilets && !prasarana.rooms?.toilets) {
-    // Format root level (jarang, tapi ada di beberapa versi lama)
-    toiletSum +=
-      Number(prasarana.toilets.good) || Number(prasarana.toilets.total) || 0;
-  }
-
-  const toilets = toiletSum;
-
-  // ==========================
-  // 3. MINING KURSI (BAIK)
-  // ==========================
-  const c1 = Number(prasarana.furniture?.chairs?.good) || 0;
-  const c2 = Number(prasarana.mebeulair?.chairs?.good) || 0;
-  const c3 = Number(prasarana.mebeulair?.kursi?.baik) || 0;
-  const c4 = Number(prasarana.mebeulair?.kursi?.jumlah) || 0;
-
-  const goodChairs = Math.max(c1, c2, c3, c4);
-
-  return { computers, toilets, goodChairs };
-};
+}
 
 export default function StatCards({ operatorType }) {
   const isCombinedPaud = operatorType === "PAUD";
 
   const {
-    data: dataMain,
+    stats: statsMain,
     isLoading: loadingMain,
-    totalSiswa: totalSiswaMain,
+    error: errMain,
   } = useSchoolData(operatorType);
-
   const {
-    data: dataTk,
+    stats: statsTk,
     isLoading: loadingTk,
-    totalSiswa: totalSiswaTk,
+    error: errTk,
   } = useSchoolData(isCombinedPaud ? "TK" : null);
 
-  const schoolsData = useMemo(() => {
-    if (!isCombinedPaud) return dataMain || [];
-    return [...(dataMain || []), ...(dataTk || [])];
-  }, [dataMain, dataTk, isCombinedPaud]);
-
   const isLoading = isCombinedPaud ? loadingMain || loadingTk : loadingMain;
+  const error = isCombinedPaud ? errMain || errTk : errMain;
 
-  const combinedTotalSiswa = useMemo(() => {
-    if (!isCombinedPaud) return totalSiswaMain;
-    if (totalSiswaMain == null && totalSiswaTk == null) return null;
-    return (Number(totalSiswaMain) || 0) + (Number(totalSiswaTk) || 0);
-  }, [totalSiswaMain, totalSiswaTk, isCombinedPaud]);
+  const totals = useMemo(() => {
+    if (!statsMain && !statsTk) return null;
+    return isCombinedPaud ? sumStats(statsMain, statsTk) : statsMain;
+  }, [statsMain, statsTk, isCombinedPaud]);
 
-  const stats = useMemo(() => {
-    if (isLoading || !schoolsData || schoolsData.length === 0) {
-      return null;
-    }
+  const cards = useMemo(() => {
+    if (isLoading || !totals) return null;
 
-    const totalSchools = schoolsData.length;
+    const totalSchools = Number(totals.total_sekolah) || 0;
+    const totalStudents = Number(totals.total_siswa) || 0;
+    const totalTeachers = Number(totals.total_guru) || 0;
+    const totalAsn = Number(totals.total_asn) || 0;
 
-    // 1. Siswa
-    const totalStudents =
-      combinedTotalSiswa ??
-      schoolsData.reduce(
-        (sum, school) => sum + (parseInt(school.student_count, 10) || 0),
-        0
-      );
+    const totalClassrooms = Number(totals.total_ruang_kelas) || 0;
+    const totalDamagedHeavy = Number(totals.total_rusak_berat) || 0;
+    const totalDamagedDestroyed = Number(totals.total_rusak_total) || 0;
 
-    // 2. Guru & ASN
-    let totalTeachers = 0;
-    let totalAsn = 0;
-
-    // 3. Infrastruktur & Fasilitas
-    let totalDamagedHeavy = 0;
-    let totalDamagedDestroyed = 0;
-    let totalClassrooms = 0;
-    let totalComputers = 0;
-    let totalToilets = 0;
-    let totalGoodChairs = 0;
-
-    schoolsData.forEach((school) => {
-      // Guru
-      const { total, asn } = getTeacherStats(school);
-      totalTeachers += total;
-      totalAsn += asn;
-
-      // Infra Fisik
-      const { heavy, destroyed, totalRooms } = getInfrastructureStats(school);
-      totalDamagedHeavy += heavy;
-      totalDamagedDestroyed += destroyed;
-      totalClassrooms += totalRooms;
-
-      // Fasilitas
-      const { computers, toilets, goodChairs } = getFacilityStats(school);
-      totalComputers += computers;
-      totalToilets += toilets;
-      totalGoodChairs += goodChairs;
-    });
-
-    // --- KALKULASI RASIO ---
+    const totalComputers = Number(totals.total_komputer) || 0;
+    const totalToilets = Number(totals.total_toilet_baik) || 0;
+    const totalGoodChairs = Number(totals.total_kursi_baik) || 0;
 
     const studentTeacherRatio =
       totalTeachers > 0 ? (totalStudents / totalTeachers).toFixed(1) : "0";
-
     const asnPercentage =
       totalTeachers > 0 ? Math.round((totalAsn / totalTeachers) * 100) : 0;
 
@@ -306,7 +126,6 @@ export default function StatCards({ operatorType }) {
       totalClassrooms > 0
         ? ((totalDamagedHeavy / totalClassrooms) * 100).toFixed(1)
         : "0";
-
     const destroyedPercentage =
       totalClassrooms > 0
         ? ((totalDamagedDestroyed / totalClassrooms) * 100).toFixed(1)
@@ -314,19 +133,15 @@ export default function StatCards({ operatorType }) {
 
     const computerRatio =
       totalComputers > 0 ? Math.round(totalStudents / totalComputers) : "∞";
-
     const toiletRatio =
       totalToilets > 0 ? Math.round(totalStudents / totalToilets) : "∞";
 
-    // Defisit Kursi Logic
     const chairDeficitRaw = totalStudents - totalGoodChairs;
     const isChairCritical = chairDeficitRaw > 0;
     const chairDeficitDisplay = Math.abs(chairDeficitRaw);
 
     const chairSubtext = isChairCritical
-      ? `${Math.round(
-          (chairDeficitRaw / totalStudents) * 100
-        )}% Siswa Tanpa Kursi Layak`
+      ? `${totalStudents > 0 ? Math.round((chairDeficitRaw / totalStudents) * 100) : 0}% Siswa Tanpa Kursi Layak`
       : `Kebutuhan Terpenuhi (+${chairDeficitDisplay} Surplus)`;
 
     const operatorLabel = isCombinedPaud
@@ -386,7 +201,7 @@ export default function StatCards({ operatorType }) {
         icon: isChairCritical ? Armchair : CheckCircle2,
         color: isChairCritical ? "text-rose-600" : "text-emerald-600",
         bg: isChairCritical ? "bg-rose-50" : "bg-emerald-50",
-        borderColor: isChairCritical ? "border-rose-200" : "border-emerald-200",
+        borderColor: isChairCritical ? "border-rose-200" : "border-emerald-50",
       },
       {
         label: "R. Kelas Rusak Berat",
@@ -407,13 +222,7 @@ export default function StatCards({ operatorType }) {
         borderColor: "border-red-200",
       },
     ];
-  }, [
-    schoolsData,
-    isLoading,
-    combinedTotalSiswa,
-    operatorType,
-    isCombinedPaud,
-  ]);
+  }, [totals, isLoading, operatorType, isCombinedPaud]);
 
   if (isLoading) {
     return (
@@ -425,11 +234,20 @@ export default function StatCards({ operatorType }) {
     );
   }
 
-  if (!stats) return null;
+  if (error) {
+    return (
+      <div className="p-6 border border-red-200 bg-red-50 rounded-xl text-red-600 text-center">
+        <h3 className="font-bold mb-1">Gagal Memuat Statistik</h3>
+        <p className="text-sm">{error}</p>
+      </div>
+    );
+  }
+
+  if (!cards) return null;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {stats.map((stat, index) => {
+      {cards.map((stat, index) => {
         const Icon = stat.icon;
         return (
           <Card
@@ -443,7 +261,7 @@ export default function StatCards({ operatorType }) {
                     {stat.label}
                   </p>
                   <h3 className="text-2xl font-bold tracking-tight text-gray-900">
-                    {stat.value.toLocaleString("id-ID")}
+                    {Number(stat.value || 0).toLocaleString("id-ID")}
                   </h3>
                 </div>
                 <div

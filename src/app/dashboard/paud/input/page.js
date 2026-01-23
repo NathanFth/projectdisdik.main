@@ -1,54 +1,39 @@
+// src/app/dashboard/paud/input/page.js
 "use client";
 
-import { useMemo, useState } from "react";
-import InputPageBody from "../../../components/InputPageBody";
+import InputPageBody from "@/app/components/InputPageBody";
+import ImportExcel from "@/app/components/ImportExcel"; // ✅ Import Komponen Bulk
 import { ClipboardList } from "lucide-react";
 
 export default function PaudInputPage() {
-  // pilihan jenjang di dalam school_type_id=1
-  const [jenjang, setJenjang] = useState("PAUD"); // "PAUD" | "TK"
-
-  const title = useMemo(() => {
-    return jenjang === "TK" ? "Input Data TK" : "Input Data PAUD";
-  }, [jenjang]);
+  // Hardcoded ke "PAUD" (TK dianggap masuk sini sesuai database)
+  const jenjang = "PAUD";
 
   return (
     <div className="min-h-screen bg-background md:pl-0">
-      <div className="py-6 px-2 sm:px-3 md:px-4 space-y-4">
-        {/* selector jenjang */}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setJenjang("PAUD")}
-            className={`px-3 py-2 rounded-lg text-sm font-medium border ${
-              jenjang === "PAUD"
-                ? "bg-primary text-primary-foreground"
-                : "bg-background hover:bg-accent"
-            }`}
-          >
-            PAUD
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setJenjang("TK")}
-            className={`px-3 py-2 rounded-lg text-sm font-medium border ${
-              jenjang === "TK"
-                ? "bg-primary text-primary-foreground"
-                : "bg-background hover:bg-accent"
-            }`}
-          >
-            TK
-          </button>
+      <div className="py-6 px-2 sm:px-3 md:px-4 space-y-8">
+        {/* FITUR 1: BULK IMPORT/EXPORT */}
+        <div className="space-y-2">
+          <h2 className="text-lg font-bold text-gray-800 px-1">
+            Update Data Massal (Excel)
+          </h2>
+          <ImportExcel schoolType={jenjang} />
         </div>
 
-        {/* body form + import */}
-        <InputPageBody
-          title={title}
-          schoolType={jenjang} // ✅ penting: kirim "PAUD" atau "TK"
-          schemaKey="TKPAUD"
-          Icon={ClipboardList}
-        />
+        <div className="border-t border-gray-200" />
+
+        {/* FITUR 2: INPUT MANUAL SATUAN */}
+        <div className="space-y-2">
+          <h2 className="text-lg font-bold text-gray-800 px-1">
+            Input / Edit Satuan
+          </h2>
+          <InputPageBody
+            title="Input Data PAUD"
+            schoolType={jenjang}
+            schemaKey="PAUD"
+            Icon={ClipboardList}
+          />
+        </div>
       </div>
     </div>
   );

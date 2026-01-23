@@ -1,77 +1,150 @@
 // src/hooks/useDataInput.js
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { dataInputService } from "@/services/dataInputService";
+import { getIn, setIn } from "@/lib/utils/objectPath";
+import { createInitialFormData } from "@/lib/config/createInitialFormData";
+import { toast } from "sonner";
 
-export function useDataInput(config, initialData) {
-  // Inisialisasi awal dengan data dari Supabase
-  const [formData, setFormData] = useState(initialData);
+// UPDATE: Tambahkan parameter `isEditMode` default false
+export function useDataInput({
+  config,
+  initialData,
+  schoolType,
+  schoolId = null,
+  isEditMode = false,
+}) {
+  // 1. GENERATE STORAGE KEY (FIX FINAL)
+  const storageKey = useMemo(() => {
+    if (!schoolType) return null;
+
+    // JIKA MODE EDIT:
+    if (isEditMode) {
+      // Kalau ID belum ada (masih loading), JANGAN generate key (return null).
+      // Jangan fallback ke 'draft_create_', bahaya!
+      if (!schoolId) return null;
+      return `draft_edit_${schoolType}_${schoolId}`;
+    }
+
+    // JIKA MODE INPUT BARU:
+    return `draft_create_${schoolType}`;
+  }, [schoolType, schoolId, isEditMode]);
+
+  // 2. STATE INITIALIZATION
+  const [formState, setFormState] = useState(() => {
+    // A. Cek Draft (Hanya jika key valid/tidak null)
+    if (typeof window !== "undefined" && storageKey) {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && typeof parsed === "object") {
+            return { data: parsed, isDirty: true };
+          }
+        }
+      } catch (e) {
+        console.error("Gagal load draft:", e);
+      }
+    }
+
+    // B. Cek Initial Data
+    if (initialData) {
+      return { data: initialData, isDirty: false };
+    }
+
+    // C. Fallback Template
+    const emptyTemplate = config ? createInitialFormData(config) : {};
+    return { data: emptyTemplate, isDirty: false };
+  });
+
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
 
-  // Sinkronisasi formData jika initialData berubah (saat fetch dari Supabase selesai)
+  // Helper variables
+  const formData = formState.data;
+  const isDirty = formState.isDirty;
+
+  // 3. EFFECT: Sinkronisasi Data Server
   useEffect(() => {
-    if (initialData) {
-      setFormData(initialData);
-    }
+    if (!initialData) return;
+
+    setFormState((prev) => {
+      // Jika user sudah ngetik, jangan timpa.
+      if (prev.isDirty) return prev;
+
+      // Update jika data server berbeda
+      if (JSON.stringify(prev.data) !== JSON.stringify(initialData)) {
+        return { data: initialData, isDirty: false };
+      }
+      return prev;
+    });
   }, [initialData]);
 
-  const handleChange = useCallback(
-    (path, value) => {
-      setFormData((prev) => {
-        if (!prev) return prev;
+  // 4. EFFECT: Auto-Save
+  useEffect(() => {
+    if (!storageKey || !formData) return;
 
-        // Deep copy untuk mencegah mutasi state langsung
-        const newData = JSON.parse(JSON.stringify(prev));
-        const keys = path.split(".");
-        let current = newData;
+    if (isDirty) {
+      const handler = setTimeout(() => {
+        localStorage.setItem(storageKey, JSON.stringify(formData));
+      }, 500);
+      return () => clearTimeout(handler);
+    }
+  }, [formData, isDirty, storageKey]);
 
-        for (let i = 0; i < keys.length - 1; i++) {
-          current[keys[i]] = current[keys[i]] || {};
-          current = current[keys[i]];
-        }
+  /**
+   * Handle Change
+   */
+  const handleChange = useCallback((path, value) => {
+    setFormState((prev) => ({
+      data: prev.data ? setIn(prev.data, path, value) : prev.data,
+      isDirty: true,
+    }));
 
-        // Hanya update jika nilainya berbeda untuk menghindari looping
-        if (current[keys[keys.length - 1]] !== value) {
-          current[keys[keys.length - 1]] = value;
-          return newData;
-        }
+    setErrors((prev) => {
+      if (!prev || !Object.prototype.hasOwnProperty.call(prev, path))
         return prev;
-      });
-
-      // Hapus error saat input diperbaiki
-      if (errors[path]) {
-        setErrors((prev) => {
-          const next = { ...prev };
-          delete next[path];
-          return next;
-        });
-      }
-    },
-    [errors]
-  );
-
-  const handleBulkUpdate = useCallback((newData) => {
-    setFormData(newData);
-    setErrors({});
+      const next = { ...prev };
+      delete next[path];
+      return next;
+    });
   }, []);
 
-  // Auto-hitung total siswa berdasarkan config sekolah
-  useEffect(() => {
-    if (!formData?.siswa || !config) return;
+  /**
+   * Handle Bulk Update
+   */
+  const handleBulkUpdate = useCallback(
+    (newData) => {
+      setFormState({ data: newData, isDirty: true });
+      setErrors({});
+
+      if (storageKey) {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(newData));
+          toast.success("Data Excel berhasil dimuat.");
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    },
+    [storageKey],
+  );
+
+  // --- Logic Hitung Siswa ---
+  const computedTotalSiswa = useMemo(() => {
+    if (!formData?.siswa || !config) return null;
 
     let total = 0;
     if (config.isPkbm && config.pakets) {
       total = Object.entries(config.pakets).reduce((sum, [key, paket]) => {
         const pKey = `paket${key}`;
-        return (
-          sum +
-          (paket.grades?.reduce((t, g) => {
-            const kelas = formData.siswa[pKey]?.[`kelas${g}`] || { l: 0, p: 0 };
-            return t + (Number(kelas.l) || 0) + (Number(kelas.p) || 0);
-          }, 0) || 0)
-        );
+        const grades = Array.isArray(paket?.grades) ? paket.grades : [];
+        const subtotal = grades.reduce((t, g) => {
+          const kelas = formData.siswa[pKey]?.[`kelas${g}`] || { l: 0, p: 0 };
+          return t + (Number(kelas.l) || 0) + (Number(kelas.p) || 0);
+        }, 0);
+        return sum + subtotal;
       }, 0);
     } else if (config.isPaud && config.rombelTypes) {
       total = config.rombelTypes.reduce((sum, t) => {
@@ -84,38 +157,70 @@ export function useDataInput(config, initialData) {
         return sum + (Number(kelas.l) || 0) + (Number(kelas.p) || 0);
       }, 0);
     }
+    return total;
+  }, [formData?.siswa, config]);
 
-    if (Number(formData.siswa.jumlahSiswa) !== total) {
-      handleChange("siswa.jumlahSiswa", total);
+  useEffect(() => {
+    if (computedTotalSiswa == null) return;
+    const current = Number(getIn(formData, "siswa.jumlahSiswa", 0)) || 0;
+    if (current !== computedTotalSiswa) {
+      setFormState((prev) => ({
+        ...prev,
+        data: setIn(prev.data, "siswa.jumlahSiswa", computedTotalSiswa),
+        isDirty: true,
+      }));
     }
-  }, [formData?.siswa, config, handleChange]);
+  }, [computedTotalSiswa, formData?.siswa?.jumlahSiswa]);
 
-  const validate = (fields) => {
-    const newErrors = {};
-    let isValid = true;
+  const validate = useCallback(
+    (fields) => {
+      const newErrors = {};
+      let isValid = true;
+      if (!Array.isArray(fields) || fields.length === 0) return true;
 
-    if (!fields || fields.length === 0) return true;
-
-    fields.forEach((field) => {
-      const val = field
-        .split(".")
-        .reduce((o, k) => (o ? o[k] : undefined), formData);
-      if ((val === "" || val === undefined) && field !== "optional") {
-        newErrors[field] = "Wajib diisi";
-        isValid = false;
+      for (const field of fields) {
+        const val = getIn(formData, field, undefined);
+        if ((val === "" || val === undefined) && field !== "optional") {
+          newErrors[field] = "Wajib diisi";
+          isValid = false;
+        }
       }
-    });
+      setErrors(newErrors);
+      return isValid;
+    },
+    [formData],
+  );
 
-    setErrors(newErrors);
-    return isValid;
-  };
+  const submit = useCallback(
+    async (targetSchoolType) => {
+      setSaving(true);
+      try {
+        const res = await dataInputService.submitData(
+          targetSchoolType,
+          formData,
+        );
 
-  const submit = async (schoolType) => {
-    setSaving(true);
-    const result = await dataInputService.submitData(schoolType, formData);
-    setSaving(false);
-    return result;
-  };
+        if (storageKey) {
+          localStorage.removeItem(storageKey);
+          setFormState((prev) => ({ ...prev, isDirty: false }));
+        }
+
+        return res;
+      } catch (err) {
+        throw err;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [formData, storageKey],
+  );
+
+  const clearDraft = useCallback(() => {
+    if (storageKey) localStorage.removeItem(storageKey);
+    const emptyTemplate = config ? createInitialFormData(config) : {};
+    setFormState({ data: initialData || emptyTemplate, isDirty: false });
+    toast.info("Draft formulir telah direset.");
+  }, [storageKey, initialData, config]);
 
   return {
     formData,
@@ -125,5 +230,7 @@ export function useDataInput(config, initialData) {
     validate,
     submit,
     saving,
+    clearDraft,
+    isDirty,
   };
 }

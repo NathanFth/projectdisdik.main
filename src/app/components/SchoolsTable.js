@@ -91,7 +91,7 @@ function computeJumlahSiswa(row) {
 function normalizeSchoolRow(row, operatorType) {
   const meta = row?.meta || {};
   const npsn = String(row?.npsn || row?.id || "").trim();
-  
+
   // Ambil nama dari 'namaSekolah' (alias di RPC) atau 'name'
   const namaSekolah = row?.namaSekolah || row?.name || "Tanpa Nama";
 
@@ -101,7 +101,14 @@ function normalizeSchoolRow(row, operatorType) {
   let statusRaw = row?.status || "SWASTA";
   const status = statusRaw.toUpperCase() === "NEGERI" ? "NEGERI" : "SWASTA";
 
-  const jenjang = row?.jenjang || meta.jenjang || operatorType;
+  // LOGIC JENJANG: Prioritaskan data spesifik row (misal: 'TK') daripada operatorType ('PAUD')
+  // Ini agar di tabel gabungan, kita tetap tahu mana yang TK mana yang PAUD.
+  const jenjang =
+    row?.schoolType ||
+    row?.type_code ||
+    row?.jenjang ||
+    meta.jenjang ||
+    operatorType;
 
   return {
     ...row,
@@ -110,18 +117,21 @@ function normalizeSchoolRow(row, operatorType) {
     namaSekolah,
     kecamatan,
     status,
-    jenjang,
-    jumlahSiswa: computeJumlahSiswa(row)
+    jenjang, // Field ini akan berisi "TK", "PAUD", "SD", dll sesuai data baris
+    jumlahSiswa: computeJumlahSiswa(row),
   };
 }
 
 function toDashboardBaseFromJenjangOrOperator({ operatorType, jenjang }) {
   const op = String(operatorType || "").toUpperCase();
-  const j = String(jenjang || "").toUpperCase();
+
+  // LOGIC GABUNGAN: Jika operatorType adalah PAUD (atau TK), kita arahkan ke base URL 'paud'.
+  // Ini menyatukan routing detail/edit agar konsisten di folder /dashboard/paud/
   if (op === "PAUD" || op === "TK") {
-    if (j === "TK") return "tk";
     return "paud";
   }
+
+  // Untuk jenjang lain (SD, SMP) tetap sesuai operatorType
   return op.toLowerCase();
 }
 
@@ -241,9 +251,9 @@ export default function SchoolsTable({ operatorType }) {
     setLoadError("");
 
     try {
-      // ✅ LOGGING UNTUK DEBUGGING (Bisa dihapus jika sudah lancar)
+      // ✅ LOGGING UNTUK DEBUGGING
       console.log("Fetching with params:", {
-        jenjang_filter: operatorType,
+        jenjang_filter: operatorType, // Mengirim "PAUD" untuk mengambil gabungan (sesuai asumsi RPC menangani ini)
         page_number: currentPage,
         page_size: itemsPerPage,
         search_query: debouncedSearch,
@@ -262,19 +272,11 @@ export default function SchoolsTable({ operatorType }) {
         sort_order: sortOrder,
       });
 
-      if (error) {
-        console.error("Database RPC Error Details:", {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint
-        });
-        throw error;
-      }
-
       if (data && data.length > 0) {
         setTotalCount(Number(data[0].total_count) || 0);
-        const normalized = data.map((d) => normalizeSchoolRow(d.row_json, operatorType));
+        const normalized = data.map((d) =>
+          normalizeSchoolRow(d.row_json, operatorType)
+        );
         setSchoolsData(normalized);
       } else {
         setTotalCount(0);
@@ -305,7 +307,7 @@ export default function SchoolsTable({ operatorType }) {
   }, [debouncedSearch, selectedKecamatan]);
 
   const totalPages = Math.ceil(totalCount / itemsPerPage);
-  
+
   const handleResetFilter = () => {
     setSearchTerm("");
     setSelectedKecamatan("all");
@@ -318,7 +320,7 @@ export default function SchoolsTable({ operatorType }) {
       operatorType: opType,
       jenjang,
     })}/${npsn}`;
-    
+
   const getEditHref = (opType, npsn, jenjang) =>
     `/dashboard/${toDashboardBaseFromJenjangOrOperator({
       operatorType: opType,
@@ -351,7 +353,6 @@ export default function SchoolsTable({ operatorType }) {
       setIsDeleting(false);
     }
   };
-
   return (
     <>
       <Card className="rounded-xl border shadow-sm bg-white overflow-hidden">
@@ -363,7 +364,7 @@ export default function SchoolsTable({ operatorType }) {
               </div>
               <div>
                 <CardTitle className="text-lg font-bold text-gray-900">
-                  Data {operatorType}
+                  Data {operatorType === "PAUD" ? "PAUD" : operatorType}
                 </CardTitle>
                 <p className="text-sm text-gray-500 mt-1">
                   Total {totalCount} sekolah ditemukan
@@ -410,7 +411,14 @@ export default function SchoolsTable({ operatorType }) {
           ) : loadError ? (
             <div className="py-20 text-center text-red-600 bg-red-50 mx-4 my-4 rounded-lg border border-red-100">
               <p className="font-semibold">{loadError}</p>
-              <Button variant="outline" size="sm" className="mt-4" onClick={fetchSchools}>Coba Lagi</Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4"
+                onClick={fetchSchools}
+              >
+                Coba Lagi
+              </Button>
             </div>
           ) : schoolsData.length === 0 ? (
             <EmptyState
@@ -438,6 +446,7 @@ export default function SchoolsTable({ operatorType }) {
                       currentSortOrder={sortOrder}
                       onSort={handleSort}
                     />
+                    <TableHead className="w-[100px]">Jenjang</TableHead>
                     <SortableHeader
                       label="Status"
                       columnKey="status"
@@ -480,6 +489,12 @@ export default function SchoolsTable({ operatorType }) {
                         {s.npsn}
                       </TableCell>
                       <TableCell>
+                        {/* Menampilkan Jenjang Spesifik (TK/PAUD) */}
+                        <Badge variant="outline" className="font-mono text-xs">
+                          {s.jenjang}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
                         <Badge
                           variant="secondary"
                           className={`${
@@ -496,7 +511,13 @@ export default function SchoolsTable({ operatorType }) {
                       </TableCell>
                       <TableCell className="pr-6">
                         <div className="flex justify-center gap-2">
-                          <Link href={getDetailHref(operatorType, s.npsn, s.jenjang)}>
+                          <Link
+                            href={getDetailHref(
+                              operatorType,
+                              s.npsn,
+                              s.jenjang
+                            )}
+                          >
                             <Button
                               variant="outline"
                               size="sm"
@@ -505,7 +526,9 @@ export default function SchoolsTable({ operatorType }) {
                               <Eye className="h-4 w-4 mr-1.5" /> Detail
                             </Button>
                           </Link>
-                          <Link href={getEditHref(operatorType, s.npsn, s.jenjang)}>
+                          <Link
+                            href={getEditHref(operatorType, s.npsn, s.jenjang)}
+                          >
                             <Button
                               variant="ghost"
                               size="sm"
@@ -581,14 +604,18 @@ export default function SchoolsTable({ operatorType }) {
         )}
       </Card>
 
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+      <AlertDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="text-red-600 flex items-center gap-2">
               <Trash2 className="h-5 w-5" /> Hapus Data Sekolah?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Data sekolah beserta data siswa, guru, dan sarpras terkait akan dihapus permanen.
+              Tindakan ini tidak dapat dibatalkan. Data sekolah beserta data
+              siswa, guru, dan sarpras terkait akan dihapus permanen.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -601,7 +628,11 @@ export default function SchoolsTable({ operatorType }) {
               className="bg-red-600 hover:bg-red-700 text-white"
               disabled={isDeleting}
             >
-              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Ya, Hapus Permanen"}
+              {isDeleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Ya, Hapus Permanen"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

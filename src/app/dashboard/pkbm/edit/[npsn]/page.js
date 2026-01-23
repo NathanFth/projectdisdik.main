@@ -1,4 +1,5 @@
 // src/app/dashboard/pkbm/edit/[npsn]/page.js
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -7,43 +8,63 @@ import { supabase } from "@/lib/supabase/lib/client";
 import EditSchoolForm from "@/app/components/EditSchoolForm";
 import { Loader2 } from "lucide-react";
 
-/**
- * Mapper: Menghubungkan data asli Supabase (RPC) ke struktur Form PKBM
- * Kak Gem pastikan data Alamat, Wilayah, Koordinat, dan Prasarana terisi otomatis.
- */
+function formatSupabaseError(err) {
+  if (!err) return "Terjadi kesalahan (error kosong).";
+  if (typeof err === "string") return err;
+
+  const msg =
+    err.message ||
+    err.error_description ||
+    err.msg ||
+    err.error ||
+    "Terjadi kesalahan (tanpa message).";
+
+  const parts = [msg];
+  if (err.code) parts.push(`code=${err.code}`);
+  if (err.details) parts.push(`details=${err.details}`);
+  if (err.hint) parts.push(`hint=${err.hint}`);
+
+  if (parts.length === 1) {
+    try {
+      parts.push(`raw=${JSON.stringify(err)}`);
+    } catch {}
+  }
+
+  return parts.join(" | ");
+}
+
 function mapSchoolDetailToFormData(row) {
   if (!row) return null;
   const meta = row.meta || {};
 
   return {
-    // ID Sekolah UUID wajib ada untuk proses Update
     id: row.id,
 
-    // ===== STEP INFO =====
     namaSekolah: row.namaSekolah || row.name || "",
     npsn: row.npsn || "",
     status: row.status || meta.status || "SWASTA",
 
-    // ===== WILAYAH & ALAMAT (FIX: Sinkron dengan hasil SQL RPC baru) =====
-    // RPC mengirim 'alamat', Form mencari 'alamat'
     alamat: row.alamat || row.address || meta.alamat || "",
-    // RPC mengirim 'desa', Form mencari 'desa'
     desa: row.desa || row.village || row.village_name || meta.desa || "",
     kecamatan: row.kecamatan || meta.kecamatan || "",
 
-    // Code wilayah agar Dropdown langsung otomatis terpilih
     kecamatan_code: row.kecamatan_code || meta.kecamatan_code || "",
     desa_code: row.desa_code || meta.desa_code || "",
 
-    // ===== KOORDINAT (FIX: Mapping dari lat/lng root ke latitude/longitude form) =====
     latitude: row.lat != null ? String(row.lat) : meta.latitude || "",
     longitude: row.lng != null ? String(row.lng) : meta.longitude || "",
 
-    // ===== OPERATOR / KONTAK =====
-    namaOperator: row.contact?.operator_name || meta.namaOperator || "",
-    hp: row.contact?.operator_phone || meta.hp || "",
+    namaOperator:
+      row.contact?.operator_name ||
+      meta.contact?.operator_name ||
+      meta.namaOperator ||
+      "",
+    hp:
+      row.contact?.operator_phone ||
+      meta.contact?.operator_phone ||
+      meta.hp ||
+      "",
 
-    // ===== DATA GURU (Sinkron dari staff_summary via RPC) =====
     guru: row.guru ||
       meta.guru || {
         pns: 0,
@@ -54,62 +75,99 @@ function mapSchoolDetailToFormData(row) {
         kekuranganGuru: 0,
       },
 
-    // ===== DATA SISWA (Sinkron dari school_classes via RPC) =====
     siswa: row.siswa || meta.siswa || {},
     rombel: row.rombel || meta.rombel || {},
     lanjut: row.lanjut || meta.lanjut || {},
 
-    // ===== DATA PRASARANA (Mapping ulang agar pas dengan path di EditSchoolForm) =====
     prasarana: {
       ukuran: row.prasarana?.ukuran || meta.prasarana?.ukuran || {},
-      classrooms: row.prasarana?.ruangKelas || meta.prasarana?.classrooms || {},
+
+      classrooms:
+        row.prasarana?.classrooms ||
+        row.prasarana?.ruangKelas ||
+        meta.prasarana?.classrooms ||
+        {},
+
       rooms: {
         library:
+          row.prasarana?.rooms?.library ||
           row.prasarana?.ruangPerpustakaan ||
           meta.prasarana?.rooms?.library ||
           {},
         laboratory:
+          row.prasarana?.rooms?.laboratory ||
           row.prasarana?.ruangLaboratorium ||
           meta.prasarana?.rooms?.laboratory ||
           {},
         teacher_room:
-          row.prasarana?.ruangGuru || meta.prasarana?.rooms?.teacher_room || {},
+          row.prasarana?.rooms?.teacher_room ||
+          row.prasarana?.ruangGuru ||
+          meta.prasarana?.rooms?.teacher_room ||
+          {},
+        headmaster_room:
+          row.prasarana?.rooms?.headmaster_room ||
+          row.prasarana?.ruangKepsek ||
+          meta.prasarana?.rooms?.headmaster_room ||
+          {},
+        administration_room:
+          row.prasarana?.rooms?.administration_room ||
+          row.prasarana?.administration_room ||
+          meta.prasarana?.rooms?.administration_room ||
+          {},
         uks_room:
-          row.prasarana?.ruangUks || meta.prasarana?.rooms?.uks_room || {},
+          row.prasarana?.rooms?.uks_room ||
+          row.prasarana?.ruangUks ||
+          meta.prasarana?.rooms?.uks_room ||
+          {},
         toilets:
+          row.prasarana?.rooms?.toilets ||
           row.prasarana?.toiletGuruSiswa ||
           meta.prasarana?.rooms?.toilets ||
           {},
         official_residences:
+          row.prasarana?.rooms?.official_residences ||
           row.prasarana?.rumahDinas ||
           meta.prasarana?.rooms?.official_residences ||
           {},
       },
+
       furniture: {
         tables:
           row.prasarana?.mebeulair?.tables ||
+          row.prasarana?.furniture?.tables ||
           meta.prasarana?.furniture?.tables ||
           {},
         chairs:
           row.prasarana?.mebeulair?.chairs ||
+          row.prasarana?.furniture?.chairs ||
           meta.prasarana?.furniture?.chairs ||
+          {},
+        whiteboard:
+          row.prasarana?.mebeulair?.whiteboard ||
+          row.prasarana?.furniture?.whiteboard ||
+          meta.prasarana?.furniture?.whiteboard ||
           {},
         computer:
           row.prasarana?.mebeulair?.computer ||
+          row.prasarana?.furniture?.computer ||
           meta.prasarana?.furniture?.computer ||
           0,
       },
+
       chromebook: row.prasarana?.chromebook || meta.prasarana?.chromebook || 0,
+      peralatanRumahTangga:
+        row.prasarana?.peralatanRumahTangga ||
+        meta.prasarana?.peralatanRumahTangga ||
+        "Baik",
     },
 
-    // ===== DATA LAINNYA =====
     kegiatanFisik: row.kegiatanFisik || meta.kegiatanFisik || {},
     kelembagaan: row.kelembagaan || meta.kelembagaan || {},
     siswaAbk: row.siswaAbk || meta.siswaAbk || {},
 
     jenjang: row.jenjang || meta.jenjang || "PKBM",
     __metaRaw: meta,
-    meta: meta, // Digunakan sebagai fallback
+    meta: meta,
   };
 }
 
@@ -135,27 +193,28 @@ export default function PkbmEditPage() {
         setLoading(true);
         setError("");
 
-        // Panggil RPC detail sekolah yang sudah kita optimasi
         const { data, error: rpcError } = await supabase.rpc(
-          "get_school_detail_by_npsn",
-          { input_npsn: npsn }
+          "get_school_by_npsn",
+          { input_npsn: String(npsn) },
         );
 
-        console.log("Data RPC (PKBM Edit):", data);
-
-        if (rpcError) throw rpcError;
+        if (rpcError) {
+          console.error("RPC Error get_school_by_npsn (PKBM):", rpcError);
+          throw new Error(formatSupabaseError(rpcError));
+        }
 
         const row = Array.isArray(data) ? data[0] : data;
-        if (!row) throw new Error("Data PKBM tidak ditemukan.");
+
+        if (!row || Object.keys(row).length === 0) {
+          throw new Error("Data PKBM tidak ditemukan.");
+        }
 
         if (ignore) return;
 
-        // Transformasi data database ke format form yang benar
-        const mappedData = mapSchoolDetailToFormData(row);
-        setInitialData(mappedData);
-      } catch (err) {
-        console.error("Load Error PKBM Edit:", err);
-        if (!ignore) setError(err?.message || "Gagal memuat data sekolah.");
+        setInitialData(mapSchoolDetailToFormData(row));
+      } catch (e) {
+        console.error("Load Error PKBM Edit:", e);
+        if (!ignore) setError(formatSupabaseError(e));
       } finally {
         if (!ignore) setLoading(false);
       }
@@ -186,6 +245,10 @@ export default function PkbmEditPage() {
   }
 
   return (
-    <EditSchoolForm key={npsn} schoolType="PKBM" initialData={initialData} />
+    <EditSchoolForm
+      key={String(npsn)}
+      schoolType="PKBM"
+      initialData={initialData}
+    />
   );
 }

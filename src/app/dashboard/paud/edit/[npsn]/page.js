@@ -1,4 +1,5 @@
 // src/app/dashboard/paud/edit/[npsn]/page.js
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -7,35 +8,59 @@ import { supabase } from "@/lib/supabase/lib/client";
 import EditSchoolForm from "@/app/components/EditSchoolForm";
 import { Loader2 } from "lucide-react";
 
+function formatSupabaseError(err) {
+  if (!err) return "Terjadi kesalahan (error kosong).";
+  if (typeof err === "string") return err;
+
+  const msg =
+    err.message ||
+    err.error_description ||
+    err.msg ||
+    err.error ||
+    "Terjadi kesalahan (tanpa message).";
+
+  const parts = [msg];
+
+  if (err.code) parts.push(`code=${err.code}`);
+  if (err.details) parts.push(`details=${err.details}`);
+  if (err.hint) parts.push(`hint=${err.hint}`);
+
+  // Pastikan error object yang “terlihat kosong” tetap kebaca
+  if (parts.length === 1) {
+    try {
+      parts.push(`raw=${JSON.stringify(err)}`);
+    } catch {
+      // ignore
+    }
+  }
+
+  return parts.join(" | ");
+}
+
 /**
  * Mapper: Menghubungkan data asli Supabase (RPC) ke struktur Form PAUD
- * Kak Gem pastikan data Alamat, Wilayah, Koordinat, dan Prasarana terisi otomatis.
  */
 function mapSchoolDetailToFormData(row) {
   if (!row) return null;
   const meta = row.meta || {};
 
   return {
-    // ID Sekolah UUID wajib ada agar handleSave bisa melakukan Update
     id: row.id,
 
     // ===== STEP INFO =====
-    namaSekolah: row.namaSekolah || "",
+    namaSekolah: row.namaSekolah || row.name || "",
     npsn: row.npsn || "",
     status: row.status || meta.status || "SWASTA",
 
-    // ===== WILAYAH & ALAMAT (FIX: Sinkron dengan hasil SQL RPC baru) =====
-    // RPC mengirim 'alamat', Form mencari 'alamat'
+    // ===== WILAYAH & ALAMAT =====
     alamat: row.alamat || row.address || meta.alamat || "",
-    // RPC mengirim 'desa', Form mencari 'desa'
-    desa: row.desa || row.village || meta.desa || "",
+    desa: row.desa || row.village || row.village_name || meta.desa || "",
     kecamatan: row.kecamatan || meta.kecamatan || "",
 
-    // Code wilayah agar Dropdown langsung otomatis terpilih
     kecamatan_code: row.kecamatan_code || meta.kecamatan_code || "",
     desa_code: row.desa_code || meta.desa_code || "",
 
-    // ===== KOORDINAT (FIX: Mapping dari lat/lng ke latitude/longitude) =====
+    // ===== KOORDINAT =====
     latitude: row.lat != null ? String(row.lat) : meta.latitude || "",
     longitude: row.lng != null ? String(row.lng) : meta.longitude || "",
 
@@ -43,7 +68,7 @@ function mapSchoolDetailToFormData(row) {
     namaOperator: row.contact?.operator_name || meta.namaOperator || "",
     hp: row.contact?.operator_phone || meta.hp || "",
 
-    // ===== DATA GURU (Sinkron dari tabel staff_summary via RPC) =====
+    // ===== DATA GURU =====
     guru: row.guru ||
       meta.guru || {
         pns: 0,
@@ -54,53 +79,97 @@ function mapSchoolDetailToFormData(row) {
         kekuranganGuru: 0,
       },
 
-    // ===== DATA SISWA (Sinkron dari tabel school_classes via RPC) =====
+    // ===== DATA SISWA =====
     siswa: row.siswa || meta.siswa || {},
     rombel: row.rombel || meta.rombel || {},
     lanjut: row.lanjut || meta.lanjut || {},
 
-    // ===== DATA PRASARANA (Mapping ulang agar pas dengan EditSchoolForm) =====
+    // ===== DATA PRASARANA =====
     prasarana: {
       ukuran: row.prasarana?.ukuran || meta.prasarana?.ukuran || {},
-      // RPC me-return 'ruangKelas', Form mencari path 'classrooms'
-      classrooms: row.prasarana?.ruangKelas || meta.prasarana?.classrooms || {},
+
+      classrooms:
+        row.prasarana?.classrooms ||
+        row.prasarana?.ruangKelas ||
+        meta.prasarana?.classrooms ||
+        {},
+
       rooms: {
         library:
+          row.prasarana?.rooms?.library ||
           row.prasarana?.ruangPerpustakaan ||
           meta.prasarana?.rooms?.library ||
           {},
         laboratory:
+          row.prasarana?.rooms?.laboratory ||
           row.prasarana?.ruangLaboratorium ||
           meta.prasarana?.rooms?.laboratory ||
           {},
         teacher_room:
-          row.prasarana?.ruangGuru || meta.prasarana?.rooms?.teacher_room || {},
+          row.prasarana?.rooms?.teacher_room ||
+          row.prasarana?.ruangGuru ||
+          meta.prasarana?.rooms?.teacher_room ||
+          {},
+        headmaster_room:
+          row.prasarana?.rooms?.headmaster_room ||
+          row.prasarana?.ruangKepsek ||
+          meta.prasarana?.rooms?.headmaster_room ||
+          {},
+        administration_room:
+          row.prasarana?.rooms?.administration_room ||
+          row.prasarana?.administration_room ||
+          meta.prasarana?.rooms?.administration_room ||
+          {},
         uks_room:
-          row.prasarana?.ruangUks || meta.prasarana?.rooms?.uks_room || {},
+          row.prasarana?.rooms?.uks_room ||
+          row.prasarana?.ruangUks ||
+          meta.prasarana?.rooms?.uks_room ||
+          {},
         toilets:
+          row.prasarana?.rooms?.toilets ||
           row.prasarana?.toiletGuruSiswa ||
           meta.prasarana?.rooms?.toilets ||
           {},
         official_residences:
+          row.prasarana?.rooms?.official_residences ||
           row.prasarana?.rumahDinas ||
           meta.prasarana?.rooms?.official_residences ||
           {},
+        ape:
+          row.prasarana?.rooms?.ape ||
+          row.prasarana?.ape ||
+          meta.prasarana?.rooms?.ape ||
+          {},
       },
+
       furniture: {
         tables:
           row.prasarana?.mebeulair?.tables ||
+          row.prasarana?.furniture?.tables ||
           meta.prasarana?.furniture?.tables ||
           {},
         chairs:
           row.prasarana?.mebeulair?.chairs ||
+          row.prasarana?.furniture?.chairs ||
           meta.prasarana?.furniture?.chairs ||
+          {},
+        whiteboard:
+          row.prasarana?.mebeulair?.whiteboard ||
+          row.prasarana?.furniture?.whiteboard ||
+          meta.prasarana?.furniture?.whiteboard ||
           {},
         computer:
           row.prasarana?.mebeulair?.computer ||
+          row.prasarana?.furniture?.computer ||
           meta.prasarana?.furniture?.computer ||
           0,
       },
+
       chromebook: row.prasarana?.chromebook || meta.prasarana?.chromebook || 0,
+      peralatanRumahTangga:
+        row.prasarana?.peralatanRumahTangga ||
+        meta.prasarana?.peralatanRumahTangga ||
+        "Baik",
     },
 
     // ===== LAINNYA =====
@@ -110,7 +179,7 @@ function mapSchoolDetailToFormData(row) {
 
     jenjang: row.jenjang || meta.jenjang || "PAUD",
     __metaRaw: meta,
-    meta: meta, // Tetap sertakan objek meta sebagai fallback
+    meta: meta,
   };
 }
 
@@ -136,27 +205,28 @@ export default function PaudEditPage() {
         setLoading(true);
         setError("");
 
-        // Panggil RPC detail sekolah yang sudah kita perbaiki
         const { data, error: rpcError } = await supabase.rpc(
-          "get_school_detail_by_npsn",
-          { input_npsn: npsn }
+          "get_school_by_npsn",
+          { input_npsn: String(npsn) },
         );
 
-        console.log("Data RPC (PAUD Edit):", data);
-
-        if (rpcError) throw rpcError;
+        if (rpcError) {
+          console.error("RPC Error get_school_by_npsn (PAUD):", rpcError);
+          throw new Error(formatSupabaseError(rpcError));
+        }
 
         const row = Array.isArray(data) ? data[0] : data;
-        if (!row) throw new Error("Sekolah tidak ditemukan.");
+
+        if (!row || Object.keys(row).length === 0) {
+          throw new Error("Sekolah tidak ditemukan.");
+        }
 
         if (ignore) return;
 
-        // Sinkronisasi data ke Form
-        const mappedData = mapSchoolDetailToFormData(row);
-        setInitialData(mappedData);
+        setInitialData(mapSchoolDetailToFormData(row));
       } catch (e) {
         console.error("Load Error PAUD Edit:", e);
-        if (!ignore) setError(e?.message || "Gagal memuat data");
+        if (!ignore) setError(formatSupabaseError(e));
       } finally {
         if (!ignore) setLoading(false);
       }
@@ -187,6 +257,10 @@ export default function PaudEditPage() {
   }
 
   return (
-    <EditSchoolForm key={npsn} schoolType="PAUD" initialData={initialData} />
+    <EditSchoolForm
+      key={String(npsn)}
+      schoolType="PAUD"
+      initialData={initialData}
+    />
   );
 }
