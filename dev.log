@@ -11,3 +11,16 @@
 ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
 ✓ Ready in 13.4s
 ○ Compiling /login ...
+ GET /login 200 in 16.0s (compile: 12.4s, render: 3.6s)
+ GET /login 200 in 350ms (compile: 167ms, render: 184ms)
+ GET /dashboard 200 in 3.5s (compile: 2.5s, proxy.ts: 781ms, render: 208ms)
+ GET /dashboard/sd 200 in 899ms (compile: 792ms, proxy.ts: 17ms, render: 90ms)
+ GET /dashboard 200 in 85ms (compile: 14ms, proxy.ts: 17ms, render: 54ms)
+ GET /login 200 in 212ms (compile: 23ms, render: 190ms)
+ GET /login 200 in 71ms (compile: 21ms, render: 50ms)
+ GET /dashboard 200 in 272ms (compile: 48ms, proxy.ts: 31ms, render: 193ms)
+ GET /dashboard 200 in 138ms (compile: 16ms, proxy.ts: 32ms, render: 89ms)
+✓ Compiled in 10.2s
+ GET /dashboard 200 in 4.1s (compile: 1390ms, proxy.ts: 17ms, render: 2.7s)
+✓ Finished filesystem cache database compaction in 14.5s
+✓ Finished writing to filesystem cache in 12.2s
