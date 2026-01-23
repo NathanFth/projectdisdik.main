@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { UserIcon, LockClosedIcon } from "@heroicons/react/24/outline";
@@ -11,7 +11,7 @@ import {
 } from "@heroicons/react/20/solid";
 import { authService } from "@/services/authService";
 
-export default function LoginPage() {
+function LoginForm() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -28,7 +28,6 @@ export default function LoginPage() {
     const raw = searchParams?.get("next");
     if (!raw) return "/dashboard";
 
-    // next/navigation sudah meng-decode, tapi kita tetap defensif.
     const next = String(raw).trim();
     if (!next.startsWith("/")) return "/dashboard";
     if (next.startsWith("//")) return "/dashboard";
@@ -77,12 +76,14 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col md:flex-row">
       <div className="md:w-1/2 w-full bg-gradient-to-b from-blue-600 to-blue-800 text-white flex flex-col justify-center items-center p-10 relative overflow-hidden">
         <div className="absolute opacity-10 w-[300px] h-[300px]">
+          {/* Pastikan path sesuai lokasi file di public/images/ */}
           <Image
             src="/images/garut-logo.png"
             alt="Logo Garut Background"
             fill
             style={{ objectFit: "contain" }}
             priority
+            unoptimized // Wajib ada untuk fix error 400 di Vercel
           />
         </div>
 
@@ -104,12 +105,14 @@ export default function LoginPage() {
 
       <div className="md:w-1/2 w-full bg-white flex flex-col justify-center items-center px-6 py-12">
         <div className="mb-6 relative w-40 h-40">
+          {/* Pastikan path sesuai lokasi file di public/images/ */}
           <Image
             src="/images/disdik-logo.png"
             alt="Logo DISDIK"
             fill
             style={{ objectFit: "contain" }}
             priority
+            unoptimized // Wajib ada untuk fix error 400 di Vercel
           />
         </div>
 
@@ -183,5 +186,19 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600"></div>
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

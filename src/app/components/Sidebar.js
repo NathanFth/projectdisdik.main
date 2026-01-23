@@ -1,8 +1,7 @@
-// src/app/components/Sidebar.jsx
 "use client";
 
 import Link from "next/link";
-import Image from "next/image"; // ✅ Import Image untuk logo
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -38,11 +37,15 @@ export default function Sidebar() {
         {/* Logo Garut (Perisai) */}
         <div className="relative w-14 h-16 mb-3 drop-shadow-sm filter">
           <Image
-            src="/images/garut-logo.png" // ✅ Pastikan file ada di public/images/
+            src="/images/garut-logo.png"
             alt="Logo Kabupaten Garut"
             fill
             className="object-contain"
             priority
+            // FIX: Tambahkan sizes agar warning hilang & performa optimal
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            // FIX: Tambahkan unoptimized agar tidak error 400 saat deploy (seperti di login)
+            unoptimized
           />
         </div>
 
